@@ -829,7 +829,7 @@ GeckoDriver.prototype.executeScript = function*(cmd, resp) {
  * @throws JavaScriptError
  *     If an Error was thrown whilst evaluating the script.
  */
-GeckoDriver.prototype.executeAsyncScript = function (cmd, resp) {
+GeckoDriver.prototype.executeAsyncScript = function* (cmd, resp) {
   let {script, args, scriptTimeout} = cmd.parameters;
   scriptTimeout = scriptTimeout || this.timeouts.script;
 
@@ -879,7 +879,7 @@ GeckoDriver.prototype.execute_ = function (script, args, timeout, opts = {}) {
  *
  * Scripts are expected to call the {@code finish} global when done.
  */
-GeckoDriver.prototype.executeJSScript = function (cmd, resp) {
+GeckoDriver.prototype.executeJSScript = function* (cmd, resp) {
   let {script, args, scriptTimeout} = cmd.parameters;
   scriptTimeout = scriptTimeout || this.timeouts.script;
 
@@ -2543,7 +2543,8 @@ GeckoDriver.prototype.sendKeysToDialog = function (cmd, resp) {
   // see toolkit/components/prompts/content/commonDialog.js
   let {loginContainer, loginTextbox} = this.dialog.ui;
   if (loginContainer.hidden) {
-    throw new ElementNotVisibleError("This prompt does not accept text input");
+    throw new ElementNotInteractableError(
+        "This prompt does not accept text input");
   }
 
   let win = this.dialog.window ? this.dialog.window : this.getCurrentWindow();
