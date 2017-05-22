@@ -2304,7 +2304,7 @@ nsHttpChannel::ContinueProcessResponse3(nsresult rv)
     }
 
     LOG(("ContinueProcessResponse3 got failure result [rv=%x]\n", rv));
-    if (mTransaction->ProxyConnectFailed()) {
+    if (mTransaction && mTransaction->ProxyConnectFailed()) {
         return ProcessFailedProxyConnect(mRedirectType);
     }
     return ProcessNormal();
@@ -5586,25 +5586,6 @@ NS_IMETHODIMP nsHttpChannel::CloseStickyConnection()
     return NS_OK;
 }
 
-NS_IMETHODIMP nsHttpChannel::ForceNoSpdy()
-{
-    LOG(("nsHttpChannel::ForceNoSpdy this=%p", this));
-
-    MOZ_ASSERT(mTransaction);
-    if (!mTransaction) {
-        return NS_ERROR_UNEXPECTED;
-    }
-
-    mAllowSpdy = 0;
-    mCaps |= NS_HTTP_DISALLOW_SPDY;
-
-    if (!(mTransaction->Caps() & NS_HTTP_DISALLOW_SPDY)) {
-        mTransaction->DisableSpdy();
-    }
-
-    return NS_OK;
-}
-
 //-----------------------------------------------------------------------------
 // nsHttpChannel::nsISupports
 //-----------------------------------------------------------------------------
@@ -5973,6 +5954,52 @@ nsHttpChannel::BeginConnect()
     CallOnModifyRequestObservers();
 
     SetLoadGroupUserAgentOverride();
+
+    // Check if request was cancelled during on-modify-request or on-useragent.
+    if (mCanceled) {
+        return mStatus;
+    }
+
+    if (mSuspendCount) {
+        LOG(("Waiting until resume BeginConnect [this=%p]\n", this));
+        MOZ_ASSERT(!mCallOnResume);
+        mCallOnResume = &nsHttpChannel::HandleBeginConnectContinue;
+        return NS_OK;
+    }
+
+    return BeginConnectContinue();
+}
+
+void
+nsHttpChannel::HandleBeginConnectContinue()
+{
+    NS_PRECONDITION(!mCallOnResume, "How did that happen?");
+    nsresult rv;
+
+    if (mSuspendCount) {
+        LOG(("Waiting until resume BeginConnect [this=%p]\n", this));
+        mCallOnResume = &nsHttpChannel::HandleBeginConnectContinue;
+        return;
+    }
+
+    LOG(("nsHttpChannel::HandleBeginConnectContinue [this=%p]\n", this));
+    rv = BeginConnectContinue();
+    if (NS_FAILED(rv)) {
+        CloseCacheEntry(false);
+        Unused << AsyncAbort(rv);
+    }
+}
+
+nsresult
+nsHttpChannel::BeginConnectContinue()
+{
+    nsresult rv;
+
+    // Check if request was cancelled during suspend AFTER on-modify-request or
+    // on-useragent.
+    if (mCanceled) {
+        return mStatus;
+    }
 
     // Check to see if we should redirect this channel elsewhere by
     // nsIHttpChannel.redirectTo API request
