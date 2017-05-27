@@ -69,7 +69,7 @@ pref("extensions.webextensions.base-content-security-policy", "script-src 'self'
 pref("extensions.webextensions.default-content-security-policy", "script-src 'self'; object-src 'self';");
 
 // Require signed add-ons by default
-pref("xpinstall.signatures.required", true);
+pref("xpinstall.signatures.required", false);
 pref("xpinstall.signatures.devInfoURL", "https://wiki.mozilla.org/Addons/Extension_Signing");
 
 // Dictionary download preference
@@ -1393,7 +1393,7 @@ pref("media.gmp-widevinecdm.enabled", true);
 // Play with different values of the decay time and get telemetry,
 // 0 means to randomize (and persist) the experiment value in users' profiles,
 // -1 means no experiment is run and we use the preferred value for frecency (6h)
-pref("browser.cache.frecency_experiment", 0);
+pref("browser.cache.frecency_experiment", -1);
 
 pref("browser.translation.detectLanguage", false);
 pref("browser.translation.neverForLanguages", "");
@@ -1404,14 +1404,14 @@ pref("browser.translation.engine", "bing");
 
 // Telemetry settings.
 // Determines if Telemetry pings can be archived locally.
-pref("toolkit.telemetry.archive.enabled", true);
+pref("toolkit.telemetry.archive.enabled", false);
 
 // Telemetry experiments settings.
-pref("experiments.enabled", true);
+pref("experiments.enabled", false);
 pref("experiments.manifest.fetchIntervalSeconds", 86400);
 pref("experiments.manifest.uri", "https://telemetry-experiment.cdn.mozilla.net/manifest/v1/firefox/%VERSION%/%CHANNEL%");
 // Whether experiments are supported by the current application profile.
-pref("experiments.supported", true);
+pref("experiments.supported", false);
 
 // Enable GMP support in the addon manager.
 pref("media.gmp-provider.enabled", true);
