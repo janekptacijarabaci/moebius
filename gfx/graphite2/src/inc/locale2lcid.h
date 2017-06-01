@@ -36,8 +36,8 @@ namespace graphite2 {
 struct IsoLangEntry
 {
     unsigned short mnLang;
-    char maLangStr[4];
-    char maCountry[3];
+    const char maLangStr[4];
+    const char maCountry[3];
 };
 
 // Windows Language ID, Locale ISO-639 language, country code as used in

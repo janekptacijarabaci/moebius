@@ -46,14 +46,14 @@ public:
   NS_DECL_NSIMUTATIONOBSERVER
   NS_DECL_NSIBFCACHEENTRY
 
-  nsExpirationState *GetExpirationState() { return &mExpirationState; }
-
 private:
   ~nsSHEntryShared();
 
   friend class nsSHEntry;
 
   friend class HistoryTracker;
+  friend class nsExpirationTracker<nsSHEntryShared, 3>;
+  nsExpirationState *GetExpirationState() { return &mExpirationState; }
 
   static already_AddRefed<nsSHEntryShared> Duplicate(nsSHEntryShared* aEntry);
 
@@ -68,7 +68,7 @@ private:
 
   // These members are copied by nsSHEntryShared::Duplicate().  If you add a
   // member here, be sure to update the Duplicate() implementation.
-  uint64_t mDocShellID;
+  nsID mDocShellID;
   nsCOMArray<nsIDocShellTreeItem> mChildShells;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   nsCOMPtr<nsIPrincipal> mPrincipalToInherit;

@@ -57,7 +57,7 @@ public:
           nsIEventTarget* aOperationThread);
 
 private:
-  ~KeyPair()
+  ~KeyPair() override
   {
     nsNSSShutDownPreventionLock locker;
     if (isAlreadyShutDown()) {
@@ -99,7 +99,7 @@ public:
                  nsIEventTarget* aOperationThread);
 
 private:
-  ~KeyGenRunnable()
+  ~KeyGenRunnable() override
   {
     nsNSSShutDownPreventionLock locker;
     if (isAlreadyShutDown()) {
@@ -109,7 +109,7 @@ private:
     shutdown(ShutdownCalledFrom::Object);
   }
 
-  virtual void virtualDestroyNSSReference() override
+  void virtualDestroyNSSReference() override
   {
     destructorSafeDestroyNSSReference();
   }
@@ -137,7 +137,7 @@ public:
                nsIIdentitySignCallback * aCallback);
 
 private:
-  ~SignRunnable()
+  ~SignRunnable() override
   {
     nsNSSShutDownPreventionLock locker;
     if (isAlreadyShutDown()) {
@@ -175,7 +175,7 @@ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIIDENTITYCRYPTOSERVICE
 
-  IdentityCryptoService() { }
+  IdentityCryptoService() = default;
   nsresult Init()
   {
     nsresult rv;
@@ -193,7 +193,7 @@ public:
   }
 
 private:
-  ~IdentityCryptoService() { }
+  ~IdentityCryptoService() = default;
   IdentityCryptoService(const KeyPair &) = delete;
   void operator=(const IdentityCryptoService &) = delete;
 

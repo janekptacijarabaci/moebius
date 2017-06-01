@@ -34,6 +34,7 @@ enum {
 class nsIWidget;
 
 namespace mozilla {
+class TimeStamp;
 namespace gfx {
 class SourceSurface;
 } // namespace gfx
@@ -141,13 +142,6 @@ public:
   {
     return LayoutDeviceIntPoint(NSToIntRound(aPt.x * aBackingScale),
                                 NSToIntRound(aPt.y * aBackingScale));
-  }
-
-  static LayoutDeviceIntPoint
-  CocoaPointsToDevPixelsRoundDown(const NSPoint& aPt, CGFloat aBackingScale)
-  {
-    return LayoutDeviceIntPoint(NSToIntFloor(aPt.x * aBackingScale),
-                                NSToIntFloor(aPt.y * aBackingScale));
   }
 
   static LayoutDeviceIntRect
@@ -384,6 +378,12 @@ public:
            const nsTArray<mozilla::FontRange>& aFontRanges,
            const bool aIsVertical,
            const CGFloat aBackingScaleFactor);
+
+  /**
+   * Compute TimeStamp from an event's timestamp.
+   * If aEventTime is 0, this returns current timestamp.
+   */
+  static mozilla::TimeStamp GetEventTimeStamp(NSTimeInterval aEventTime);
 };
 
 #endif // nsCocoaUtils_h_

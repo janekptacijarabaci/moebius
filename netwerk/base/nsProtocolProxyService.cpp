@@ -36,7 +36,6 @@
 #include "nsINetworkLinkService.h"
 #include "nsIHttpChannelInternal.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Tokenizer.h"
 
 //----------------------------------------------------------------------------
 
@@ -646,7 +645,7 @@ nsProtocolProxyService::PrefsChanged(nsIPrefBranch *prefBranch,
         rv = prefBranch->GetCharPref(PROXY_PREF("no_proxies_on"),
                                      getter_Copies(tempString));
         if (NS_SUCCEEDED(rv))
-            LoadHostFilters(tempString);
+            LoadHostFilters(tempString.get());
     }
 
     // We're done if not using something that could give us a PAC URL
@@ -728,9 +727,7 @@ nsProtocolProxyService::CanUseProxy(nsIURI *aURI, int32_t defaultPort)
     }
 
     // Don't use proxy for local hosts (plain hostname, no dots)
-    if ((!is_ipaddr && mFilterLocalHosts && !host.Contains('.')) ||
-        host.EqualsLiteral("127.0.0.1") ||
-        host.EqualsLiteral("::1")) {
+    if (!is_ipaddr && mFilterLocalHosts && !host.Contains('.')) {
         LOG(("Not using proxy for this local host [%s]!\n", host.get()));
         return false; // don't allow proxying
     }
@@ -1543,16 +1540,15 @@ nsProtocolProxyService::GetProxyConfigType(uint32_t* aProxyConfigType)
 }
 
 void
-nsProtocolProxyService::LoadHostFilters(const nsACString& aFilters)
+nsProtocolProxyService::LoadHostFilters(const char *filters)
 {
     // check to see the owners flag? /!?/ TODO
     if (mHostFiltersArray.Length() > 0) {
         mHostFiltersArray.Clear();
     }
 
-    if (aFilters.IsEmpty()) {
-        return;
-    }
+    if (!filters)
+        return; // fail silently...
 
     //
     // filter  = ( host | domain | ipaddr ["/" mask] ) [":" port]
@@ -1560,79 +1556,38 @@ nsProtocolProxyService::LoadHostFilters(const nsACString& aFilters)
     //
     // Reset mFilterLocalHosts - will be set to true if "<local>" is in pref string
     mFilterLocalHosts = false;
-
-    mozilla::Tokenizer t(aFilters);
-    mozilla::Tokenizer::Token token;
-    bool eof = false;
-    // while (*filters) {
-    while (!eof) {
+    while (*filters) {
         // skip over spaces and ,
-        t.SkipWhites();
-        while (t.CheckChar(',')) {
-            t.SkipWhites();
+        while (*filters && (*filters == ',' || IS_ASCII_SPACE(*filters)))
+            filters++;
+
+        const char *starthost = filters;
+        const char *endhost = filters + 1; // at least that...
+        const char *portLocation = 0;
+        const char *maskLocation = 0;
+
+        while (*endhost && (*endhost != ',' && !IS_ASCII_SPACE(*endhost))) {
+            if (*endhost == ':')
+                portLocation = endhost;
+            else if (*endhost == '/')
+                maskLocation = endhost;
+            else if (*endhost == ']') // IPv6 address literals
+                portLocation = 0;
+            endhost++;
         }
 
-        nsAutoCString portStr;
-        nsAutoCString hostStr;
-        nsAutoCString maskStr;
-        t.Record();
+        filters = endhost; // advance iterator up front
 
-        bool parsingIPv6 = false;
-        bool parsingPort = false;
-        bool parsingMask = false;
-        while (t.Next(token)) {
-            if (token.Equals(mozilla::Tokenizer::Token::EndOfFile()))  {
-                eof = true;
-                break;
-            }
-            if (token.Equals(mozilla::Tokenizer::Token::Char(',')) ||
-                token.Type() == mozilla::Tokenizer::TOKEN_WS) {
-                break;
-            }
+        // locate end of host
+        const char *end = maskLocation ? maskLocation :
+                          portLocation ? portLocation :
+                          endhost;
 
-            if (token.Equals(mozilla::Tokenizer::Token::Char('['))) {
-                parsingIPv6 = true;
-                continue;
-            }
-
-            if (!parsingIPv6 && token.Equals(mozilla::Tokenizer::Token::Char(':'))) {
-                // Port is starting. Claim the previous as host.
-                if (parsingMask) {
-                    t.Claim(maskStr);
-                } else {
-                    t.Claim(hostStr);
-                }
-                t.Record();
-                parsingPort = true;
-                continue;
-            } else if (token.Equals(mozilla::Tokenizer::Token::Char('/'))) {
-                t.Claim(hostStr);
-                t.Record();
-                parsingMask = true;
-                continue;
-            } else if (token.Equals(mozilla::Tokenizer::Token::Char(']'))) {
-                parsingIPv6 = false;
-                continue;
-            }
-        }
-        if (!parsingPort && !parsingMask) {
-            t.Claim(hostStr);
-        } else if (parsingPort) {
-            t.Claim(portStr);
-        } else if (parsingMask) {
-            t.Claim(maskStr);
-        } else {
-            NS_WARNING("Could not parse this rule");
-            continue;
-        }
-
-        if (hostStr.IsEmpty()) {
-            continue;
-        }
+        nsAutoCString str(starthost, end - starthost);
 
         // If the current host filter is "<local>", then all local (i.e.
         // no dots in the hostname) hosts should bypass the proxy
-        if (hostStr.EqualsIgnoreCase("<local>")) {
+        if (str.EqualsIgnoreCase("<local>")) {
             mFilterLocalHosts = true;
             LOG(("loaded filter for local hosts "
                  "(plain host names, no dots)\n"));
@@ -1642,30 +1597,13 @@ nsProtocolProxyService::LoadHostFilters(const nsACString& aFilters)
 
         // For all other host filters, create HostInfo object and add to list
         HostInfo *hinfo = new HostInfo();
-        nsresult rv = NS_OK;
-
-        int32_t port = portStr.ToInteger(&rv);
-        if (NS_FAILED(rv)) {
-            port = 0;
-        }
-        hinfo->port = port;
-
-        int32_t maskLen = maskStr.ToInteger(&rv);
-        if (NS_FAILED(rv)) {
-            maskLen = 128;
-        }
-
-        // PR_StringToNetAddr can't parse brackets enclosed IPv6
-        nsAutoCString addrString = hostStr;
-        if (hostStr.First() == '[' && hostStr.Last() == ']') {
-            addrString = Substring(hostStr, 1, hostStr.Length() - 2);
-        }
+        hinfo->port = portLocation ? atoi(portLocation + 1) : 0;
 
         PRNetAddr addr;
-        if (PR_StringToNetAddr(addrString.get(), &addr) == PR_SUCCESS) {
+        if (PR_StringToNetAddr(str.get(), &addr) == PR_SUCCESS) {
             hinfo->is_ipaddr   = true;
             hinfo->ip.family   = PR_AF_INET6; // we always store address as IPv6
-            hinfo->ip.mask_len = maskLen;
+            hinfo->ip.mask_len = maskLocation ? atoi(maskLocation + 1) : 128;
 
             if (hinfo->ip.mask_len == 0) {
                 NS_WARNING("invalid mask");
@@ -1692,33 +1630,27 @@ nsProtocolProxyService::LoadHostFilters(const nsACString& aFilters)
             proxy_MaskIPv6Addr(hinfo->ip.addr, hinfo->ip.mask_len);
         }
         else {
-            nsAutoCString host;
-            if (hostStr.First() == '*') {
-                host = Substring(hostStr, 1);
-            } else {
-                host = hostStr;
-            }
-
-            if (host.IsEmpty()) {
-                hinfo->name.host = nullptr;
-                goto loser;
-            }
-
-            hinfo->name.host_len = host.Length();
+            uint32_t startIndex, endIndex;
+            if (str.First() == '*')
+                startIndex = 1; // *.domain -> .domain
+            else
+                startIndex = 0;
+            endIndex = (portLocation ? portLocation : endhost) - starthost;
 
             hinfo->is_ipaddr = false;
-            hinfo->name.host = ToNewCString(host);
+            hinfo->name.host = ToNewCString(Substring(str, startIndex, endIndex));
 
             if (!hinfo->name.host)
                 goto loser;
+
+            hinfo->name.host_len = endIndex - startIndex;
         }
 
 //#define DEBUG_DUMP_FILTERS
 #ifdef DEBUG_DUMP_FILTERS
-        printf("loaded filter[%zu]:\n", mHostFiltersArray.Length());
+        printf("loaded filter[%u]:\n", mHostFiltersArray.Length());
         printf("  is_ipaddr = %u\n", hinfo->is_ipaddr);
         printf("  port = %u\n", hinfo->port);
-        printf("  host = %s\n", hostStr.get());
         if (hinfo->is_ipaddr) {
             printf("  ip.family = %x\n", hinfo->ip.family);
             printf("  ip.mask_len = %u\n", hinfo->ip.mask_len);

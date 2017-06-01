@@ -52,7 +52,7 @@
 #include <errno.h>
 #include <algorithm>
 
-#include "updatecommon.h"
+#include "updatelogging.h"
 #ifdef XP_MACOSX
 #include "updaterfileutils_osx.h"
 #endif // XP_MACOSX
@@ -306,7 +306,7 @@ private:
 
 //-----------------------------------------------------------------------------
 
-static NS_tchar gPatchDirPath[MAXPATHLEN];
+static NS_tchar* gPatchDirPath;
 static NS_tchar gInstallDirPath[MAXPATHLEN];
 static NS_tchar gWorkingDirPath[MAXPATHLEN];
 static ArchiveReader gArchiveReader;
@@ -1086,7 +1086,7 @@ class Action
 {
 public:
   Action() : mProgressCost(1), mNext(nullptr) { }
-  virtual ~Action() { }
+  virtual ~Action() = default;
 
   virtual int Parse(NS_tchar *line) = 0;
 
@@ -1115,10 +1115,10 @@ class RemoveFile : public Action
 public:
   RemoveFile() : mSkip(0) { }
 
-  int Parse(NS_tchar *line);
-  int Prepare();
-  int Execute();
-  void Finish(int status);
+  int Parse(NS_tchar *line) override;
+  int Prepare() override;
+  int Execute() override;
+  void Finish(int status) override;
 
 private:
   mozilla::UniquePtr<NS_tchar[]> mFile;
@@ -1246,10 +1246,10 @@ class RemoveDir : public Action
 public:
   RemoveDir() : mSkip(0) { }
 
-  virtual int Parse(NS_tchar *line);
-  virtual int Prepare(); // check that the source dir exists
-  virtual int Execute();
-  virtual void Finish(int status);
+  int Parse(NS_tchar *line) override;
+  int Prepare() override; // check that the source dir exists
+  int Execute() override;
+  void Finish(int status) override;
 
 private:
   mozilla::UniquePtr<NS_tchar[]> mDir;
@@ -1363,10 +1363,10 @@ class AddFile : public Action
 public:
   AddFile() : mAdded(false) { }
 
-  virtual int Parse(NS_tchar *line);
-  virtual int Prepare();
-  virtual int Execute();
-  virtual void Finish(int status);
+  int Parse(NS_tchar *line) override;
+  int Prepare() override;
+  int Execute() override;
+  void Finish(int status) override;
 
 private:
   mozilla::UniquePtr<NS_tchar[]> mFile;
@@ -1466,12 +1466,12 @@ class PatchFile : public Action
 public:
   PatchFile() : mPatchFile(nullptr), mPatchIndex(-1), buf(nullptr) { }
 
-  virtual ~PatchFile();
+  ~PatchFile() override;
 
-  virtual int Parse(NS_tchar *line);
-  virtual int Prepare(); // should check for patch file and for checksum here
-  virtual int Execute();
-  virtual void Finish(int status);
+  int Parse(NS_tchar *line) override;
+  int Prepare() override; // should check for patch file and for checksum here
+  int Execute() override;
+  void Finish(int status) override;
 
 private:
   int LoadSourceFile(FILE* ofile);
@@ -1787,10 +1787,10 @@ PatchFile::Finish(int status)
 class AddIfFile : public AddFile
 {
 public:
-  virtual int Parse(NS_tchar *line);
-  virtual int Prepare();
-  virtual int Execute();
-  virtual void Finish(int status);
+  int Parse(NS_tchar *line) override;
+  int Prepare() override;
+  int Execute() override;
+  void Finish(int status) override;
 
 protected:
   mozilla::UniquePtr<NS_tchar[]> mTestFile;
@@ -1848,10 +1848,10 @@ AddIfFile::Finish(int status)
 class AddIfNotFile : public AddFile
 {
 public:
-  virtual int Parse(NS_tchar *line);
-  virtual int Prepare();
-  virtual int Execute();
-  virtual void Finish(int status);
+  int Parse(NS_tchar *line) override;
+  int Prepare() override;
+  int Execute() override;
+  void Finish(int status) override;
 
 protected:
   mozilla::UniquePtr<NS_tchar[]> mTestFile;
@@ -1909,10 +1909,10 @@ AddIfNotFile::Finish(int status)
 class PatchIfFile : public PatchFile
 {
 public:
-  virtual int Parse(NS_tchar *line);
-  virtual int Prepare(); // should check for patch file and for checksum here
-  virtual int Execute();
-  virtual void Finish(int status);
+  int Parse(NS_tchar *line) override;
+  int Prepare() override; // should check for patch file and for checksum here
+  int Execute() override;
+  void Finish(int status) override;
 
 private:
   mozilla::UniquePtr<NS_tchar[]> mTestFile;
@@ -2020,30 +2020,14 @@ LaunchWinPostProcess(const WCHAR *installationDir,
     return false;
   }
 
-  // The relative path must not contain directory traversals, current directory,
-  // or colons.
-  if (wcsstr(exefile, L"..") != nullptr ||
-      wcsstr(exefile, L"./") != nullptr ||
-      wcsstr(exefile, L".\\") != nullptr ||
-      wcsstr(exefile, L":") != nullptr) {
-    return false;
-  }
-
-  // The relative path must not start with a decimal point, backslash, or
-  // forward slash.
-  if (exefile[0] == L'.' ||
-      exefile[0] == L'\\' ||
-      exefile[0] == L'/') {
+  // Verify that exeFile doesn't contain relative paths
+  if (wcsstr(exefile, L"..") != nullptr) {
     return false;
   }
 
   WCHAR exefullpath[MAX_PATH + 1] = { L'\0' };
   wcsncpy(exefullpath, installationDir, MAX_PATH);
   if (!PathAppendSafe(exefullpath, exefile)) {
-    return false;
-  }
-
-  if (!IsValidFullPath(exefullpath)) {
     return false;
   }
 
@@ -2153,9 +2137,7 @@ WriteStatusFile(const char* aStatus)
 #if defined(XP_WIN)
   // The temp file is not removed on failure since there is client code that
   // will remove it.
-  if (GetTempFileNameW(gPatchDirPath, L"sta", 0, filename) == 0) {
-    return false;
-  }
+  GetTempFileNameW(gPatchDirPath, L"sta", 0, filename);
 #else
   NS_tsnprintf(filename, sizeof(filename)/sizeof(filename[0]),
                NS_T("%s/update.status"), gPatchDirPath);
@@ -2841,38 +2823,9 @@ int NS_main(int argc, NS_tchar **argv)
     return 1;
   }
 
-  // This check is also performed in workmonitor.cpp since the maintenance
-  // service can be called directly.
-  if (!IsValidFullPath(argv[1])) {
-    // Since the status file is written to the patch directory and the patch
-    // directory is invalid don't write the status file.
-    fprintf(stderr, "The patch directory path is not valid for this "  \
-            "application (" LOG_S ")\n", argv[1]);
-#ifdef XP_MACOSX
-    if (isElevated) {
-      freeArguments(argc, argv);
-      CleanupElevatedMacUpdate(true);
-    }
-#endif
-    return 1;
-  }
   // The directory containing the update information.
-  NS_tstrncpy(gPatchDirPath, argv[1], MAXPATHLEN);
+  gPatchDirPath = argv[1];
 
-  // This check is also performed in workmonitor.cpp since the maintenance
-  // service can be called directly.
-  if (!IsValidFullPath(argv[2])) {
-    WriteStatusFile(INVALID_INSTALL_DIR_PATH_ERROR);
-    fprintf(stderr, "The install directory path is not valid for this "  \
-            "application (" LOG_S ")\n", argv[2]);
-#ifdef XP_MACOSX
-    if (isElevated) {
-      freeArguments(argc, argv);
-      CleanupElevatedMacUpdate(true);
-    }
-#endif
-    return 1;
-  }
   // The directory we're going to update to.
   // We copy this string because we need to remove trailing slashes.  The C++
   // standard says that it's always safe to write to strings pointed to by argv
@@ -2945,20 +2898,6 @@ int NS_main(int argc, NS_tchar **argv)
     }
   }
 
-  // This check is also performed in workmonitor.cpp since the maintenance
-  // service can be called directly.
-  if (!IsValidFullPath(argv[3])) {
-    WriteStatusFile(INVALID_WORKING_DIR_PATH_ERROR);
-    fprintf(stderr, "The working directory path is not valid for this "  \
-            "application (" LOG_S ")\n", argv[3]);
-#ifdef XP_MACOSX
-    if (isElevated) {
-      freeArguments(argc, argv);
-      CleanupElevatedMacUpdate(true);
-    }
-#endif
-    return 1;
-  }
   // The directory we're going to update to.
   // We copy this string because we need to remove trailing slashes.  The C++
   // standard says that it's always safe to write to strings pointed to by argv
@@ -2968,39 +2907,6 @@ int NS_main(int argc, NS_tchar **argv)
   slash = NS_tstrrchr(gWorkingDirPath, NS_SLASH);
   if (slash && !slash[1]) {
     *slash = NS_T('\0');
-  }
-
-  // These checks are also performed in workmonitor.cpp since the maintenance
-  // service can be called directly.
-  if (argc > callbackIndex) {
-    if (!IsValidFullPath(argv[callbackIndex])) {
-      WriteStatusFile(INVALID_CALLBACK_PATH_ERROR);
-      fprintf(stderr, "The callback file path is not valid for this "  \
-              "application (" LOG_S ")\n", argv[callbackIndex]);
-#ifdef XP_MACOSX
-      if (isElevated) {
-        freeArguments(argc, argv);
-        CleanupElevatedMacUpdate(true);
-      }
-#endif
-      return 1;
-    }
-
-    size_t len = NS_tstrlen(gInstallDirPath);
-    NS_tchar callbackInstallDir[MAXPATHLEN] = { NS_T('\0') };
-    NS_tstrncpy(callbackInstallDir, argv[callbackIndex], len);
-    if (NS_tstrcmp(gInstallDirPath, callbackInstallDir) != 0) {
-      WriteStatusFile(INVALID_CALLBACK_DIR_ERROR);
-      fprintf(stderr, "The callback file must be located in the "  \
-              "installation directory (" LOG_S ")\n", argv[callbackIndex]);
-#ifdef XP_MACOSX
-      if (isElevated) {
-        freeArguments(argc, argv);
-        CleanupElevatedMacUpdate(true);
-      }
-#endif
-      return 1;
-    }
   }
 
 #ifdef XP_MACOSX
@@ -3053,8 +2959,6 @@ int NS_main(int argc, NS_tchar **argv)
   LOG(("WORKING DIRECTORY " LOG_S, gWorkingDirPath));
 
 #if defined(XP_WIN)
-  // These checks are also performed in workmonitor.cpp since the maintenance
-  // service can be called directly.
   if (_wcsnicmp(gWorkingDirPath, gInstallDirPath, MAX_PATH) != 0) {
     if (!sStagedUpdate && !sReplaceRequest) {
       WriteStatusFile(INVALID_APPLYTO_DIR_ERROR);

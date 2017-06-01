@@ -10,7 +10,6 @@
 #include "GetDirectoryListingTask.h"
 #include "GetFileOrDirectoryTask.h"
 
-#include "mozilla/AppProcessChecker.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/FileSystemBase.h"
 #include "mozilla/dom/FileSystemSecurity.h"
@@ -61,7 +60,7 @@ FileSystemRequestParent::Initialize(const FileSystemParams& aParams)
     FILESYSTEM_REQUEST_PARENT_DISPATCH_ENTRY(GetFiles)
 
     default: {
-      NS_RUNTIMEABORT("not reached");
+      MOZ_CRASH("not reached");
       break;
     }
   }

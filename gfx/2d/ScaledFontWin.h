@@ -16,15 +16,17 @@ class ScaledFontWin : public ScaledFontBase
 {
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(ScaledFontWin)
-  ScaledFontWin(const LOGFONT* aFont, Float aSize);
+  ScaledFontWin(LOGFONT* aFont, Float aSize);
 
   virtual FontType GetType() const { return FontType::GDI; }
 
   bool GetFontFileData(FontFileDataOutput aDataCallback, void *aBaton) override;
 
-  bool GetFontInstanceData(FontInstanceDataOutput aCb, void* aBaton) override;
-
   virtual bool GetFontDescriptor(FontDescriptorOutput aCb, void* aBaton) override;
+
+  static already_AddRefed<ScaledFont>
+    CreateFromFontDescriptor(const uint8_t* aData, uint32_t aDataLength, Float aSize);
+
   virtual AntialiasMode GetDefaultAAMode() override;
 
 #ifdef USE_SKIA

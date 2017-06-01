@@ -57,7 +57,6 @@ public:
 
 protected:
     friend class nsAsyncResolveRequest;
-    friend class TestProtocolProxyService_LoadHostFilters_Test; // for gtest
 
     ~nsProtocolProxyService();
 
@@ -277,7 +276,7 @@ protected:
      * @param hostFilters
      *        A "no-proxy-for" exclusion list.
      */
-    void LoadHostFilters(const nsACString& hostFilters);
+    void LoadHostFilters(const char *hostFilters);
 
     /**
      * This method checks the given URI against mHostFiltersArray.

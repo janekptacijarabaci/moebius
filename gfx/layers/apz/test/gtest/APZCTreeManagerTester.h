@@ -29,7 +29,6 @@ protected:
   virtual void TearDown() {
     while (mcc->RunThroughDelayedTasks());
     manager->ClearTree();
-    manager->ClearContentController();
   }
 
   /**

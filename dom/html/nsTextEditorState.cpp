@@ -27,7 +27,6 @@
 #include "nsAttrValueInlines.h"
 #include "nsGenericHTMLElement.h"
 #include "nsIDOMEventListener.h"
-#include "nsIEditorIMESupport.h"
 #include "nsIEditorObserver.h"
 #include "nsIWidget.h"
 #include "nsIDocumentEncoder.h"
@@ -1831,6 +1830,7 @@ nsTextEditorState::InitializeRootNode()
         disp->mOverflowX != NS_STYLE_OVERFLOW_CLIP) {
       classValue.AppendLiteral(" inherit-overflow");
     }
+    classValue.AppendLiteral(" inherit-scroll-behavior");
   }
   nsresult rv = mRootNode->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
                                    classValue, false);
@@ -2040,10 +2040,7 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
         // document may be unloaded.
         mValueBeingSet = aValue;
         mIsCommittingComposition = true;
-        nsCOMPtr<nsIEditorIMESupport> editorIMESupport =
-                                        do_QueryInterface(mEditor);
-        MOZ_RELEASE_ASSERT(editorIMESupport);
-        nsresult rv = editorIMESupport->ForceCompositionEnd();
+        nsresult rv = mEditor->ForceCompositionEnd();
         if (!self.get()) {
           return true;
         }
@@ -2307,9 +2304,8 @@ bool
 nsTextEditorState::EditorHasComposition()
 {
   bool isComposing = false;
-  nsCOMPtr<nsIEditorIMESupport> editorIMESupport = do_QueryInterface(mEditor);
-  return editorIMESupport &&
-         NS_SUCCEEDED(editorIMESupport->GetComposing(&isComposing)) &&
+  return mEditor &&
+         NS_SUCCEEDED(mEditor->GetComposing(&isComposing)) &&
          isComposing;
 }
 

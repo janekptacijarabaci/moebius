@@ -983,6 +983,16 @@ ValidateCompressedTexImageRestrictions(const char* funcName, WebGLContext* webgl
     };
 
     switch (format->compression->family) {
+    case webgl::CompressionFamily::ASTC:
+        if (target == LOCAL_GL_TEXTURE_3D &&
+            !webgl->gl->IsExtensionSupported(gl::GLContext::KHR_texture_compression_astc_hdr))
+        {
+            webgl->ErrorInvalidOperation("%s: TEXTURE_3D requires ASTC's hdr profile.",
+                                         funcName);
+            return false;
+        }
+        break;
+
     case webgl::CompressionFamily::PVRTC:
         if (!IsPowerOfTwo(width) || !IsPowerOfTwo(height)) {
             webgl->ErrorInvalidValue("%s: %s requires power-of-two width and height.",
@@ -1175,9 +1185,9 @@ WebGLTexture::TexStorage(const char* funcName, TexTarget target, GLsizei levels,
     const bool isDataInitialized = false;
     const WebGLTexture::ImageInfo newInfo(dstUsage, width, height, depth,
                                           isDataInitialized);
-    SetImageInfosAtLevel(0, newInfo);
+    SetImageInfosAtLevel(funcName, 0, newInfo);
 
-    PopulateMipChain(0, levels-1);
+    PopulateMipChain(funcName, 0, levels-1);
 
     mImmutable = true;
     mImmutableLevelCount = levels;
@@ -1307,7 +1317,7 @@ WebGLTexture::TexImage(const char* funcName, TexImageTarget target, GLint level,
     ////////////////////////////////////
     // Update our specification data.
 
-    SetImageInfo(imageInfo, newImageInfo);
+    SetImageInfo(funcName, imageInfo, newImageInfo);
 }
 
 void
@@ -1513,7 +1523,7 @@ WebGLTexture::CompressedTexImage(const char* funcName, TexImageTarget target, GL
     const bool isDataInitialized = true;
     const ImageInfo newImageInfo(usage, blob->mWidth, blob->mHeight, blob->mDepth,
                                  isDataInitialized);
-    SetImageInfo(imageInfo, newImageInfo);
+    SetImageInfo(funcName, imageInfo, newImageInfo);
 }
 
 static inline bool
@@ -1915,7 +1925,21 @@ ValidateCopyDestUsage(const char* funcName, WebGLContext* webgl,
 
     const auto dstFormat = dstUsage->format;
 
-    if (dstFormat->componentType != srcFormat->componentType) {
+    const auto fnNarrowType = [&](webgl::ComponentType type) {
+        switch (type) {
+        case webgl::ComponentType::NormInt:
+        case webgl::ComponentType::NormUInt:
+            // These both count as "fixed-point".
+            return webgl::ComponentType::NormInt;
+
+        default:
+            return type;
+        }
+    };
+
+    const auto srcType = fnNarrowType(srcFormat->componentType);
+    const auto dstType = fnNarrowType(dstFormat->componentType);
+    if (dstType != srcType) {
         webgl->ErrorInvalidOperation("%s: For sized internalFormats, source and dest"
                                      " component types must match. (source: %s, dest:"
                                      " %s)",
@@ -2150,7 +2174,7 @@ WebGLTexture::CopyTexImage2D(TexImageTarget target, GLint level, GLenum internal
 
     const bool isDataInitialized = true;
     const ImageInfo newImageInfo(dstUsage, width, height, depth, isDataInitialized);
-    SetImageInfo(imageInfo, newImageInfo);
+    SetImageInfo(funcName, imageInfo, newImageInfo);
 }
 
 void

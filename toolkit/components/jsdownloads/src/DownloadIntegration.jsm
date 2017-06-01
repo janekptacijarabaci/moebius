@@ -580,11 +580,7 @@ this.DownloadIntegration = {
         // to match Windows behavior.
         if (zone >= Ci.mozIDownloadPlatform.ZONE_INTERNET) {
           let streamPath = aDownload.target.path + ":Zone.Identifier";
-          let stream = yield OS.File.open(
-            streamPath,
-            { create: true },
-            { winAllowLengthBeyondMaxPathWithCaveats: true }
-          );
+          let stream = yield OS.File.open(streamPath, { create: true });
           try {
             yield stream.write(new TextEncoder().encode("[ZoneTransfer]\r\nZoneId=" + zone + "\r\n"));
           } finally {
@@ -1032,7 +1028,7 @@ this.DownloadObserver = {
                                      p.ON_LEAVE_PRIVATE_BROWSING);
         break;
       case "last-pb-context-exited":
-        let promise = Task.spawn(function() {
+        let promise = Task.spawn(function*() {
           let list = yield Downloads.getList(Downloads.PRIVATE);
           let downloads = yield list.getAll();
 

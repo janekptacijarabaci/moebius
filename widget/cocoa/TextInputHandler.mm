@@ -2529,7 +2529,7 @@ IMEInputHandler::GetCurrentTSMDocumentID()
  *
  ******************************************************************************/
 
-NS_IMETHODIMP
+nsresult
 IMEInputHandler::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
                            const IMENotification& aNotification)
 {

@@ -17,7 +17,6 @@
 #include "nsISupportsPrimitives.h"
 #include "nsIURI.h"
 #include "GeckoProfiler.h"
-#include "prnetdb.h"
 #include "ProxyUtils.h"
 
 class nsWindowsSystemProxySettings final : public nsISystemProxySettings
@@ -149,18 +148,10 @@ nsWindowsSystemProxySettings::MatchOverride(const nsACString& aHost)
             const nsAutoCString override(Substring(cbuf, start,
                                                    delimiter - start));
             if (override.EqualsLiteral("<local>")) {
-                PRNetAddr addr;
-                bool isIpAddr = (PR_StringToNetAddr(host.get(), &addr) == PR_SUCCESS);
-
-                // Don't use proxy for local hosts (plain hostname, no dots)
-                if (!isIpAddr && !host.Contains('.')) {
+                // This override matches local addresses.
+                if (host.EqualsLiteral("localhost") ||
+                    host.EqualsLiteral("127.0.0.1"))
                     return true;
-                }
-
-                if (host.EqualsLiteral("127.0.0.1") ||
-                    host.EqualsLiteral("::1")) {
-                    return true;
-                }
             } else if (PatternMatch(host, override)) {
                 return true;
             }

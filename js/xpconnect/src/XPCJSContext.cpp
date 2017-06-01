@@ -199,6 +199,7 @@ CompartmentPrivate::CompartmentPrivate(JSCompartment* c)
     , allowCPOWs(false)
     , universalXPConnectEnabled(false)
     , forcePermissiveCOWs(false)
+    , wasNuked(false)
     , scriptability(c)
     , scope(nullptr)
     , mWrappedJSMap(JSObject2WrappedJSMap::newMap(XPC_JS_MAP_LENGTH))
@@ -563,6 +564,37 @@ CurrentWindowOrNull(JSContext* cx)
 {
     JSObject* glob = JS::CurrentGlobalOrNull(cx);
     return glob ? WindowOrNull(glob) : nullptr;
+}
+
+// Nukes all wrappers into or out of the given compartment, and prevents new
+// wrappers from being created. Additionally marks the compartment as
+// unscriptable after wrappers have been nuked.
+//
+// Note: This should *only* be called for browser or extension compartments.
+// Wrappers between web compartments must never be cut in web-observable
+// ways.
+void
+NukeAllWrappersForCompartment(JSContext* cx, JSCompartment* compartment,
+                              js::NukeReferencesToWindow nukeReferencesToWindow)
+{
+    // First, nuke all wrappers into or out of the target compartment. Once
+    // the compartment is marked as nuked, WrapperFactory will refuse to
+    // create new live wrappers for it, in either direction. This means that
+    // we need to be sure that we don't have any existing cross-compartment
+    // wrappers which may be replaced with dead wrappers during unrelated
+    // wrapper recomputation *before* we set that bit.
+    js::NukeCrossCompartmentWrappers(cx, js::AllCompartments(),
+                                     js::SingleCompartment(compartment),
+                                     nukeReferencesToWindow,
+                                     js::NukeAllReferences);
+
+    // At this point, we should cross-compartment wrappers for the nuked
+    // compartment. Set the wasNuked bit so WrapperFactory will return a
+    // DeadObjectProxy when asked to create a new wrapper for it, and mark as
+    // unscriptable.
+    auto compartmentPrivate = xpc::CompartmentPrivate::Get(compartment);
+    compartmentPrivate->wasNuked = true;
+    compartmentPrivate->scriptability.Block();
 }
 
 } // namespace xpc
@@ -1171,6 +1203,7 @@ AutoLockWatchdog::~AutoLockWatchdog()
 static void
 WatchdogMain(void* arg)
 {
+    mozilla::AutoProfilerRegister registerThread("JS Watchdog");
     PR_SetCurrentThreadName("JS Watchdog");
 
     Watchdog* self = static_cast<Watchdog*>(arg);
@@ -1453,6 +1486,9 @@ ReloadPrefsCallback(const char* pref, void* data)
                                                  "baselinejit.unsafe_eager_compilation");
     bool useIonEager = Preferences::GetBool(JS_OPTIONS_DOT_STR "ion.unsafe_eager_compilation");
 
+    int32_t baselineThreshold = Preferences::GetInt(JS_OPTIONS_DOT_STR "baselinejit.threshold", -1);
+    int32_t ionThreshold = Preferences::GetInt(JS_OPTIONS_DOT_STR "ion.threshold", -1);
+
     sDiscardSystemSource = Preferences::GetBool(JS_OPTIONS_DOT_STR "discardSystemSource");
 
     bool useAsyncStack = Preferences::GetBool(JS_OPTIONS_DOT_STR "asyncstack");
@@ -1499,9 +1535,9 @@ ReloadPrefsCallback(const char* pref, void* data)
     JS_SetParallelParsingEnabled(cx, parallelParsing);
     JS_SetOffthreadIonCompilationEnabled(cx, offthreadIonCompilation);
     JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_BASELINE_WARMUP_TRIGGER,
-                                  useBaselineEager ? 0 : -1);
+                                  useBaselineEager ? 0 : baselineThreshold);
     JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_ION_WARMUP_TRIGGER,
-                                  useIonEager ? 0 : -1);
+                                  useIonEager ? 0 : ionThreshold);
 }
 
 XPCJSContext::~XPCJSContext()
@@ -1562,7 +1598,7 @@ XPCJSContext::~XPCJSContext()
 
 #ifdef MOZ_ENABLE_PROFILER_SPS
     // Tell the profiler that the context is gone
-    if (PseudoStack* stack = mozilla_get_pseudo_stack())
+    if (PseudoStack* stack = profiler_get_pseudo_stack())
         stack->sampleContext(nullptr);
 #endif
 
@@ -3423,7 +3459,7 @@ XPCJSContext::Initialize()
     JS_SetWrapObjectCallbacks(cx, &WrapObjectCallbacks);
     js::SetPreserveWrapperCallback(cx, PreserveWrapper);
 #ifdef MOZ_ENABLE_PROFILER_SPS
-    if (PseudoStack* stack = mozilla_get_pseudo_stack())
+    if (PseudoStack* stack = profiler_get_pseudo_stack())
         stack->sampleContext(cx);
 #endif
     JS_SetAccumulateTelemetryCallback(cx, AccumulateTelemetryCallback);
@@ -3532,7 +3568,6 @@ bool
 XPCJSContext::DescribeCustomObjects(JSObject* obj, const js::Class* clasp,
                                     char (&name)[72]) const
 {
-    XPCNativeScriptableInfo* si = nullptr;
 
     if (!IS_PROTO_CLASS(clasp)) {
         return false;
@@ -3540,13 +3575,13 @@ XPCJSContext::DescribeCustomObjects(JSObject* obj, const js::Class* clasp,
 
     XPCWrappedNativeProto* p =
         static_cast<XPCWrappedNativeProto*>(xpc_GetJSPrivate(obj));
-    si = p->GetScriptableInfo();
-
-    if (!si) {
+    nsCOMPtr<nsIXPCScriptable> scr = p->GetScriptable();
+    if (!scr) {
         return false;
     }
 
-    SprintfLiteral(name, "JS Object (%s - %s)", clasp->name, si->GetJSClass()->name);
+    SprintfLiteral(name, "JS Object (%s - %s)",
+                   clasp->name, scr->GetJSClass()->name);
     return true;
 }
 

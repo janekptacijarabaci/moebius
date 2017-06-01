@@ -26,9 +26,9 @@ typedef mozilla::layers::Image Image;
 typedef mozilla::layers::PlanarYCbCrImage PlanarYCbCrImage;
 
 AndroidMediaReader::AndroidMediaReader(AbstractMediaDecoder *aDecoder,
-                                       const nsACString& aContentType) :
+                                       const MediaContainerType& aContainerType) :
   MediaDecoderReader(aDecoder),
-  mType(aContentType),
+  mType(aContainerType),
   mPlugin(nullptr),
   mHasAudio(false),
   mHasVideo(false),
@@ -142,9 +142,8 @@ bool AndroidMediaReader::DecodeVideoFrame(bool &aKeyframeSkip,
         int64_t durationUs;
         mPlugin->GetDuration(mPlugin, &durationUs);
         durationUs = std::max<int64_t>(durationUs - mLastVideoFrame->mTime, 0);
-        RefPtr<VideoData> data = VideoData::ShallowCopyUpdateDuration(mLastVideoFrame,
-                                                                        durationUs);
-        mVideoQueue.Push(data);
+        mLastVideoFrame->UpdateDuration(durationUs);
+        mVideoQueue.Push(mLastVideoFrame);
         mLastVideoFrame = nullptr;
       }
       return false;
@@ -262,7 +261,7 @@ bool AndroidMediaReader::DecodeVideoFrame(bool &aKeyframeSkip,
     // timestamp of the previous frame. We can then return the previously
     // decoded frame, and it will have a valid timestamp.
     int64_t duration = v->mTime - mLastVideoFrame->mTime;
-    mLastVideoFrame = VideoData::ShallowCopyUpdateDuration(mLastVideoFrame, duration);
+    mLastVideoFrame->UpdateDuration(duration);
 
     // We have the start time of the next frame, so we can push the previous
     // frame into the queue, except if the end time is below the threshold,
@@ -315,7 +314,7 @@ bool AndroidMediaReader::DecodeAudioData()
 }
 
 RefPtr<MediaDecoderReader::SeekPromise>
-AndroidMediaReader::Seek(SeekTarget aTarget, int64_t aEndTime)
+AndroidMediaReader::Seek(const SeekTarget& aTarget)
 {
   MOZ_ASSERT(OnTaskQueue());
 
@@ -332,7 +331,7 @@ AndroidMediaReader::Seek(SeekTarget aTarget, int64_t aEndTime)
     mVideoSeekTimeUs = aTarget.GetTime().ToMicroseconds();
 
     RefPtr<AndroidMediaReader> self = this;
-    mSeekRequest.Begin(DecodeToFirstVideoData()->Then(OwnerThread(), __func__, [self] (MediaData* v) {
+    DecodeToFirstVideoData()->Then(OwnerThread(), __func__, [self] (MediaData* v) {
       self->mSeekRequest.Complete();
       self->mAudioSeekTimeUs = v->mTime;
       self->mSeekPromise.Resolve(media::TimeUnit::FromMicroseconds(self->mAudioSeekTimeUs), __func__);
@@ -340,7 +339,7 @@ AndroidMediaReader::Seek(SeekTarget aTarget, int64_t aEndTime)
       self->mSeekRequest.Complete();
       self->mAudioSeekTimeUs = aTarget.GetTime().ToMicroseconds();
       self->mSeekPromise.Resolve(aTarget.GetTime(), __func__);
-    }));
+    })->Track(mSeekRequest);
   } else {
     mAudioSeekTimeUs = mVideoSeekTimeUs = aTarget.GetTime().ToMicroseconds();
     mSeekPromise.Resolve(aTarget.GetTime(), __func__);

@@ -16,7 +16,6 @@
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/ImageBridgeChild.h"  // for ImageBridgeChild
 #include "mozilla/layers/ImageClient.h"  // for ImageClient
-#include "mozilla/layers/ImageContainerChild.h"
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/SharedPlanarYCbCrImage.h"
 #include "mozilla/layers/SharedRGBImage.h"
@@ -99,21 +98,55 @@ BufferRecycleBin::ClearRecycledBuffers()
   mRecycledBufferSize = 0;
 }
 
+ImageContainerListener::ImageContainerListener(ImageContainer* aImageContainer)
+  : mLock("mozilla.layers.ImageContainerListener.mLock")
+  , mImageContainer(aImageContainer)
+{
+}
+
+ImageContainerListener::~ImageContainerListener()
+{
+}
+
 void
-ImageContainer::EnsureImageClient(bool aCreate)
+ImageContainerListener::NotifyComposite(const ImageCompositeNotification& aNotification)
+{
+  MutexAutoLock lock(mLock);
+  if (mImageContainer) {
+    mImageContainer->NotifyComposite(aNotification);
+  }
+}
+
+void
+ImageContainerListener::ClearImageContainer()
+{
+  MutexAutoLock lock(mLock);
+  mImageContainer = nullptr;
+}
+
+void
+ImageContainer::EnsureImageClient()
 {
   // If we're not forcing a new ImageClient, then we can skip this if we don't have an existing
   // ImageClient, or if the existing one belongs to an IPC actor that is still open.
-  if (!aCreate && (!mImageClient || mImageClient->GetForwarder()->GetLayersIPCActor()->IPCOpen())) {
+  if (!mIsAsync) {
+    return;
+  }
+  if (mImageClient && mImageClient->GetForwarder()->GetLayersIPCActor()->IPCOpen()) {
     return;
   }
 
   RefPtr<ImageBridgeChild> imageBridge = ImageBridgeChild::GetSingleton();
   if (imageBridge) {
-    mIPDLChild = new ImageContainerChild(this);
-    mImageClient = imageBridge->CreateImageClient(CompositableType::IMAGE, this, mIPDLChild);
+    mImageClient = imageBridge->CreateImageClient(CompositableType::IMAGE, this);
     if (mImageClient) {
-      mAsyncContainerID = mImageClient->GetAsyncID();
+      mAsyncContainerHandle = mImageClient->GetAsyncHandle();
+      mNotifyCompositeListener = new ImageContainerListener(this);
+    } else {
+      // It's okay to drop the async container handle since the ImageBridgeChild
+      // is going to die anyway.
+      mAsyncContainerHandle = CompositableHandle();
+      mNotifyCompositeListener = nullptr;
     }
   }
 }
@@ -125,34 +158,36 @@ ImageContainer::ImageContainer(Mode flag)
   mDroppedImageCount(0),
   mImageFactory(new ImageFactory()),
   mRecycleBin(new BufferRecycleBin()),
+  mIsAsync(flag == ASYNCHRONOUS),
   mCurrentProducerID(-1)
 {
   if (flag == ASYNCHRONOUS) {
-    EnsureImageClient(true);
-  } else {
-    mAsyncContainerID = sInvalidAsyncContainerId;
+    EnsureImageClient();
   }
 }
 
-ImageContainer::ImageContainer(uint64_t aAsyncContainerID)
+ImageContainer::ImageContainer(const CompositableHandle& aHandle)
   : mReentrantMonitor("ImageContainer.mReentrantMonitor"),
   mGenerationCounter(++sGenerationCounter),
   mPaintCount(0),
   mDroppedImageCount(0),
   mImageFactory(nullptr),
   mRecycleBin(nullptr),
-  mAsyncContainerID(aAsyncContainerID),
+  mIsAsync(true),
+  mAsyncContainerHandle(aHandle),
   mCurrentProducerID(-1)
 {
-  MOZ_ASSERT(mAsyncContainerID != sInvalidAsyncContainerId);
+  MOZ_ASSERT(mAsyncContainerHandle);
 }
 
 ImageContainer::~ImageContainer()
 {
-  if (mIPDLChild) {
-    mIPDLChild->ForgetImageContainer();
+  if (mNotifyCompositeListener) {
+    mNotifyCompositeListener->ClearImageContainer();
+  }
+  if (mAsyncContainerHandle) {
     if (RefPtr<ImageBridgeChild> imageBridge = ImageBridgeChild::GetSingleton()) {
-      imageBridge->ReleaseImageContainer(mIPDLChild);
+      imageBridge->ForgetImageContainer(mAsyncContainerHandle);
     }
   }
 }
@@ -161,7 +196,7 @@ RefPtr<PlanarYCbCrImage>
 ImageContainer::CreatePlanarYCbCrImage()
 {
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-  EnsureImageClient(false);
+  EnsureImageClient();
   if (mImageClient && mImageClient->AsImageClientSingle()) {
     return new SharedPlanarYCbCrImage(mImageClient);
   }
@@ -172,7 +207,7 @@ RefPtr<SharedRGBImage>
 ImageContainer::CreateSharedRGBImage()
 {
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-  EnsureImageClient(false);
+  EnsureImageClient();
   if (!mImageClient || !mImageClient->AsImageClientSingle()) {
     return nullptr;
   }
@@ -318,14 +353,15 @@ ImageContainer::SetCurrentImagesInTransaction(const nsTArray<NonOwningImage>& aI
 
 bool ImageContainer::IsAsync() const
 {
-  return mAsyncContainerID != sInvalidAsyncContainerId;
+  return mIsAsync;
 }
 
-uint64_t ImageContainer::GetAsyncContainerID()
+CompositableHandle ImageContainer::GetAsyncContainerHandle()
 {
-  NS_ASSERTION(IsAsync(),"Shared image ID is only relevant to async ImageContainers");
-  EnsureImageClient(false);
-  return mAsyncContainerID;
+  NS_ASSERTION(IsAsync(), "Shared image ID is only relevant to async ImageContainers");
+  NS_ASSERTION(mAsyncContainerHandle, "Should have a shared image ID");
+  EnsureImageClient();
+  return mAsyncContainerHandle;
 }
 
 bool
@@ -361,7 +397,7 @@ ImageContainer::GetCurrentSize()
 }
 
 void
-ImageContainer::NotifyCompositeInternal(const ImageCompositeNotification& aNotification)
+ImageContainer::NotifyComposite(const ImageCompositeNotification& aNotification)
 {
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
 
@@ -567,9 +603,7 @@ NVImage::NVImage()
 {
 }
 
-NVImage::~NVImage()
-{
-}
+NVImage::~NVImage() = default;
 
 IntSize
 NVImage::GetSize()
@@ -595,7 +629,7 @@ NVImage::GetAsSourceSurface()
   // logics in PlanarYCbCrImage::GetAsSourceSurface().
   const int bufferLength = mData.mYSize.height * mData.mYStride +
                            mData.mCbCrSize.height * mData.mCbCrSize.width * 2;
-  uint8_t* buffer = new uint8_t[bufferLength];
+  auto *buffer = new uint8_t[bufferLength];
 
   Data aData = mData;
   aData.mCbCrStride = aData.mCbCrSize.width;
@@ -739,9 +773,7 @@ SourceSurfaceImage::SourceSurfaceImage(gfx::SourceSurface* aSourceSurface)
     mTextureFlags(TextureFlags::DEFAULT)
 {}
 
-SourceSurfaceImage::~SourceSurfaceImage()
-{
-}
+SourceSurfaceImage::~SourceSurfaceImage() = default;
 
 TextureClient*
 SourceSurfaceImage::GetTextureClient(KnowsCompositor* aForwarder)
@@ -777,12 +809,6 @@ SourceSurfaceImage::GetTextureClient(KnowsCompositor* aForwarder)
 
   mTextureClients.Put(aForwarder->GetSerial(), textureClient);
   return textureClient;
-}
-
-PImageContainerChild*
-ImageContainer::GetPImageContainerChild()
-{
-  return mIPDLChild;
 }
 
 ImageContainer::ProducerID

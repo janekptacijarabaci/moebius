@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsTArray.h"
+#include "mozilla/CheckedInt.h"
 
 /**
  * nsTString::Find
@@ -509,7 +510,7 @@ nsTString_CharT::ReplaceSubstring(const self_type& aTarget,
   // Remember all of the non-matching parts.
   AutoTArray<Segment, 16> nonMatching;
   uint32_t i = 0;
-  uint32_t newLength = 0;
+  mozilla::CheckedUint32 newLength;
   while (true)
   {
     int32_t r = FindSubstring(mData + i, mLength - i, static_cast<const char_type*>(aTarget.Data()), aTarget.Length(), false);
@@ -530,6 +531,10 @@ nsTString_CharT::ReplaceSubstring(const self_type& aTarget,
     }
   }
 
+  if (!newLength.isValid()) {
+    return false;
+  }
+
   // If there's only one non-matching segment, then the target string was not
   // found, and there's nothing to do.
   if (nonMatching.Length() == 1) {
@@ -544,7 +549,7 @@ nsTString_CharT::ReplaceSubstring(const self_type& aTarget,
   // string.  In other words, we over-allocate in the shrinking case.
   char_type* oldData;
   uint32_t oldFlags;
-  if (!MutatePrep(XPCOM_MAX(mLength, newLength), &oldData, &oldFlags))
+  if (!MutatePrep(XPCOM_MAX(mLength, newLength.value()), &oldData, &oldFlags))
     return false;
   if (oldData) {
     // Copy all of the old data to the new buffer.
@@ -587,7 +592,7 @@ nsTString_CharT::ReplaceSubstring(const self_type& aTarget,
   }
 
   // Adjust the length and make sure the string is null terminated.
-  mLength = newLength;
+  mLength = newLength.value();
   mData[mLength] = char_type(0);
 
   return true;

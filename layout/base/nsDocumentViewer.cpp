@@ -6,6 +6,7 @@
 
 /* container for a document and its presentation */
 
+#include "mozilla/ServoRestyleManager.h"
 #include "mozilla/ServoStyleSet.h"
 #include "nsAutoPtr.h"
 #include "nscore.h"
@@ -172,8 +173,6 @@ public:
 
   nsresult             Init(nsDocumentViewer *aDocViewer);
 
-  void                 Disconnect() { mDocViewer = nullptr; }
-
 protected:
 
   virtual              ~nsDocViewerSelectionListener() {}
@@ -197,8 +196,6 @@ public:
   NS_DECL_NSIDOMEVENTLISTENER
 
   nsresult             Init(nsDocumentViewer *aDocViewer);
-
-  void                 Disconnect() { mDocViewer = nullptr; }
 
 protected:
   /** default destructor
@@ -345,7 +342,7 @@ protected:
   RefPtr<nsPresContext>  mPresContext;
   nsCOMPtr<nsIPresShell>   mPresShell;
 
-  RefPtr<nsDocViewerSelectionListener> mSelectionListener;
+  nsCOMPtr<nsISelectionListener> mSelectionListener;
   RefPtr<nsDocViewerFocusListener> mFocusListener;
 
   nsCOMPtr<nsIContentViewer> mPreviousViewer;
@@ -554,14 +551,6 @@ nsDocumentViewer::~nsDocumentViewer()
     Destroy();
   }
 
-  if (mSelectionListener) {
-    mSelectionListener->Disconnect();
-  }
-
-  if (mFocusListener) {
-    mFocusListener->Disconnect();
-  }
-
   // XXX(?) Revoke pending invalidate events
 }
 
@@ -687,7 +676,7 @@ nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow)
     // Note that we are flushing before we add mPresShell as an observer
     // to avoid bogus notifications.
 
-    mDocument->FlushPendingNotifications(Flush_ContentAndNotify);
+    mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
   }
 
   mPresShell->BeginObservingDocument();
@@ -741,9 +730,6 @@ nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow)
 
   // Save old listener so we can unregister it
   RefPtr<nsDocViewerFocusListener> oldFocusListener = mFocusListener;
-  if (oldFocusListener) {
-    oldFocusListener->Disconnect();
-  }
 
   // focus listener
   //
@@ -964,7 +950,7 @@ nsDocumentViewer::LoadComplete(nsresult aStatus)
   if (mPresShell && !mStopped) {
     // Hold strong ref because this could conceivably run script
     nsCOMPtr<nsIPresShell> shell = mPresShell;
-    shell->FlushPendingNotifications(Flush_Layout);
+    shell->FlushPendingNotifications(FlushType::Layout);
   }
 
   nsresult rv = NS_OK;
@@ -1527,14 +1513,11 @@ nsDocumentViewer::Close(nsISHEntry *aSHEntry)
         mDocument->RemovedFromDocShell();
     }
 
-  if (mFocusListener) {
-    mFocusListener->Disconnect();
-    if (mDocument) {
-      mDocument->RemoveEventListener(NS_LITERAL_STRING("focus"), mFocusListener,
-                                     false);
-      mDocument->RemoveEventListener(NS_LITERAL_STRING("blur"), mFocusListener,
-                                     false);
-    }
+  if (mFocusListener && mDocument) {
+    mDocument->RemoveEventListener(NS_LITERAL_STRING("focus"), mFocusListener,
+                                   false);
+    mDocument->RemoveEventListener(NS_LITERAL_STRING("blur"), mFocusListener,
+                                   false);
   }
 
   return NS_OK;
@@ -2173,24 +2156,19 @@ nsDocumentViewer::Hide(void)
     mPresShell->CaptureHistoryState(getter_AddRefs(layoutState));
   }
 
-  {
-    // Do not run ScriptRunners queued by DestroyPresShell() in the intermediate
-    // state before we're done destroying PresShell, PresContext, ViewManager, etc.
-    nsAutoScriptBlocker scriptBlocker;
-    DestroyPresShell();
+  DestroyPresShell();
 
-    DestroyPresContext();
+  DestroyPresContext();
 
-    mViewManager   = nullptr;
-    mWindow        = nullptr;
-    mDeviceContext = nullptr;
-    mParentWidget  = nullptr;
+  mViewManager   = nullptr;
+  mWindow        = nullptr;
+  mDeviceContext = nullptr;
+  mParentWidget  = nullptr;
 
-    nsCOMPtr<nsIBaseWindow> base_win(mContainer);
+  nsCOMPtr<nsIBaseWindow> base_win(mContainer);
 
-    if (base_win && !mAttachedToParent) {
-      base_win->SetParentWidget(nullptr);
-    }
+  if (base_win && !mAttachedToParent) {
+    base_win->SetParentWidget(nullptr);
   }
 
   return NS_OK;
@@ -3425,7 +3403,7 @@ nsDocumentViewer::GetContentSizeInternal(int32_t* aWidth, int32_t* aHeight,
 
   // Flush out all content and style updates. We can't use a resize reflow
   // because it won't change some sizes that a style change reflow will.
-  mDocument->FlushPendingNotifications(Flush_Layout);
+  mDocument->FlushPendingNotifications(FlushType::Layout);
 
   nsIFrame *root = presShell->GetRootFrame();
   NS_ENSURE_TRUE(root, NS_ERROR_FAILURE);
@@ -3686,9 +3664,7 @@ NS_IMETHODIMP nsDocumentViewer::GetInImage(bool* aInImage)
 
 NS_IMETHODIMP nsDocViewerSelectionListener::NotifySelectionChanged(nsIDOMDocument *, nsISelection *, int16_t aReason)
 {
-  if (!mDocViewer) {
-    return NS_OK;
-  }
+  NS_ASSERTION(mDocViewer, "Should have doc viewer!");
 
   // get the selection state
   RefPtr<mozilla::dom::Selection> selection = mDocViewer->GetDocumentSelection();
@@ -4505,6 +4481,15 @@ NS_IMETHODIMP nsDocumentViewer::SetPageMode(bool aPageMode, nsIPrintSettings* aP
 
   mViewManager  = nullptr;
   mWindow       = nullptr;
+
+  // We're creating a new presentation context for an existing document.
+  // Drop any associated Servo data.
+#ifdef MOZ_STYLO
+  Element* root = mDocument->GetRootElement();
+  if (root && root->IsStyledByServo()) {
+    ServoRestyleManager::ClearServoDataFromSubtree(root);
+  }
+#endif
 
   NS_ENSURE_STATE(mDocument);
   if (aPageMode)

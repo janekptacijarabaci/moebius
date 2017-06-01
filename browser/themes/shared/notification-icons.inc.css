@@ -25,20 +25,10 @@
   list-style-image: url(chrome://browser/skin/notification-icons.svg#default-info);
 }
 
-.popup-notification-icon {
-  width: 64px;
-  height: 64px;
-  margin-inline-end: 10px;
-}
-
 .notification-anchor-icon:not(.plugin-blocked):-moz-lwtheme,
 #blocked-permissions-container > .blocked-permission-icon:-moz-lwtheme {
-  filter: url(chrome://browser/skin/filters.svg#fill);
+  filter: url(chrome://global/skin/filters.svg#fill);
   fill: currentColor;
-}
-
-.notification-anchor-icon:not(.plugin-blocked):not(:hover) {
-  opacity: .8;
 }
 
 /* INDIVIDUAL NOTIFICATIONS */

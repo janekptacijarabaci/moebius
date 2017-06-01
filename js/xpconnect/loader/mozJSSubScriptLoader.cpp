@@ -130,7 +130,9 @@ PrepareScript(nsIURI* uri,
               MutableHandleFunction function)
 {
     JS::CompileOptions options(cx);
-    options.setFileAndLine(uriStr, 1)
+    // Use line 0 to make the function body starts from line 1 when
+    // |reuseGlobal == true|.
+    options.setFileAndLine(uriStr, reuseGlobal ? 0 : 1)
            .setVersion(JSVERSION_LATEST);
     if (!charset.IsVoid()) {
         char16_t* scriptBuf = nullptr;
@@ -293,7 +295,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(AsyncScriptLoader)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPromise)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(AsyncScriptLoader)

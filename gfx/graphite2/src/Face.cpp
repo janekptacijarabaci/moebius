@@ -190,10 +190,9 @@ bool Face::runGraphite(Segment *seg, const Silf *aSilf) const
 #if !defined GRAPHITE2_NTRACING
     if (dbgout)
 {
-        seg->positionSlots(0, 0, 0, seg->currdir());
+        seg->positionSlots(0, 0, 0, aSilf->dir());
         *dbgout             << json::item
                             << json::close // Close up the passes array
-                << "outputdir" << (seg->currdir() ? "rtl" : "ltr")
                 << "output" << json::array;
         for(Slot * s = seg->first(); s; s = s->next())
             *dbgout     << dslot(seg, s);
