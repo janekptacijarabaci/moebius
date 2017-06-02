@@ -19,12 +19,12 @@ namespace gmp {
 class GMPContentParent;
 class GMPServiceChild;
 
-class GeckoMediaPluginServiceChild : public GeckoMediaPluginService
+class GoannaMediaPluginServiceChild : public GoannaMediaPluginService
 {
   friend class GMPServiceChild;
 
 public:
-  static already_AddRefed<GeckoMediaPluginServiceChild> GetSingleton();
+  static already_AddRefed<GoannaMediaPluginServiceChild> GetSingleton();
 
   NS_IMETHOD HasPluginForAPI(const nsACString& aAPI,
                              nsTArray<nsCString>* aTags,

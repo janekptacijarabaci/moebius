@@ -35,7 +35,7 @@ protected:
 private:
   PreloadedStyleSheet(nsIURI* aURI, css::SheetParsingMode aParsingMode);
 
-  RefPtr<StyleSheet> mGecko;
+  RefPtr<StyleSheet> mGoanna;
   RefPtr<StyleSheet> mServo;
 
   nsCOMPtr<nsIURI> mURI;

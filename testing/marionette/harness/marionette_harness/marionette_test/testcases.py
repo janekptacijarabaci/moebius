@@ -277,7 +277,7 @@ class CommonTestCase(unittest.TestCase):
                 try:
                     self.marionette.delete_session()
                 except IOError:
-                    # Gecko has crashed?
+                    # Goanna has crashed?
                     pass
         self.marionette = None
 

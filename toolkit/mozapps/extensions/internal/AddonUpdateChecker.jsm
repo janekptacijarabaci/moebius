@@ -495,16 +495,16 @@ function parseJSONManifest(aId, aUpdateKey, aRequest, aManifestData) {
     logger.debug(`Found an update entry for ${aId} version ${version}`);
 
     let applications = getProperty(update, "applications", "object",
-                                   { gecko: {} });
+                                   { goanna: {} });
 
-    // "gecko" is currently the only supported application entry. If
+    // "goanna" is currently the only supported application entry. If
     // it's missing, skip this update.
-    if (!("gecko" in applications)) {
-      logger.debug("gecko not in application entry, skipping update of ${addon}")
+    if (!("goanna" in applications)) {
+      logger.debug("goanna not in application entry, skipping update of ${addon}")
       continue;
     }
 
-    let app = getProperty(applications, "gecko", "object");
+    let app = getProperty(applications, "goanna", "object");
 
     let appEntry = {
       id: TOOLKIT_ID,

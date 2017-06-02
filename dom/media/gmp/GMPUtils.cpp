@@ -201,8 +201,8 @@ bool
 HaveGMPFor(const nsCString& aAPI,
            nsTArray<nsCString>&& aTags)
 {
-  nsCOMPtr<mozIGeckoMediaPluginService> mps =
-    do_GetService("@mozilla.org/gecko-media-plugin-service;1");
+  nsCOMPtr<mozIGoannaMediaPluginService> mps =
+    do_GetService("@mozilla.org/goanna-media-plugin-service;1");
   if (NS_WARN_IF(!mps)) {
     return false;
   }

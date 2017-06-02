@@ -92,7 +92,7 @@ public:
    * |mData|) and cannot be used until its |CompressFrom| method or
    * |InitializeEmpty| method is called.
    */
-  Declaration() : DeclarationBlock(StyleBackendType::Gecko) {}
+  Declaration() : DeclarationBlock(StyleBackendType::Goanna) {}
 
   Declaration(const Declaration& aCopy);
 

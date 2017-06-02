@@ -12,7 +12,7 @@ const { classes: Cc, interfaces: Ci, utils: Cu } = Components; /*global Componen
 Cu.import("resource://gre/modules/Messaging.jsm"); /*global Messaging */
 Cu.import("resource://gre/modules/Services.jsm"); /*global Services */
 
-function resolveGeckoURI(uri) {
+function resolveGoannaURI(uri) {
   if (!uri) {
     throw new Error("Can't resolve an empty uri");
   }
@@ -40,7 +40,7 @@ var JavaAddonManager = Object.freeze({
     return EventDispatcher.instance.sendRequestForResult({
       type: "JavaAddonManagerV1:Load",
       classname: classname,
-      filename: resolveGeckoURI(filename)
+      filename: resolveGoannaURI(filename)
     })
       .then((guid) => {
         if (!guid) {

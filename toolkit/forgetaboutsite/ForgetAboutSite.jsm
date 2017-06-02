@@ -79,8 +79,8 @@ this.ForgetAboutSite = {
     }
 
     // EME
-    let mps = Cc["@mozilla.org/gecko-media-plugin-service;1"].
-               getService(Ci.mozIGeckoMediaPluginChromeService);
+    let mps = Cc["@mozilla.org/goanna-media-plugin-service;1"].
+               getService(Ci.mozIGoannaMediaPluginChromeService);
     mps.forgetThisSite(aDomain, JSON.stringify({}));
 
     // Plugin data

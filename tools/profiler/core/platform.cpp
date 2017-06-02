@@ -13,14 +13,14 @@
 #include "PlatformMacros.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/UniquePtr.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "ProfilerIOInterposeObserver.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Sprintf.h"
 #include "PseudoStack.h"
-#include "GeckoSampler.h"
+#include "GoannaSampler.h"
 #include "nsIObserverService.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
@@ -31,7 +31,7 @@
 #include "ProfilerMarkers.h"
 
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracer.h"
+#include "GoannaTaskTracer.h"
 #endif
 
 #if defined(SPS_OS_android) && !defined(MOZ_WIDGET_GONK)
@@ -49,10 +49,10 @@
 #endif
 
 #if defined(SPS_OS_android) && !defined(MOZ_WIDGET_GONK)
-class GeckoJavaSampler : public java::GeckoJavaSampler::Natives<GeckoJavaSampler>
+class GoannaJavaSampler : public java::GoannaJavaSampler::Natives<GoannaJavaSampler>
 {
 private:
-  GeckoJavaSampler();
+  GoannaJavaSampler();
 
 public:
   static double GetProfilerTime() {
@@ -65,7 +65,7 @@ public:
 #endif
 
 MOZ_THREAD_LOCAL(PseudoStack *) tlsPseudoStack;
-MOZ_THREAD_LOCAL(GeckoSampler *) tlsTicker;
+MOZ_THREAD_LOCAL(GoannaSampler *) tlsTicker;
 // We need to track whether we've been initialized otherwise
 // we end up using tlsStack without initializing it.
 // Because tlsStack is totally opaque to us we can't reuse
@@ -103,14 +103,14 @@ static int sProfileEntries;   /* how many entries do we store? */
 std::vector<ThreadInfo*>* Sampler::sRegisteredThreads = nullptr;
 mozilla::UniquePtr< ::Mutex> Sampler::sRegisteredThreadsMutex;
 
-GeckoSampler* Sampler::sActiveSampler;
+GoannaSampler* Sampler::sActiveSampler;
 
 static mozilla::StaticAutoPtr<mozilla::ProfilerIOInterposeObserver>
                                                             sInterposeObserver;
 
-// The name that identifies the gecko thread for calls to
+// The name that identifies the goanna thread for calls to
 // profiler_register_thread.
-static const char * gGeckoThreadName = "GeckoMain";
+static const char * gGoannaThreadName = "GoannaMain";
 
 void Sampler::Startup() {
   sRegisteredThreads = new std::vector<ThreadInfo*>();
@@ -451,7 +451,7 @@ bool is_main_thread_name(const char* aName) {
   if (!aName) {
     return false;
   }
-  return strcmp(aName, gGeckoThreadName) == 0;
+  return strcmp(aName, gGoannaThreadName) == 0;
 }
 
 #ifdef HAVE_VA_COPY
@@ -531,7 +531,7 @@ profiler_init(void* stackTop)
 
   bool isMainThread = true;
   Sampler::RegisterCurrentThread(isMainThread ?
-                                   gGeckoThreadName : "Application Thread",
+                                   gGoannaThreadName : "Application Thread",
                                  stack, isMainThread, stackTop);
 
   // Read interval settings from MOZ_PROFILER_INTERVAL and stack-scan
@@ -545,7 +545,7 @@ profiler_init(void* stackTop)
 
 #if defined(SPS_OS_android) && !defined(MOZ_WIDGET_GONK)
   if (mozilla::jni::IsFennec()) {
-    GeckoJavaSampler::Init();
+    GoannaJavaSampler::Init();
   }
 #endif
 
@@ -570,7 +570,7 @@ profiler_init(void* stackTop)
 #endif
                          };
 
-  const char* threadFilters[] = { "GeckoMain", "Compositor" };
+  const char* threadFilters[] = { "GoannaMain", "Compositor" };
 
   profiler_start(PROFILE_DEFAULT_ENTRY, PROFILE_DEFAULT_INTERVAL,
                          features, MOZ_ARRAY_LENGTH(features),
@@ -587,7 +587,7 @@ profiler_shutdown()
     return;
 
   // Save the profile on shutdown if requested.
-  GeckoSampler *t = tlsTicker.get();
+  GoannaSampler *t = tlsTicker.get();
   if (t) {
     const char *val = getenv("MOZ_PROFILER_SHUTDOWN");
     if (val) {
@@ -618,7 +618,7 @@ profiler_shutdown()
 mozilla::UniquePtr<char[]>
 profiler_get_profile(double aSinceTime)
 {
-  GeckoSampler *t = tlsTicker.get();
+  GoannaSampler *t = tlsTicker.get();
   if (!t) {
     return nullptr;
   }
@@ -629,7 +629,7 @@ profiler_get_profile(double aSinceTime)
 JSObject*
 profiler_get_profile_jsobject(JSContext *aCx, double aSinceTime)
 {
-  GeckoSampler *t = tlsTicker.get();
+  GoannaSampler *t = tlsTicker.get();
   if (!t) {
     return nullptr;
   }
@@ -641,7 +641,7 @@ void
 profiler_get_profile_jsobject_async(double aSinceTime,
                                     mozilla::dom::Promise* aPromise)
 {
-  GeckoSampler *t = tlsTicker.get();
+  GoannaSampler *t = tlsTicker.get();
   if (NS_WARN_IF(!t)) {
     return;
   }
@@ -654,7 +654,7 @@ profiler_save_profile_to_file_async(double aSinceTime, const char* aFileName)
 {
   nsCString filename(aFileName);
   NS_DispatchToMainThread(NS_NewRunnableFunction([=] () {
-    GeckoSampler *t = tlsTicker.get();
+    GoannaSampler *t = tlsTicker.get();
     if (NS_WARN_IF(!t)) {
       return;
     }
@@ -674,7 +674,7 @@ profiler_get_start_params(int* aEntrySize,
     return;
   }
 
-  GeckoSampler *t = tlsTicker.get();
+  GoannaSampler *t = tlsTicker.get();
   if (NS_WARN_IF(!t)) {
     return;
   }
@@ -707,7 +707,7 @@ profiler_get_gatherer(nsISupports** aRetVal)
     return;
   }
 
-  GeckoSampler *t = tlsTicker.get();
+  GoannaSampler *t = tlsTicker.get();
   if (NS_WARN_IF(!t)) {
     *aRetVal = nullptr;
     return;
@@ -719,7 +719,7 @@ profiler_get_gatherer(nsISupports** aRetVal)
 void
 profiler_save_profile_to_file(const char* aFilename)
 {
-  GeckoSampler *t = tlsTicker.get();
+  GoannaSampler *t = tlsTicker.get();
   if (!t) {
     return;
   }
@@ -793,7 +793,7 @@ profiler_get_buffer_info_helper(uint32_t *aCurrentPosition,
   if (!stack_key_initialized)
     return;
 
-  GeckoSampler *t = tlsTicker.get();
+  GoannaSampler *t = tlsTicker.get();
   if (!t)
     return;
 
@@ -824,8 +824,8 @@ profiler_start(int aProfileEntries, double aInterval,
   // Reset the current state if the profiler is running
   profiler_stop();
 
-  GeckoSampler* t;
-  t = new GeckoSampler(aInterval ? aInterval : PROFILE_DEFAULT_INTERVAL,
+  GoannaSampler* t;
+  t = new GoannaSampler(aInterval ? aInterval : PROFILE_DEFAULT_INTERVAL,
                       aProfileEntries ? aProfileEntries : PROFILE_DEFAULT_ENTRY,
                       aFeatures, aFeatureCount,
                       aThreadNameFilters, aFilterCount);
@@ -862,7 +862,7 @@ profiler_start(int aProfileEntries, double aInterval,
     if (javaInterval < 10) {
       aInterval = 10;
     }
-    java::GeckoJavaSampler::Start(javaInterval, 1000);
+    java::GoannaJavaSampler::Start(javaInterval, 1000);
   }
 #endif
 
@@ -914,7 +914,7 @@ profiler_stop()
   if (!stack_key_initialized)
     return;
 
-  GeckoSampler *t = tlsTicker.get();
+  GoannaSampler *t = tlsTicker.get();
   if (!t) {
     LOG("END   profiler_stop-early");
     return;
@@ -1182,7 +1182,7 @@ profiler_get_backtrace()
     return nullptr;
   }
 
-  GeckoSampler* t = tlsTicker.get();
+  GoannaSampler* t = tlsTicker.get();
   if (!t) {
     return nullptr;
   }
@@ -1285,13 +1285,13 @@ profiler_add_marker(const char *aMarker, ProfilerMarkerPayload *aPayload)
 
 #include "mozilla/Mutex.h"
 
-class GeckoMutex : public ::Mutex {
+class GoannaMutex : public ::Mutex {
  public:
-  explicit GeckoMutex(const char* aDesc) :
+  explicit GoannaMutex(const char* aDesc) :
     mMutex(aDesc)
   {}
 
-  virtual ~GeckoMutex() {}
+  virtual ~GoannaMutex() {}
 
   virtual int Lock() {
     mMutex.Lock();
@@ -1308,7 +1308,7 @@ class GeckoMutex : public ::Mutex {
 };
 
 mozilla::UniquePtr< ::Mutex> OS::CreateMutex(const char* aDesc) {
-  return mozilla::MakeUnique<GeckoMutex>(aDesc);
+  return mozilla::MakeUnique<GoannaMutex>(aDesc);
 }
 
 // END externally visible functions

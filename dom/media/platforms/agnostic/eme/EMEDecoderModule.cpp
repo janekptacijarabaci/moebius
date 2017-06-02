@@ -7,7 +7,7 @@
 #include "EMEDecoderModule.h"
 #include "EMEVideoDecoder.h"
 #include "MediaDataDecoderProxy.h"
-#include "mozIGeckoMediaPluginService.h"
+#include "mozIGoannaMediaPluginService.h"
 #include "mozilla/CDMProxy.h"
 #include "mozilla/Unused.h"
 #include "nsAutoPtr.h"
@@ -245,7 +245,7 @@ EMEDecoderModule::~EMEDecoderModule()
 static already_AddRefed<MediaDataDecoderProxy>
 CreateDecoderWrapper(MediaDataDecoderCallback* aCallback, CDMProxy* aProxy, TaskQueue* aTaskQueue)
 {
-  RefPtr<gmp::GeckoMediaPluginService> s(gmp::GeckoMediaPluginService::GetGeckoMediaPluginService());
+  RefPtr<gmp::GoannaMediaPluginService> s(gmp::GoannaMediaPluginService::GetGoannaMediaPluginService());
   if (!s) {
     return nullptr;
   }

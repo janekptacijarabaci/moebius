@@ -114,7 +114,7 @@ public:
 
   /**
    * DispatchLegacyMouseScrollEvents() dispatches eLegacyMouseLineOrPageScroll
-   * event and eLegacyMousePixelScroll event for compatibility with old Gecko.
+   * event and eLegacyMousePixelScroll event for compatibility with old Goanna.
    */
   void DispatchLegacyMouseScrollEvents(nsIFrame* aTargetFrame,
                                        WidgetWheelEvent* aEvent,

@@ -23,7 +23,7 @@ interface CSSFontFeatureValuesRule : CSSRule {
 };
 
 partial interface CSSFontFeatureValuesRule {
-  // Gecko addition?
+  // Goanna addition?
   [SetterThrows]
   attribute DOMString valueText;
 };

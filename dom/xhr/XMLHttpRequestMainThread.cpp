@@ -69,7 +69,7 @@
 #include "nsIFileChannel.h"
 #include "mozilla/Telemetry.h"
 #include "jsfriendapi.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "mozilla/dom/EncodingUtils.h"
 #include "nsIUnicodeDecoder.h"
 #include "mozilla/dom/XMLHttpRequestBinding.h"
@@ -1516,7 +1516,7 @@ XMLHttpRequestMainThread::Open(const nsACString& aMethod,
                                bool aAsync,
                                const nsAString& aUsername,
                                const nsAString& aPassword) {
-  // Gecko-specific
+  // Goanna-specific
   if (!aAsync && !DontWarnAboutSyncXHR() && GetOwner() &&
       GetOwner()->GetExtantDoc()) {
     GetOwner()->GetExtantDoc()->WarnOnceAbout(nsIDocument::eSyncXMLHttpRequest);
@@ -1605,7 +1605,7 @@ XMLHttpRequestMainThread::Open(const nsACString& aMethod,
   mAuthorRequestHeaders.Clear();
   ResetResponse();
 
-  // Gecko-specific
+  // Goanna-specific
   mFlagHadUploadListenersOnSend = false;
   mFlagAborted = false;
   mFlagTimedOut = false;
@@ -3129,7 +3129,7 @@ XMLHttpRequestMainThread::SetRequestHeader(const nsACString& aName,
   // web-compatible. See bug 1285036.
 
   // Step 6.2-6.3
-  // Gecko-specific: invalid headers can be set by privileged
+  // Goanna-specific: invalid headers can be set by privileged
   //                 callers, but will not merge.
   if (isPrivilegedCaller && isForbiddenHeader) {
     mAuthorRequestHeaders.Set(aName, value);

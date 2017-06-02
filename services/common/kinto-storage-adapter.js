@@ -460,7 +460,7 @@ function transactionProxy(collection, preloaded) {
     },
 
     get(id) {
-      // Gecko JS engine outputs undesired warnings if id is not in preloaded.
+      // Goanna JS engine outputs undesired warnings if id is not in preloaded.
       return id in preloaded ? preloaded[id] : undefined;
     }
   };

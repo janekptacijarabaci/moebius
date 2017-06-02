@@ -35,7 +35,7 @@ add_task(function* test_tab_options_privileges() {
     useAddonManager: "temporary",
 
     manifest: {
-      applications: {gecko: {id: ID}},
+      applications: {goanna: {id: ID}},
       "permissions": ["tabs"],
       "options_ui": {
         "page": "options.html",

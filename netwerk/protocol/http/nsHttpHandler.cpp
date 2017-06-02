@@ -77,7 +77,7 @@
 #endif
 
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracer.h"
+#include "GoannaTaskTracer.h"
 #endif
 
 //-----------------------------------------------------------------------------
@@ -202,7 +202,7 @@ nsHttpHandler::nsHttpHandler()
     , mSessionStartTime(0)
     , mLegacyAppName("Mozilla")
     , mLegacyAppVersion("5.0")
-    , mProduct("Gecko")
+    , mProduct("Goanna")
     , mCompatFirefoxEnabled(false)
     , mUserAgentIsDirty(true)
     , mPromptTempRedirect(true)

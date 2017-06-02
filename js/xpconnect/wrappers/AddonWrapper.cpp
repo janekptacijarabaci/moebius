@@ -14,7 +14,7 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "nsGlobalWindow.h"
 
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 #include "nsID.h"
 

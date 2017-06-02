@@ -18,7 +18,7 @@
 #include "nsLayoutUtils.h"
 #include "AnimationCommon.h" // For GetLayerAnimationInfo
 #include "FrameLayerBuilder.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "LayerAnimationInfo.h" // For LayerAnimationInfo::sRecords
 #include "nsAutoPtr.h"
 #include "nsStyleChangeList.h"
@@ -3850,10 +3850,10 @@ RestyleManager::ComputeAndProcessStyleChange(nsStyleContext*        aNewContext,
 nsStyleSet*
 ElementRestyler::StyleSet() const
 {
-  MOZ_ASSERT(mPresContext->StyleSet()->IsGecko(),
-             "ElementRestyler should only be used with a Gecko-flavored "
+  MOZ_ASSERT(mPresContext->StyleSet()->IsGoanna(),
+             "ElementRestyler should only be used with a Goanna-flavored "
              "style backend");
-  return mPresContext->StyleSet()->AsGecko();
+  return mPresContext->StyleSet()->AsGoanna();
 }
 
 AutoDisplayContentsAncestorPusher::AutoDisplayContentsAncestorPusher(

@@ -313,7 +313,7 @@ class TickSample {
 
 class ThreadInfo;
 class PlatformData;
-class GeckoSampler;
+class GoannaSampler;
 class SyncProfile;
 class Sampler {
  public:
@@ -389,8 +389,8 @@ class Sampler {
   // Should only be called on shutdown
   static void Shutdown();
 
-  static GeckoSampler* GetActiveSampler() { return sActiveSampler; }
-  static void SetActiveSampler(GeckoSampler* sampler) { sActiveSampler = sampler; }
+  static GoannaSampler* GetActiveSampler() { return sActiveSampler; }
+  static void SetActiveSampler(GoannaSampler* sampler) { sActiveSampler = sampler; }
 
   static mozilla::UniquePtr<Mutex> sRegisteredThreadsMutex;
 
@@ -409,7 +409,7 @@ class Sampler {
 
  protected:
   static std::vector<ThreadInfo*>* sRegisteredThreads;
-  static GeckoSampler* sActiveSampler;
+  static GoannaSampler* sActiveSampler;
 
  private:
   void SetActive(bool value) { NoBarrier_Store(&active_, value); }

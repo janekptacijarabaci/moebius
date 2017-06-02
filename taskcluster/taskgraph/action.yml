@@ -8,9 +8,9 @@ metadata:
   name: "[tc] Action Task"
   description: Helps schedule new jobs without new push
 
-workerType: "gecko-decision"
+workerType: "goanna-decision"
 provisionerId: "aws-provisioner-v1"
-schedulerId: "gecko-level-{{level}}"
+schedulerId: "goanna-level-{{level}}"
 
 tags:
   createdForUser: {{owner}}
@@ -24,10 +24,10 @@ routes:
 
 payload:
   env:
-    GECKO_BASE_REPOSITORY: 'https://hg.mozilla.org/mozilla-unified'
-    GECKO_HEAD_REPOSITORY: '{{{head_repository}}}'
-    GECKO_HEAD_REF: '{{head_ref}}'
-    GECKO_HEAD_REV: '{{head_rev}}'
+    GOANNA_BASE_REPOSITORY: 'https://hg.mozilla.org/mozilla-unified'
+    GOANNA_HEAD_REPOSITORY: '{{{head_repository}}}'
+    GOANNA_HEAD_REF: '{{head_ref}}'
+    GOANNA_HEAD_REV: '{{head_rev}}'
     HG_STORE_PATH: /home/worker/checkouts/hg-store
 
   cache:
@@ -48,12 +48,12 @@ payload:
 
   command:
     - /home/worker/bin/run-task
-    - '--vcs-checkout=/home/worker/checkouts/gecko'
+    - '--vcs-checkout=/home/worker/checkouts/goanna'
     - '--'
     - bash
     - -cx
     - >
-        cd /home/worker/checkouts/gecko &&
+        cd /home/worker/checkouts/goanna &&
         ln -s /home/worker/artifacts artifacts &&
         ./mach --log-no-times taskgraph {{action}} {{action_args}}
 

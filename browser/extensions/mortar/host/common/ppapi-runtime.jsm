@@ -1401,7 +1401,7 @@ const EventTypeArray = [
    [["compositionstart", PP_InputEvent_Type.PP_INPUTEVENT_TYPE_IME_COMPOSITION_START],
     ["text", PP_InputEvent_Type.PP_INPUTEVENT_TYPE_IME_COMPOSITION_UPDATE],
     ["compositionend", PP_InputEvent_Type.PP_INPUTEVENT_TYPE_IME_COMPOSITION_END],
-    //There is no strict equivalent in Gecko for PP_INPUTEVENT_TYPE_IME_TEXT.
+    //There is no strict equivalent in Goanna for PP_INPUTEVENT_TYPE_IME_TEXT.
     //["text", PP_InputEvent_Type.PP_INPUTEVENT_TYPE_IME_TEXT]
     ]],
 ];
@@ -1429,7 +1429,7 @@ const EventByTypes = EventTypeArray.reduce((map, [eventClass, resourceCtor, even
   }, new Map());
 
 // Special case for PP_INPUTEVENT_TYPE_IME_TEXT, there is no strict equivalent
-// in Gecko, use compositionend.
+// in Goanna, use compositionend.
 EventByTypes.set(PP_InputEvent_Type.PP_INPUTEVENT_TYPE_IME_TEXT, "compositionend");
 
 const ModifierMap = [
@@ -2968,8 +2968,8 @@ dump(`callFromJSON: < ${JSON.stringify(call)}\n`);
     PPB_InputEvent_GetModifiers: function(json) {
       let event = PP_Resource.lookup(json.event);
       let modifiers = 0;
-      for (let [gecko, ppapi] of ModifierMap) {
-        if (event.domEvent.getModifierState(gecko)) {
+      for (let [goanna, ppapi] of ModifierMap) {
+        if (event.domEvent.getModifierState(goanna)) {
           modifiers |= ppapi;
         }
       }

@@ -11,7 +11,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/gfx/Point.h" // IntSize
 
-#include"GeckoProfiler.h"
+#include"GoannaProfiler.h"
 #include "OggWriter.h"
 #include "OpusTrackEncoder.h"
 

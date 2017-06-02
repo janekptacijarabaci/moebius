@@ -2531,7 +2531,7 @@ Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter *writer,
     return ProcessConnectedPush(pushConnectedStream, writer, count, countWritten);
   }
 
-  // feed gecko channels that previously stopped consuming data
+  // feed goanna channels that previously stopped consuming data
   // only take data from stored buffers
   Http2Stream *slowConsumer =
     static_cast<Http2Stream *>(mSlowConsumersReadyForRead.PopFront());

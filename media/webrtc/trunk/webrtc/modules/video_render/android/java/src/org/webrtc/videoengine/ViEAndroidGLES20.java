@@ -26,7 +26,7 @@ import android.opengl.GLSurfaceView;
 
 import android.util.Log;
 
-import org.mozilla.gecko.annotation.WebRTCJNITarget;
+import org.mozilla.goanna.annotation.WebRTCJNITarget;
 
 public class ViEAndroidGLES20 extends GLSurfaceView
         implements GLSurfaceView.Renderer {

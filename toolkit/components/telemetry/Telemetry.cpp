@@ -3100,28 +3100,28 @@ AccumulateTimeDelta(ID aHistogram, TimeStamp start, TimeStamp end)
 }
 
 void
-AccumulateChild(GeckoProcessType aProcessType,
+AccumulateChild(GoannaProcessType aProcessType,
                 const nsTArray<Accumulation>& aAccumulations)
 {
   TelemetryHistogram::AccumulateChild(aProcessType, aAccumulations);
 }
 
 void
-AccumulateChildKeyed(GeckoProcessType aProcessType,
+AccumulateChildKeyed(GoannaProcessType aProcessType,
                      const nsTArray<KeyedAccumulation>& aAccumulations)
 {
   TelemetryHistogram::AccumulateChildKeyed(aProcessType, aAccumulations);
 }
 
 void
-UpdateChildScalars(GeckoProcessType aProcessType,
+UpdateChildScalars(GoannaProcessType aProcessType,
                    const nsTArray<ScalarAction>& aScalarActions)
 {
   TelemetryScalar::UpdateChildData(aProcessType, aScalarActions);
 }
 
 void
-UpdateChildKeyedScalars(GeckoProcessType aProcessType,
+UpdateChildKeyedScalars(GoannaProcessType aProcessType,
                         const nsTArray<KeyedScalarAction>& aScalarActions)
 {
   TelemetryScalar::UpdateChildKeyedData(aProcessType, aScalarActions);

@@ -134,7 +134,7 @@ proxy.AsyncMessageChannel = class {
       this.addListener_(path, cb);
       modal.addHandler(this.dialogueObserver_);
 
-      // sendAsync is GeckoDriver#sendAsync
+      // sendAsync is GoannaDriver#sendAsync
       this.sendAsync(name, marshal(args), uuid);
     });
   }

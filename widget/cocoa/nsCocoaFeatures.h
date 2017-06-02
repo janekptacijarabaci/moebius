@@ -42,7 +42,7 @@ private:
 
 // C-callable helper for cairo-quartz-font.c
 extern "C" {
-    bool Gecko_OnSierraOrLater();
+    bool Goanna_OnSierraOrLater();
 }
 
 #endif // nsCocoaFeatures_h_

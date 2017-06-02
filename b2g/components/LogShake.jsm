@@ -300,7 +300,7 @@ var LogShake = {
       Cu.reportError("Unable to get device properties: " + ex);
     }
 
-    // Let Gecko perfom the dump to a file, and just collect it
+    // Let Goanna perfom the dump to a file, and just collect it
     let readAboutMemoryPromise = new Promise(resolve => {
       // Wrap the readAboutMemory promise to make it infallible
       LogCapture.readAboutMemory().then(aboutMemory => {

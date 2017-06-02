@@ -1,5 +1,5 @@
 from .runner import BaseRunner
 from .device import DeviceRunner, FennecRunner
-from .browser import GeckoRuntimeRunner
+from .browser import GoannaRuntimeRunner
 
-__all__ = ['BaseRunner', 'DeviceRunner', 'FennecRunner', 'GeckoRuntimeRunner']
+__all__ = ['BaseRunner', 'DeviceRunner', 'FennecRunner', 'GoannaRuntimeRunner']

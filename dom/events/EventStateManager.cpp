@@ -92,7 +92,7 @@
 
 #include "mozilla/Preferences.h"
 #include "mozilla/LookAndFeel.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "Units.h"
 #include "mozilla/layers/APZCTreeManager.h"
 
@@ -729,7 +729,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
   case eDragStart:
     if (Prefs::ClickHoldContextMenu()) {
       // an external drag gesture event came in, not generated internally
-      // by Gecko. Make sure we get rid of the click-hold timer.
+      // by Goanna. Make sure we get rid of the click-hold timer.
       KillClickHoldTimer();
     }
     break;

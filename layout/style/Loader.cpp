@@ -1099,7 +1099,7 @@ Loader::CreateSheet(nsIURI* aURI,
   *aIsAlternate = IsAlternate(aTitle, aHasAlternateRel);
 
   // XXXheycam Cached sheets currently must be CSSStyleSheets.
-  if (aURI && GetStyleBackendType() == StyleBackendType::Gecko) {
+  if (aURI && GetStyleBackendType() == StyleBackendType::Goanna) {
     aSheetState = eSheetComplete;
     RefPtr<StyleSheet> sheet;
 
@@ -1136,11 +1136,11 @@ Loader::CreateSheet(nsIURI* aURI,
 
       // This sheet came from the XUL cache or our per-document hashtable; it
       // better be a complete sheet.
-      NS_ASSERTION(sheet->AsGecko()->IsComplete(),
+      NS_ASSERTION(sheet->AsGoanna()->IsComplete(),
                    "Sheet thinks it's not complete while we think it is");
 
       // Make sure it hasn't been modified; if it has, we can't use it
-      if (sheet->AsGecko()->IsModified()) {
+      if (sheet->AsGoanna()->IsModified()) {
         LOG(("  Not cloning completed sheet %p because it's been modified",
              sheet.get()));
         sheet = nullptr;
@@ -1196,25 +1196,25 @@ Loader::CreateSheet(nsIURI* aURI,
       if (sheet->IsServo()) {
         MOZ_CRASH("stylo: can't clone ServoStyleSheets yet");
       }
-      NS_ASSERTION(!sheet->AsGecko()->IsModified() ||
-                   !sheet->AsGecko()->IsComplete(),
+      NS_ASSERTION(!sheet->AsGoanna()->IsModified() ||
+                   !sheet->AsGoanna()->IsComplete(),
                    "Unexpected modified complete sheet");
-      NS_ASSERTION(sheet->AsGecko()->IsComplete() ||
+      NS_ASSERTION(sheet->AsGoanna()->IsComplete() ||
                    aSheetState != eSheetComplete,
                    "Sheet thinks it's not complete while we think it is");
 
       RefPtr<CSSStyleSheet> clonedSheet =
-        sheet->AsGecko()->Clone(nullptr, nullptr, nullptr, nullptr);
+        sheet->AsGoanna()->Clone(nullptr, nullptr, nullptr, nullptr);
       *aSheet = Move(clonedSheet);
       if (*aSheet && fromCompleteSheets &&
-          !sheet->AsGecko()->GetOwnerNode() &&
-          !sheet->AsGecko()->GetParentSheet()) {
+          !sheet->AsGoanna()->GetOwnerNode() &&
+          !sheet->AsGoanna()->GetParentSheet()) {
         // The sheet we're cloning isn't actually referenced by
         // anyone.  Replace it in the cache, so that if our CSSOM is
         // later modified we don't end up with two copies of our inner
         // hanging around.
         URIPrincipalReferrerPolicyAndCORSModeHashKey key(aURI, aLoaderPrincipal, aCORSMode, aReferrerPolicy);
-        NS_ASSERTION((*aSheet)->AsGecko()->IsComplete(),
+        NS_ASSERTION((*aSheet)->AsGoanna()->IsComplete(),
                      "Should only be caching complete sheets");
         mSheets->mCompleteSheets.Put(&key, *aSheet);
       }
@@ -1252,7 +1252,7 @@ Loader::CreateSheet(nsIURI* aURI,
                                   &sriMetadata);
     }
 
-    if (GetStyleBackendType() == StyleBackendType::Gecko) {
+    if (GetStyleBackendType() == StyleBackendType::Goanna) {
       *aSheet = new CSSStyleSheet(aParsingMode, aCORSMode, aReferrerPolicy, sriMetadata);
     } else {
       *aSheet = new ServoStyleSheet(aParsingMode, aCORSMode, aReferrerPolicy, sriMetadata);
@@ -1301,8 +1301,8 @@ Loader::PrepareSheet(StyleSheet* aSheet,
   aSheet->SetTitle(aTitle);
   aSheet->SetEnabled(!aIsAlternate);
 
-  if (aSheet->IsGecko()) {
-    aSheet->AsGecko()->SetScopeElement(aScopeElement);
+  if (aSheet->IsGoanna()) {
+    aSheet->AsGoanna()->SetScopeElement(aScopeElement);
   } else {
     if (aScopeElement) {
       NS_WARNING("stylo: scoped style sheets not supported");
@@ -1405,19 +1405,19 @@ Loader::InsertSheetInDoc(StyleSheet* aSheet,
 nsresult
 Loader::InsertChildSheet(StyleSheet* aSheet,
                          StyleSheet* aParentSheet,
-                         ImportRule* aGeckoParentRule,
+                         ImportRule* aGoannaParentRule,
                          const RawServoImportRule* aServoParentRule)
 {
   LOG(("css::Loader::InsertChildSheet"));
   MOZ_ASSERT(aSheet, "Nothing to insert");
   MOZ_ASSERT(aParentSheet, "Need a parent to insert into");
-  MOZ_ASSERT_IF(aSheet->IsGecko(), aGeckoParentRule && !aServoParentRule);
-  MOZ_ASSERT_IF(aSheet->IsServo(), aServoParentRule && !aGeckoParentRule);
-  if (aSheet->IsGecko()) {
+  MOZ_ASSERT_IF(aSheet->IsGoanna(), aGoannaParentRule && !aServoParentRule);
+  MOZ_ASSERT_IF(aSheet->IsServo(), aServoParentRule && !aGoannaParentRule);
+  if (aSheet->IsGoanna()) {
     // child sheets should always start out enabled, even if they got
     // cloned off of top-level sheets which were disabled
-    aSheet->AsGecko()->SetEnabled(true);
-    aGeckoParentRule->SetSheet(aSheet->AsGecko()); // This sets the ownerRule on the sheet
+    aSheet->AsGoanna()->SetEnabled(true);
+    aGoannaParentRule->SetSheet(aSheet->AsGoanna()); // This sets the ownerRule on the sheet
   } else {
     RefPtr<RawServoStyleSheet> sheet =
       Servo_ImportRule_GetSheet(aServoParentRule).Consume();
@@ -1766,8 +1766,8 @@ Loader::ParseSheet(const nsAString& aInput,
 
   nsresult rv;
 
-  if (aLoadData->mSheet->IsGecko()) {
-    nsCSSParser parser(this, aLoadData->mSheet->AsGecko());
+  if (aLoadData->mSheet->IsGoanna()) {
+    nsCSSParser parser(this, aLoadData->mSheet->AsGoanna());
     rv = parser.ParseSheet(aInput, sheetURI, baseURI,
                            aLoadData->mSheet->Principal(),
                            aLoadData->mLineNumber);
@@ -1894,8 +1894,8 @@ Loader::DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
       // If mSheetAlreadyComplete, then the sheet could well be modified between
       // when we posted the async call to SheetComplete and now, since the sheet
       // was page-accessible during that whole time.
-      MOZ_ASSERT(!(data->mSheet->IsGecko() &&
-                   data->mSheet->AsGecko()->IsModified()),
+      MOZ_ASSERT(!(data->mSheet->IsGoanna() &&
+                   data->mSheet->AsGoanna()->IsModified()),
                  "should not get marked modified during parsing");
       data->mSheet->SetComplete();
       data->ScheduleLoadEventIfNeeded(aStatus);
@@ -1936,12 +1936,12 @@ Loader::DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
     // one of the sheets that will be kept alive by a document or
     // parent sheet anyway, so that if someone then accesses it via
     // CSSOM we won't have extra clones of the inner lying around.
-    if (aLoadData->mSheet->IsGecko()) {
+    if (aLoadData->mSheet->IsGoanna()) {
       data = aLoadData;
-      CSSStyleSheet* sheet = aLoadData->mSheet->AsGecko();
+      CSSStyleSheet* sheet = aLoadData->mSheet->AsGoanna();
       while (data) {
         if (data->mSheet->GetParentSheet() || data->mSheet->GetOwnerNode()) {
-          sheet = data->mSheet->AsGecko();
+          sheet = data->mSheet->AsGoanna();
           break;
         }
         data = data->mNext;
@@ -2196,7 +2196,7 @@ nsresult
 Loader::LoadChildSheet(StyleSheet* aParentSheet,
                        nsIURI* aURL,
                        nsMediaList* aMedia,
-                       ImportRule* aGeckoParentRule,
+                       ImportRule* aGoannaParentRule,
                        const RawServoImportRule* aServoParentRule,
                        LoaderReusableStyleSheets* aReusableSheets)
 {
@@ -2205,9 +2205,9 @@ Loader::LoadChildSheet(StyleSheet* aParentSheet,
   NS_PRECONDITION(aParentSheet, "Must have a parent sheet");
 
   // Servo doesn't support reusable sheets.
-  MOZ_ASSERT_IF(aReusableSheets, aParentSheet->IsGecko());
-  MOZ_ASSERT_IF(aParentSheet->IsGecko(), aGeckoParentRule && !aServoParentRule);
-  MOZ_ASSERT_IF(aParentSheet->IsServo(), aServoParentRule && !aGeckoParentRule);
+  MOZ_ASSERT_IF(aReusableSheets, aParentSheet->IsGoanna());
+  MOZ_ASSERT_IF(aParentSheet->IsGoanna(), aGoannaParentRule && !aServoParentRule);
+  MOZ_ASSERT_IF(aParentSheet->IsServo(), aServoParentRule && !aGoannaParentRule);
 
   if (!mEnabled) {
     LOG_WARN(("  Not enabled"));
@@ -2224,7 +2224,7 @@ Loader::LoadChildSheet(StyleSheet* aParentSheet,
   // FIXME(emilio): Figure out whether this walk up is necessary (try seems
   // green without it), and fix the parenting of stylesheets in the servo case
   // if that's the case.
-  if (aParentSheet->GetAssociatedDocument() && aParentSheet->IsGecko()) {
+  if (aParentSheet->GetAssociatedDocument() && aParentSheet->IsGoanna()) {
     StyleSheet* topSheet = aParentSheet;
     while (StyleSheet* parent = topSheet->GetParentSheet()) {
       topSheet = parent;
@@ -2263,9 +2263,9 @@ Loader::LoadChildSheet(StyleSheet* aParentSheet,
     // No parent load data, so the sheet will need to be notified when
     // we finish, if it can be, if we do the load asynchronously.
     // XXXheycam ServoStyleSheet doesn't implement nsICSSLoaderObserver yet.
-    MOZ_ASSERT(aParentSheet->IsGecko(),
+    MOZ_ASSERT(aParentSheet->IsGoanna(),
                "stylo: ServoStyleSheets don't support child sheet loading yet");
-    observer = aParentSheet->AsGecko();
+    observer = aParentSheet->AsGoanna();
   }
 
   // Now that we know it's safe to load this (passes security check and not a
@@ -2275,7 +2275,7 @@ Loader::LoadChildSheet(StyleSheet* aParentSheet,
   StyleSheetState state;
   if (aReusableSheets && aReusableSheets->FindReusableStyleSheet(aURL, reusableSheet)) {
     sheet = reusableSheet;
-    aGeckoParentRule->SetSheet(reusableSheet);
+    aGoannaParentRule->SetSheet(reusableSheet);
     state = eSheetComplete;
   } else {
     bool isAlternate;
@@ -2292,7 +2292,7 @@ Loader::LoadChildSheet(StyleSheet* aParentSheet,
     PrepareSheet(sheet, empty, empty, aMedia, nullptr, isAlternate);
   }
 
-  rv = InsertChildSheet(sheet, aParentSheet, aGeckoParentRule,
+  rv = InsertChildSheet(sheet, aParentSheet, aGoannaParentRule,
                         aServoParentRule);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -2629,8 +2629,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Loader)
          !iter.Done();
          iter.Next()) {
       NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "Sheet cache nsCSSLoader");
-      if (iter.UserData()->IsGecko()) {
-        CSSStyleSheet* sheet = iter.UserData()->AsGecko();
+      if (iter.UserData()->IsGoanna()) {
+        CSSStyleSheet* sheet = iter.UserData()->AsGoanna();
         cb.NoteXPCOMChild(NS_ISUPPORTS_CAST(nsIDOMCSSStyleSheet*, sheet));
       }
     }

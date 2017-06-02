@@ -22,7 +22,7 @@ import android.os.Process;
 
 import android.util.Log;
 
-import org.mozilla.gecko.annotation.WebRTCJNITarget;
+import org.mozilla.goanna.annotation.WebRTCJNITarget;
 
 @WebRTCJNITarget
 class WebRtcAudioTrack {

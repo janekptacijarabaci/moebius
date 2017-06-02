@@ -428,8 +428,8 @@ this.ExtensionData = class {
 
       try {
         // Do not override the add-on id that has been already assigned.
-        if (!this.id && this.manifest.applications.gecko.id) {
-          this.id = this.manifest.applications.gecko.id;
+        if (!this.id && this.manifest.applications.goanna.id) {
+          this.id = this.manifest.applications.goanna.id;
         }
       } catch (e) {
         // Errors are handled by the type checks above.
@@ -478,7 +478,7 @@ this.ExtensionData = class {
   }
 
   // If a "default_locale" is specified in that manifest, returns it
-  // as a Gecko-compatible locale string. Otherwise, returns null.
+  // as a Goanna-compatible locale string. Otherwise, returns null.
   get defaultLocale() {
     if (this.manifest.default_locale != null) {
       return this.normalizeLocaleCode(this.manifest.default_locale);
@@ -488,13 +488,13 @@ this.ExtensionData = class {
   }
 
   // Normalizes a Chrome-compatible locale code to the appropriate
-  // Gecko-compatible variant. Currently, this means simply
+  // Goanna-compatible variant. Currently, this means simply
   // replacing underscores with hyphens.
   normalizeLocaleCode(locale) {
     return locale.replace(/_/g, "-");
   }
 
-  // Reads the locale file for the given Gecko-compatible locale code, and
+  // Reads the locale file for the given Goanna-compatible locale code, and
   // stores its parsed contents in |this.localeMessages.get(locale)|.
   readLocaleFile(locale) {
     return Task.spawn(function* () {
@@ -514,10 +514,10 @@ this.ExtensionData = class {
 
   // Reads the list of locales available in the extension, and returns a
   // Promise which resolves to a Map upon completion.
-  // Each map key is a Gecko-compatible locale code, and each value is the
+  // Each map key is a Goanna-compatible locale code, and each value is the
   // "_locales" subdirectory containing that locale:
   //
-  // Map(gecko-locale-code -> locale-directory-name)
+  // Map(goanna-locale-code -> locale-directory-name)
   promiseLocales() {
     if (!this._promiseLocales) {
       this._promiseLocales = Task.spawn(function* () {
@@ -546,7 +546,7 @@ this.ExtensionData = class {
 
   // Reads the locale messages for all locales, and returns a promise which
   // resolves to a Map of locale messages upon completion. Each key in the map
-  // is a Gecko-compatible locale code, and each value is a locale data object
+  // is a Goanna-compatible locale code, and each value is a locale data object
   // as returned by |readLocaleFile|.
   initAllLocales() {
     return Task.spawn(function* () {
@@ -571,7 +571,7 @@ this.ExtensionData = class {
     }.bind(this));
   }
 
-  // Reads the locale file for the given Gecko-compatible locale code, or the
+  // Reads the locale file for the given Goanna-compatible locale code, or the
   // default locale if no locale code is given, and sets it as the currently
   // selected locale on success.
   //
@@ -825,7 +825,7 @@ this.Extension = class extends ExtensionData {
     ]);
   }
 
-  // Reads the locale file for the given Gecko-compatible locale code, or if
+  // Reads the locale file for the given Goanna-compatible locale code, or if
   // no locale is given, the available locale closest to the UI locale.
   // Sets the currently selected locale on success.
   initLocale(locale = undefined) {

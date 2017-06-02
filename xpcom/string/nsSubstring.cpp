@@ -355,42 +355,42 @@ static_assert(sizeof(nsStringContainer_base) == sizeof(nsSubstring),
 // Provide rust bindings to the nsA[C]String types
 extern "C" {
 
-void Gecko_FinalizeCString(nsACString* aThis)
+void Goanna_FinalizeCString(nsACString* aThis)
 {
   aThis->~nsACString();
 }
 
-void Gecko_AssignCString(nsACString* aThis, const nsACString* aOther)
+void Goanna_AssignCString(nsACString* aThis, const nsACString* aOther)
 {
   aThis->Assign(*aOther);
 }
 
-void Gecko_AppendCString(nsACString* aThis, const nsACString* aOther)
+void Goanna_AppendCString(nsACString* aThis, const nsACString* aOther)
 {
   aThis->Append(*aOther);
 }
 
-void Gecko_TruncateCString(nsACString* aThis)
+void Goanna_TruncateCString(nsACString* aThis)
 {
   aThis->Truncate();
 }
 
-void Gecko_FinalizeString(nsAString* aThis)
+void Goanna_FinalizeString(nsAString* aThis)
 {
   aThis->~nsAString();
 }
 
-void Gecko_AssignString(nsAString* aThis, const nsAString* aOther)
+void Goanna_AssignString(nsAString* aThis, const nsAString* aOther)
 {
   aThis->Assign(*aOther);
 }
 
-void Gecko_AppendString(nsAString* aThis, const nsAString* aOther)
+void Goanna_AppendString(nsAString* aThis, const nsAString* aOther)
 {
   aThis->Append(*aOther);
 }
 
-void Gecko_TruncateString(nsAString* aThis)
+void Goanna_TruncateString(nsAString* aThis)
 {
   aThis->Truncate();
 }

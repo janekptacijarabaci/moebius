@@ -10,12 +10,12 @@
 #include "nsThreadManager.h"
 #include "nsThreadUtils.h"
 #include "pratom.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Logging.h"
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracerImpl.h"
+#include "GoannaTaskTracerImpl.h"
 using namespace mozilla::tasktracer;
 #endif
 

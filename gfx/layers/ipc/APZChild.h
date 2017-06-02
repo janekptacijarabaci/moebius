@@ -13,16 +13,16 @@ namespace mozilla {
 
 namespace layers {
 
-class GeckoContentController;
+class GoannaContentController;
 
 /**
- * APZChild implements PAPZChild and is used to remote a GeckoContentController
+ * APZChild implements PAPZChild and is used to remote a GoannaContentController
  * that lives in a different process than where APZ lives.
  */
 class APZChild final : public PAPZChild
 {
 public:
-  explicit APZChild(RefPtr<GeckoContentController> aController);
+  explicit APZChild(RefPtr<GoannaContentController> aController);
   ~APZChild();
 
   mozilla::ipc::IPCResult RecvRequestContentRepaint(const FrameMetrics& frame) override;
@@ -45,7 +45,7 @@ public:
   mozilla::ipc::IPCResult RecvDestroy() override;
 
 private:
-  RefPtr<GeckoContentController> mController;
+  RefPtr<GoannaContentController> mController;
 };
 
 } // namespace layers

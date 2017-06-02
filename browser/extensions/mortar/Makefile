@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# We keep the Makefile until the mortar is integrated into gecko build system.
+# We keep the Makefile until the mortar is integrated into goanna build system.
 ifeq ($(shell uname), Darwin)
 	DLL_SUFFIX = .dylib
 	CXX = g++

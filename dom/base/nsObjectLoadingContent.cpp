@@ -68,7 +68,7 @@
 #include "nsObjectLoadingContent.h"
 #include "mozAutoDocUpdate.h"
 #include "nsIContentSecurityPolicy.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "nsPluginFrame.h"
 #include "nsDOMClassInfo.h"
 #include "nsWrapperCacheInlines.h"

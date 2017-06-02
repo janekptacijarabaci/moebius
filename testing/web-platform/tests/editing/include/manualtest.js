@@ -168,7 +168,7 @@ function continueBrowserCell(test, testDiv, browserCell) {
         }
 
         compareDiv1.normalize();
-        // Sigh, Gecko is crazy
+        // Sigh, Goanna is crazy
         var treeWalker = document.createTreeWalker(compareDiv1, NodeFilter.SHOW_ELEMENT, null, null);
         while (treeWalker.nextNode()) {
             var remove = [].filter.call(treeWalker.currentNode.attributes, function(attrib) {

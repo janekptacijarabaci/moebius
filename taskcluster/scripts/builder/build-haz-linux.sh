@@ -33,18 +33,18 @@ SCRIPT_FLAGS="$@"
 DIRNAME=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 PATH=$DIRNAME:$PATH
 
-# Use GECKO_BASE_REPOSITORY as a signal for whether we are running in automation.
-export AUTOMATION=${GECKO_BASE_REPOSITORY:+1}
+# Use GOANNA_BASE_REPOSITORY as a signal for whether we are running in automation.
+export AUTOMATION=${GOANNA_BASE_REPOSITORY:+1}
 
-: ${GECKO_DIR:=$WORKSPACE/gecko}
+: ${GOANNA_DIR:=$WORKSPACE/goanna}
 : ${TOOLTOOL_MANIFEST:=browser/config/tooltool-manifests/linux64/hazard.manifest}
 : ${TOOLTOOL_CACHE:=$WORKSPACE/tt-cache}
 
-if ! [ -d $GECKO_DIR ]; then
-    echo "GECKO_DIR must be set to a directory containing a gecko source checkout" >&2
+if ! [ -d $GOANNA_DIR ]; then
+    echo "GOANNA_DIR must be set to a directory containing a goanna source checkout" >&2
     exit 1
 fi
-GECKO_DIR=$( cd "$GECKO_DIR" && pwd )
+GOANNA_DIR=$( cd "$GOANNA_DIR" && pwd )
 
 # Directory to populate with tooltool-installed tools
 export TOOLTOOL_DIR="$WORKSPACE"
@@ -54,7 +54,7 @@ export MOZ_OBJDIR="$WORKSPACE/obj-analyzed"
 mkdir -p "$MOZ_OBJDIR"
 
 if [ -n "$DO_TOOLTOOL" ]; then
-  ( cd $TOOLTOOL_DIR; python $GECKO_DIR/taskcluster/docker/recipes/tooltool.py --url https://api.pub.build.mozilla.org/tooltool/ -m $GECKO_DIR/$TOOLTOOL_MANIFEST fetch -c $TOOLTOOL_CACHE )
+  ( cd $TOOLTOOL_DIR; python $GOANNA_DIR/taskcluster/docker/recipes/tooltool.py --url https://api.pub.build.mozilla.org/tooltool/ -m $GOANNA_DIR/$TOOLTOOL_MANIFEST fetch -c $TOOLTOOL_CACHE )
 fi
 
 export NO_MERCURIAL_SETUP_CHECK=1

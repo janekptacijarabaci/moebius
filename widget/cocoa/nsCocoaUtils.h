@@ -192,7 +192,7 @@ public:
   }
 
   // Returns the given y coordinate, which must be in screen coordinates,
-  // flipped from Gecko to Cocoa or Cocoa to Gecko.
+  // flipped from Goanna to Cocoa or Cocoa to Goanna.
   static float FlippedScreenY(float y);
 
   // The following functions come in "DevPix" variants that work with
@@ -201,25 +201,25 @@ public:
   // The difference becomes important in HiDPI display modes, where Cocoa
   // points and backing-store pixels are no longer 1:1.
 
-  // Gecko rects (nsRect) contain an origin (x,y) in a coordinate
+  // Goanna rects (nsRect) contain an origin (x,y) in a coordinate
   // system with (0,0) in the top-left of the primary screen. Cocoa rects
   // (NSRect) contain an origin (x,y) in a coordinate system with (0,0)
   // in the bottom-left of the primary screen. Both nsRect and NSRect
   // contain width/height info, with no difference in their use.
-  // This function does no scaling, so the Gecko coordinates are
+  // This function does no scaling, so the Goanna coordinates are
   // expected to be desktop pixels, which are equal to Cocoa points
   // (by definition).
-  static NSRect GeckoRectToCocoaRect(const mozilla::DesktopIntRect &geckoRect);
+  static NSRect GoannaRectToCocoaRect(const mozilla::DesktopIntRect &goannaRect);
 
-  // Converts aGeckoRect in dev pixels to points in Cocoa coordinates
+  // Converts aGoannaRect in dev pixels to points in Cocoa coordinates
   static NSRect
-  GeckoRectToCocoaRectDevPix(const mozilla::LayoutDeviceIntRect &aGeckoRect,
+  GoannaRectToCocoaRectDevPix(const mozilla::LayoutDeviceIntRect &aGoannaRect,
                              CGFloat aBackingScale);
 
-  // See explanation for geckoRectToCocoaRect, guess what this does...
-  static mozilla::DesktopIntRect CocoaRectToGeckoRect(const NSRect &cocoaRect);
+  // See explanation for goannaRectToCocoaRect, guess what this does...
+  static mozilla::DesktopIntRect CocoaRectToGoannaRect(const NSRect &cocoaRect);
 
-  static mozilla::LayoutDeviceIntRect CocoaRectToGeckoRectDevPix(
+  static mozilla::LayoutDeviceIntRect CocoaRectToGoannaRectDevPix(
     const NSRect& aCocoaRect, CGFloat aBackingScale);
 
   // Gives the location for the event in screen coordinates. Do not call this
@@ -299,20 +299,20 @@ public:
   static NSString* ToNSString(const nsAString& aString);
 
   /**
-   * Returns NSRect for aGeckoRect.
+   * Returns NSRect for aGoannaRect.
    * Just copies values between the two types; it does no coordinate-system
    * conversion, so both rects must have the same coordinate origin/direction.
    */
-  static void GeckoRectToNSRect(const nsIntRect& aGeckoRect,
+  static void GoannaRectToNSRect(const nsIntRect& aGoannaRect,
                                 NSRect& aOutCocoaRect);
 
   /**
-   * Returns Gecko rect for aCocoaRect.
+   * Returns Goanna rect for aCocoaRect.
    * Just copies values between the two types; it does no coordinate-system
    * conversion, so both rects must have the same coordinate origin/direction.
    */
-  static void NSRectToGeckoRect(const NSRect& aCocoaRect,
-                                nsIntRect& aOutGeckoRect);
+  static void NSRectToGoannaRect(const NSRect& aCocoaRect,
+                                nsIntRect& aOutGoannaRect);
 
   /**
    * Makes NSEvent instance for aEventTytpe and aEvent.
@@ -359,16 +359,16 @@ public:
                                       nsTArray<KeyBindingsCommand>& aCommands);
 
   /**
-   * Converts the string name of a Gecko key (like "VK_HOME") to the
+   * Converts the string name of a Goanna key (like "VK_HOME") to the
    * corresponding Cocoa Unicode character.
    */
-  static uint32_t ConvertGeckoNameToMacCharCode(const nsAString& aKeyCodeName);
+  static uint32_t ConvertGoannaNameToMacCharCode(const nsAString& aKeyCodeName);
 
   /**
-   * Converts a Gecko key code (like NS_VK_HOME) to the corresponding Cocoa
+   * Converts a Goanna key code (like NS_VK_HOME) to the corresponding Cocoa
    * Unicode character.
    */
-  static uint32_t ConvertGeckoKeyCodeToMacCharCode(uint32_t aKeyCode);
+  static uint32_t ConvertGoannaKeyCodeToMacCharCode(uint32_t aKeyCode);
 
   /**
    * Convert string with font attribute to NSMutableAttributedString

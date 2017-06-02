@@ -327,7 +327,7 @@ LogErrorToConsole(const nsAString& aMessage,
   static const char kErrorString[] = "JS error in Web Worker: %s [%s:%u]";
 
 #ifdef ANDROID
-  __android_log_print(ANDROID_LOG_INFO, "Gecko", kErrorString, msg.get(),
+  __android_log_print(ANDROID_LOG_INFO, "Goanna", kErrorString, msg.get(),
                       filename.get(), aLineNumber);
 #endif
 
@@ -4209,7 +4209,7 @@ WorkerPrivate::Constructor(JSContext* aCx,
     new WorkerPrivate(parent, aScriptURL, aIsChromeWorker,
                       aWorkerType, aWorkerName, *aLoadInfo);
 
-  // Gecko contexts always have an explicitly-set default locale (set by
+  // Goanna contexts always have an explicitly-set default locale (set by
   // XPJSRuntime::Initialize for the main thread, set by
   // WorkerThreadPrimaryRunnable::Run for workers just before running worker
   // code), so this is never SpiderMonkey's builtin default locale.

@@ -34,7 +34,7 @@ struct OverscrollHandoffState;
 struct FlingHandoffState;
 class LayerMetricsWrapper;
 class InputQueue;
-class GeckoContentController;
+class GoannaContentController;
 class HitTestingTreeNode;
 
 /**
@@ -130,7 +130,7 @@ public:
   /**
    * Walk the tree of APZCs and flushes the repaint requests for all the APZCS
    * corresponding to the given layers id. Finally, sends a flush complete
-   * notification to the GeckoContentController for the layers id.
+   * notification to the GoannaContentController for the layers id.
    */
   void FlushApzRepaints(uint64_t aLayersId);
 
@@ -406,7 +406,7 @@ protected:
 
   // Protected hooks for gtests subclass
   virtual AsyncPanZoomController* NewAPZCInstance(uint64_t aLayersId,
-                                                  GeckoContentController* aController);
+                                                  GoannaContentController* aController);
 public:
   // Public hooks for gtests subclass
   virtual TimeStamp GetFrameTime();
@@ -423,7 +423,7 @@ public:
                                                          HitTestResult* aOutHitResult,
                                                          bool* aOutHitScrollbar = nullptr);
   ScreenToParentLayerMatrix4x4 GetScreenToApzcTransform(const AsyncPanZoomController *aApzc) const;
-  ParentLayerToScreenMatrix4x4 GetApzcToGeckoTransform(const AsyncPanZoomController *aApzc) const;
+  ParentLayerToScreenMatrix4x4 GetApzcToGoannaTransform(const AsyncPanZoomController *aApzc) const;
 
   /**
    * Process touch velocity.
@@ -461,7 +461,7 @@ private:
   nsEventStatus ProcessTouchInput(MultiTouchInput& aInput,
                                   ScrollableLayerGuid* aOutTargetGuid,
                                   uint64_t* aOutInputBlockId);
-  void FlushRepaintsToClearScreenToGeckoTransform();
+  void FlushRepaintsToClearScreenToGoannaTransform();
 
   already_AddRefed<HitTestingTreeNode> RecycleOrCreateNode(TreeBuildingState& aState,
                                                            AsyncPanZoomController* aApzc,
@@ -494,7 +494,7 @@ private:
   mutable mozilla::Mutex mTreeLock;
   RefPtr<HitTestingTreeNode> mRootNode;
   /* Holds the zoom constraints for scrollable layers, as determined by the
-   * the main-thread gecko code. */
+   * the main-thread goanna code. */
   std::map<ScrollableLayerGuid, ZoomConstraints> mZoomConstraints;
   /* This tracks the APZC that should receive all inputs for the current input event block.
    * This allows touch points to move outside the thing they started on, but still have the

@@ -72,8 +72,8 @@ public:
 
 protected:
 
-  void GetGeckoDragAction(DWORD grfKeyState, LPDWORD pdwEffect, 
-                          uint32_t * aGeckoAction);
+  void GetGoannaDragAction(DWORD grfKeyState, LPDWORD pdwEffect, 
+                          uint32_t * aGoannaAction);
   void ProcessDrag(mozilla::EventMessage aEventMessage, DWORD grfKeyState,
                    POINTL pt, DWORD* pdwEffect);
   void DispatchDragDropEvent(mozilla::EventMessage aEventMessage,
@@ -87,7 +87,7 @@ protected:
   DWORD            mEffectsPreferred;
   bool             mTookOwnRef;
 
-  // Gecko Stuff
+  // Goanna Stuff
   nsIWidget      * mWidget;
   nsIDragService * mDragService;
   // Drag target helper 

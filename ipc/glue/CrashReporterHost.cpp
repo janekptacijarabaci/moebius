@@ -18,7 +18,7 @@
 namespace mozilla {
 namespace ipc {
 
-CrashReporterHost::CrashReporterHost(GeckoProcessType aProcessType,
+CrashReporterHost::CrashReporterHost(GoannaProcessType aProcessType,
                                      const Shmem& aShmem)
  : mProcessType(aProcessType),
    mShmem(aShmem),
@@ -39,14 +39,14 @@ CrashReporterHost::GenerateCrashReport(RefPtr<nsIFile> aCrashDump)
 
   nsAutoCString type;
   switch (mProcessType) {
-    case GeckoProcessType_Content:
+    case GoannaProcessType_Content:
       type = NS_LITERAL_CSTRING("content");
       break;
-    case GeckoProcessType_Plugin:
-    case GeckoProcessType_GMPlugin:
+    case GoannaProcessType_Plugin:
+    case GoannaProcessType_GMPlugin:
       type = NS_LITERAL_CSTRING("plugin");
       break;
-    case GeckoProcessType_GPU:
+    case GoannaProcessType_GPU:
       type = NS_LITERAL_CSTRING("gpu");
       break;
     default:
@@ -210,7 +210,7 @@ CrashReporterHost::AsyncAddCrash(int32_t aProcessType,
 }
 
 /* static */ void
-CrashReporterHost::NotifyCrashService(GeckoProcessType aProcessType,
+CrashReporterHost::NotifyCrashService(GoannaProcessType aProcessType,
                                       const nsString& aChildDumpID,
                                       const AnnotationTable* aNotes)
 {
@@ -231,11 +231,11 @@ CrashReporterHost::NotifyCrashService(GeckoProcessType aProcessType,
   nsCString telemetryKey;
 
   switch (aProcessType) {
-    case GeckoProcessType_Content:
+    case GoannaProcessType_Content:
       processType = nsICrashService::PROCESS_TYPE_CONTENT;
       telemetryKey.AssignLiteral("content");
       break;
-    case GeckoProcessType_Plugin: {
+    case GoannaProcessType_Plugin: {
       processType = nsICrashService::PROCESS_TYPE_PLUGIN;
       telemetryKey.AssignLiteral("plugin");
       nsAutoCString val;
@@ -246,11 +246,11 @@ CrashReporterHost::NotifyCrashService(GeckoProcessType aProcessType,
       }
       break;
     }
-    case GeckoProcessType_GMPlugin:
+    case GoannaProcessType_GMPlugin:
       processType = nsICrashService::PROCESS_TYPE_GMPLUGIN;
       telemetryKey.AssignLiteral("gmplugin");
       break;
-    case GeckoProcessType_GPU:
+    case GoannaProcessType_GPU:
       processType = nsICrashService::PROCESS_TYPE_GPU;
       telemetryKey.AssignLiteral("gpu");
       break;

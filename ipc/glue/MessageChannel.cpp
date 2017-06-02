@@ -25,7 +25,7 @@
 #include <math.h>
 
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracer.h"
+#include "GoannaTaskTracer.h"
 using namespace mozilla::tasktracer;
 #endif
 

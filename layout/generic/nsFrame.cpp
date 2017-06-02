@@ -684,12 +684,12 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
     // and not only those whose current style involves CSS transitions,
     // because what matters is whether the new style (not the old)
     // specifies CSS transitions.
-    if (presContext->RestyleManager()->IsGecko()) {
+    if (presContext->RestyleManager()->IsGoanna()) {
       // stylo: ServoRestyleManager does not handle transitions yet, and when
       // it does it probably won't need to track reframed style contexts to
       // initiate transitions correctly.
       RestyleManager::ReframingStyleContexts* rsc =
-        presContext->RestyleManager()->AsGecko()->GetReframingStyleContexts();
+        presContext->RestyleManager()->AsGoanna()->GetReframingStyleContexts();
       if (rsc) {
         rsc->Put(mContent, mStyleContext);
       }
@@ -700,9 +700,9 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
       EffectSet::GetEffectSet(this)) {
     // If no new frame for this element is created by the end of the
     // restyling process, stop animations and transitions for this frame
-    if (presContext->RestyleManager()->IsGecko()) {
+    if (presContext->RestyleManager()->IsGoanna()) {
       RestyleManager::AnimationsWithDestroyedFrame* adf =
-        presContext->RestyleManager()->AsGecko()->GetAnimationsWithDestroyedFrame();
+        presContext->RestyleManager()->AsGoanna()->GetAnimationsWithDestroyedFrame();
       // AnimationsWithDestroyedFrame only lives during the restyling process.
       if (adf) {
         adf->Put(mContent, mStyleContext);
@@ -10589,37 +10589,37 @@ DR_State::DR_State()
 
 void DR_State::Init() 
 {
-  char* env = PR_GetEnv("GECKO_DISPLAY_REFLOW_ASSERT");
+  char* env = PR_GetEnv("GOANNA_DISPLAY_REFLOW_ASSERT");
   int32_t num;
   if (env) {
     if (GetNumber(env, num)) 
       mAssert = num;
     else 
-      printf("GECKO_DISPLAY_REFLOW_ASSERT - invalid value = %s", env);
+      printf("GOANNA_DISPLAY_REFLOW_ASSERT - invalid value = %s", env);
   }
 
-  env = PR_GetEnv("GECKO_DISPLAY_REFLOW_INDENT_START");
+  env = PR_GetEnv("GOANNA_DISPLAY_REFLOW_INDENT_START");
   if (env) {
     if (GetNumber(env, num)) 
       mIndent = num;
     else 
-      printf("GECKO_DISPLAY_REFLOW_INDENT_START - invalid value = %s", env);
+      printf("GOANNA_DISPLAY_REFLOW_INDENT_START - invalid value = %s", env);
   }
 
-  env = PR_GetEnv("GECKO_DISPLAY_REFLOW_INDENT_UNDISPLAYED_FRAMES");
+  env = PR_GetEnv("GOANNA_DISPLAY_REFLOW_INDENT_UNDISPLAYED_FRAMES");
   if (env) {
     if (GetNumber(env, num)) 
       mIndentUndisplayedFrames = num;
     else 
-      printf("GECKO_DISPLAY_REFLOW_INDENT_UNDISPLAYED_FRAMES - invalid value = %s", env);
+      printf("GOANNA_DISPLAY_REFLOW_INDENT_UNDISPLAYED_FRAMES - invalid value = %s", env);
   }
 
-  env = PR_GetEnv("GECKO_DISPLAY_REFLOW_FLAG_PIXEL_ERRORS");
+  env = PR_GetEnv("GOANNA_DISPLAY_REFLOW_FLAG_PIXEL_ERRORS");
   if (env) {
     if (GetNumber(env, num)) 
       mDisplayPixelErrors = num;
     else 
-      printf("GECKO_DISPLAY_REFLOW_FLAG_PIXEL_ERRORS - invalid value = %s", env);
+      printf("GOANNA_DISPLAY_REFLOW_FLAG_PIXEL_ERRORS - invalid value = %s", env);
   }
 
   InitFrameTypeTable();
@@ -10743,7 +10743,7 @@ void DR_State::AddRule(nsTArray<DR_Rule*>& aRules,
 
 void DR_State::ParseRulesFile()
 {
-  char* path = PR_GetEnv("GECKO_DISPLAY_REFLOW_RULES_FILE");
+  char* path = PR_GetEnv("GOANNA_DISPLAY_REFLOW_RULES_FILE");
   if (path) {
     FILE* inFile = fopen(path, "r");
     if (inFile) {

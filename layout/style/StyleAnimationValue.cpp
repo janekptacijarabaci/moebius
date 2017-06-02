@@ -3484,9 +3484,9 @@ ComputeValuesFromStyleRule(nsCSSPropertyID aProperty,
     return false;
   }
 
-  MOZ_ASSERT(aStyleContext->PresContext()->StyleSet()->IsGecko(),
+  MOZ_ASSERT(aStyleContext->PresContext()->StyleSet()->IsGoanna(),
              "ServoStyleSet should not use StyleAnimationValue for animations");
-  nsStyleSet* styleSet = aStyleContext->PresContext()->StyleSet()->AsGecko();
+  nsStyleSet* styleSet = aStyleContext->PresContext()->StyleSet()->AsGoanna();
 
   RefPtr<nsStyleContext> tmpStyleContext;
   if (aIsContextSensitive) {

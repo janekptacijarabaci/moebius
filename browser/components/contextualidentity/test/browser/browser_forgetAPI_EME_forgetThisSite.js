@@ -201,8 +201,8 @@ add_task(function* test_EME_forgetThisSite() {
   }
 
   // Clear all EME data for a given domain with originAttributes pattern.
-  let mps = Cc["@mozilla.org/gecko-media-plugin-service;1"].
-               getService(Ci.mozIGeckoMediaPluginChromeService);
+  let mps = Cc["@mozilla.org/goanna-media-plugin-service;1"].
+               getService(Ci.mozIGoannaMediaPluginChromeService);
   mps.forgetThisSite(TEST_HOST, JSON.stringify({}));
 
   // Open tabs again to check EME keys have been cleared.

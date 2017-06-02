@@ -25,9 +25,9 @@ class nsIWidget;
 // up carbon events. Protocol is defined as of 10.6 SDK.
 @interface MenuDelegate : NSObject < NSMenuDelegate >
 {
-  nsMenuX* mGeckoMenu; // weak ref
+  nsMenuX* mGoannaMenu; // weak ref
 }
-- (id)initWithGeckoMenu:(nsMenuX*)geckoMenu;
+- (id)initWithGoannaMenu:(nsMenuX*)goannaMenu;
 @end
 
 // Once instantiated, this object lives until its DOM node or its parent window is destroyed.
@@ -77,7 +77,7 @@ protected:
   nsMenuX*       AddMenu(mozilla::UniquePtr<nsMenuX> aMenu);
   void           LoadMenuItem(nsIContent* inMenuItemContent);
   void           LoadSubMenu(nsIContent* inMenuContent);
-  GeckoNSMenu*   CreateMenuWithGeckoString(nsString& menuTitle);
+  GoannaNSMenu*   CreateMenuWithGoannaString(nsString& menuTitle);
 
   nsTArray<mozilla::UniquePtr<nsMenuObjectX>> mMenuObjectsArray;
   nsString                  mLabel;
@@ -86,7 +86,7 @@ protected:
   nsMenuGroupOwnerX*        mMenuGroupOwner; // [weak]
   // The icon object should never outlive its creating nsMenuX object.
   RefPtr<nsMenuItemIconX> mIcon;
-  GeckoNSMenu*              mNativeMenu; // [strong]
+  GoannaNSMenu*              mNativeMenu; // [strong]
   MenuDelegate*             mMenuDelegate; // [strong]
   // nsMenuX objects should always have a valid native menu item.
   NSMenuItem*               mNativeMenuItem; // [strong]

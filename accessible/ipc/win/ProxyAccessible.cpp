@@ -7,7 +7,7 @@
 #include "Accessible2.h"
 #include "ProxyAccessible.h"
 #include "ia2AccessibleValue.h"
-#include "IGeckoCustom.h"
+#include "IGoannaCustom.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "DocAccessible.h"
 #include "mozilla/a11y/DocManager.h"
@@ -75,9 +75,9 @@ struct InterfaceIID<IAccessibleHyperlink>
 };
 
 template<>
-struct InterfaceIID<IGeckoCustom>
+struct InterfaceIID<IGoannaCustom>
 {
-  static REFIID Value() { return IID_IGeckoCustom; }
+  static REFIID Value() { return IID_IGoannaCustom; }
 };
 
 /**
@@ -105,8 +105,8 @@ QueryInterface(const ProxyAccessible* aProxy)
 static ProxyAccessible*
 GetProxyFor(DocAccessibleParent* aDoc, IUnknown* aCOMProxy)
 {
-  RefPtr<IGeckoCustom> custom;
-  if (FAILED(aCOMProxy->QueryInterface(IID_IGeckoCustom,
+  RefPtr<IGoannaCustom> custom;
+  if (FAILED(aCOMProxy->QueryInterface(IID_IGoannaCustom,
                                        (void**) getter_AddRefs(custom)))) {
     return nullptr;
   }
@@ -415,9 +415,9 @@ ProxyAccessible::MaxValue()
 }
 
 static IA2TextBoundaryType
-GetIA2TextBoundary(AccessibleTextBoundary aGeckoBoundaryType)
+GetIA2TextBoundary(AccessibleTextBoundary aGoannaBoundaryType)
 {
-  switch (aGeckoBoundaryType) {
+  switch (aGoannaBoundaryType) {
     case nsIAccessibleText::BOUNDARY_CHAR:
       return IA2_TEXT_BOUNDARY_CHAR;
     case nsIAccessibleText::BOUNDARY_WORD_START:
@@ -673,7 +673,7 @@ uint32_t
 ProxyAccessible::AnchorCount(bool* aOk)
 {
   *aOk = false;
-  RefPtr<IGeckoCustom> custom = QueryInterface<IGeckoCustom>(this);
+  RefPtr<IGoannaCustom> custom = QueryInterface<IGoannaCustom>(this);
   if (!custom) {
     return 0;
   }
@@ -710,7 +710,7 @@ void
 ProxyAccessible::DOMNodeID(nsString& aID)
 {
   aID.Truncate();
-  RefPtr<IGeckoCustom> custom = QueryInterface<IGeckoCustom>(this);
+  RefPtr<IGoannaCustom> custom = QueryInterface<IGoannaCustom>(this);
   if (!custom) {
     return;
   }

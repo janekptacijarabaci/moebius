@@ -55,7 +55,7 @@
 #include "nsGlobalWindow.h"
 #include "nsAboutProtocolUtils.h"
 
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "nsIXULRuntime.h"
 #include "nsJSPrincipals.h"
 
@@ -958,7 +958,7 @@ class Watchdog
         {
             AutoLockWatchdog lock(this);
 
-            // Gecko uses thread private for accounting and has to clean up at thread exit.
+            // Goanna uses thread private for accounting and has to clean up at thread exit.
             // Therefore, even though we don't have a return value from the watchdog, we need to
             // join it on shutdown.
             mThread = PR_CreateThread(PR_USER_THREAD, WatchdogMain, this,
@@ -1301,7 +1301,7 @@ XPCJSContext::InterruptCallback(JSContext* cx)
         return true;
     }
 
-    // Sometimes we get called back during XPConnect initialization, before Gecko
+    // Sometimes we get called back during XPConnect initialization, before Goanna
     // has finished bootstrapping. Avoid crashing in nsContentUtils below.
     if (!nsContentUtils::IsInitialized())
         return true;

@@ -11,7 +11,7 @@
 #include "gfxFailure.h"
 #include "gfxPrefs.h"
 #include "prenv.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "mozilla/gfx/MacIOSurface.h"
 #include "mozilla/widget/CompositorWidget.h"
 

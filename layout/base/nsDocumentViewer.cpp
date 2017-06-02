@@ -2215,7 +2215,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
   StyleBackendType backendType = aDocument->GetStyleBackendType();
 
   StyleSetHandle styleSet;
-  if (backendType == StyleBackendType::Gecko) {
+  if (backendType == StyleBackendType::Goanna) {
     styleSet = new nsStyleSet();
   } else {
     styleSet = new ServoStyleSet();
@@ -2375,7 +2375,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     }
   }
 
-  if (styleSet->IsGecko()) {
+  if (styleSet->IsGoanna()) {
     nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
     if (sheetService) {
       for (StyleSheet* sheet : *sheetService->AgentStyleSheets()) {

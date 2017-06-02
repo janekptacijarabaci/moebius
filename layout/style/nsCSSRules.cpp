@@ -214,7 +214,7 @@ GroupRuleRuleList::GetParentObject()
     return nullptr;
   }
   StyleSheet* sheet = mGroupRule->GetStyleSheet();
-  return sheet ? sheet->AsGecko() : nullptr;
+  return sheet ? sheet->AsGoanna() : nullptr;
 }
 
 uint32_t
@@ -536,7 +536,7 @@ GroupRule::AppendStyleRule(Rule* aRule)
   aRule->SetStyleSheet(sheet);
   aRule->SetParentRule(this);
   if (sheet) {
-    sheet->AsGecko()->SetModifiedByChildRule();
+    sheet->AsGoanna()->SetModifiedByChildRule();
   }
 }
 
@@ -644,7 +644,7 @@ GroupRule::InsertRule(const nsAString& aRule, uint32_t aIndex, ErrorResult& aRv)
 
   uint32_t retval;
   nsresult rv =
-    sheet->AsGecko()->InsertRuleIntoGroup(aRule, this, aIndex, &retval);
+    sheet->AsGoanna()->InsertRuleIntoGroup(aRule, this, aIndex, &retval);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
     return 0;
@@ -677,7 +677,7 @@ GroupRule::DeleteRule(uint32_t aIndex, ErrorResult& aRv)
   NS_ASSERTION(uint32_t(mRules.Count()) <= INT32_MAX,
                "Too many style rules!");
 
-  nsresult rv = sheet->AsGecko()->DeleteRuleFromGroup(this, aIndex);
+  nsresult rv = sheet->AsGoanna()->DeleteRuleFromGroup(this, aIndex);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
   }
@@ -756,7 +756,7 @@ MediaRule::SetStyleSheet(StyleSheet* aSheet)
     // Set to null so it knows it's leaving one sheet and joining another.
     mMedia->SetStyleSheet(nullptr);
     if (aSheet) {
-      mMedia->SetStyleSheet(aSheet->AsGecko());
+      mMedia->SetStyleSheet(aSheet->AsGoanna());
     }
   }
 
@@ -2056,7 +2056,7 @@ nsresult
 nsCSSKeyframeStyleDeclaration::SetCSSDeclaration(DeclarationBlock* aDecl)
 {
   MOZ_ASSERT(aDecl, "must be non-null");
-  mRule->ChangeDeclaration(aDecl->AsGecko());
+  mRule->ChangeDeclaration(aDecl->AsGoanna());
   return NS_OK;
 }
 
@@ -2213,7 +2213,7 @@ nsCSSKeyframeRule::SetKeyText(const nsAString& aKeyText)
   newSelectors.SwapElements(mKeys);
 
   if (StyleSheet* sheet = GetStyleSheet()) {
-    sheet->AsGecko()->SetModifiedByChildRule();
+    sheet->AsGoanna()->SetModifiedByChildRule();
     if (doc) {
       doc->StyleRuleChanged(sheet, this);
     }
@@ -2254,7 +2254,7 @@ nsCSSKeyframeRule::ChangeDeclaration(css::Declaration* aDeclaration)
   }
 
   if (StyleSheet* sheet = GetStyleSheet()) {
-    sheet->AsGecko()->SetModifiedByChildRule();
+    sheet->AsGoanna()->SetModifiedByChildRule();
     if (doc) {
       doc->StyleRuleChanged(sheet, this);
     }
@@ -2377,7 +2377,7 @@ nsCSSKeyframesRule::SetName(const nsAString& aName)
   mName = aName;
 
   if (StyleSheet* sheet = GetStyleSheet()) {
-    sheet->AsGecko()->SetModifiedByChildRule();
+    sheet->AsGoanna()->SetModifiedByChildRule();
     if (doc) {
       doc->StyleRuleChanged(sheet, this);
     }
@@ -2410,7 +2410,7 @@ nsCSSKeyframesRule::AppendRule(const nsAString& aRule)
     AppendStyleRule(rule);
 
     if (StyleSheet* sheet = GetStyleSheet()) {
-      sheet->AsGecko()->SetModifiedByChildRule();
+      sheet->AsGoanna()->SetModifiedByChildRule();
       if (doc) {
         doc->StyleRuleChanged(sheet, this);
       }
@@ -2456,7 +2456,7 @@ nsCSSKeyframesRule::DeleteRule(const nsAString& aKey)
     DeleteStyleRuleAt(index);
 
     if (StyleSheet* sheet = GetStyleSheet()) {
-      sheet->AsGecko()->SetModifiedByChildRule();
+      sheet->AsGoanna()->SetModifiedByChildRule();
 
       if (doc) {
         doc->StyleRuleChanged(sheet, this);
@@ -2565,7 +2565,7 @@ nsresult
 nsCSSPageStyleDeclaration::SetCSSDeclaration(DeclarationBlock* aDecl)
 {
   MOZ_ASSERT(aDecl, "must be non-null");
-  mRule->ChangeDeclaration(aDecl->AsGecko());
+  mRule->ChangeDeclaration(aDecl->AsGoanna());
   return NS_OK;
 }
 
@@ -2703,7 +2703,7 @@ nsCSSPageRule::ChangeDeclaration(css::Declaration* aDeclaration)
   }
 
   if (StyleSheet* sheet = GetStyleSheet()) {
-    sheet->AsGecko()->SetModifiedByChildRule();
+    sheet->AsGoanna()->SetModifiedByChildRule();
   }
 }
 
@@ -2987,7 +2987,7 @@ nsCSSCounterStyleRule::SetName(const nsAString& aName)
     mName = name;
 
     if (StyleSheet* sheet = GetStyleSheet()) {
-      sheet->AsGecko()->SetModifiedByChildRule();
+      sheet->AsGoanna()->SetModifiedByChildRule();
       if (doc) {
         doc->StyleRuleChanged(sheet, this);
       }
@@ -3032,7 +3032,7 @@ nsCSSCounterStyleRule::SetDesc(nsCSSCounterDesc aDescID, const nsCSSValue& aValu
   mGeneration++;
 
   if (StyleSheet* sheet = GetStyleSheet()) {
-    sheet->AsGecko()->SetModifiedByChildRule();
+    sheet->AsGoanna()->SetModifiedByChildRule();
     if (doc) {
       doc->StyleRuleChanged(sheet, this);
     }

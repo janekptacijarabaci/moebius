@@ -11,7 +11,7 @@
 
 namespace mozilla {
 
-// Tagged union between Gecko Rule Nodes and Servo Computed Values.
+// Tagged union between Goanna Rule Nodes and Servo Computed Values.
 //
 // The rule node is the node in the lexicographic tree of rule nodes
 // (the "rule tree") that indicates which style rules are used to
@@ -34,24 +34,24 @@ struct NonOwningStyleContextSource
 
   bool operator==(const NonOwningStyleContextSource& aOther) const {
     MOZ_ASSERT(IsServoComputedValues() == aOther.IsServoComputedValues(),
-               "Comparing Servo to Gecko - probably a bug");
+               "Comparing Servo to Goanna - probably a bug");
     return mBits == aOther.mBits;
   }
   bool operator!=(const NonOwningStyleContextSource& aOther) const {
     return !(*this == aOther);
   }
 
-  // We intentionally avoid exposing IsGeckoRuleNode() here, because that would
+  // We intentionally avoid exposing IsGoannaRuleNode() here, because that would
   // encourage callers to do:
   //
-  // if (source.IsGeckoRuleNode()) {
+  // if (source.IsGoannaRuleNode()) {
   //   // Code that we would run unconditionally if it weren't for Servo.
   // }
   //
   // We want these branches to compile away when MOZ_STYLO is disabled, but that
   // won't happen if there's an implicit null-check.
   bool IsNull() const { return !mBits; }
-  bool IsGeckoRuleNodeOrNull() const { return !IsServoComputedValues(); }
+  bool IsGoannaRuleNodeOrNull() const { return !IsServoComputedValues(); }
   bool IsServoComputedValues() const {
 #ifdef MOZ_STYLO
     return mBits & 1;
@@ -60,8 +60,8 @@ struct NonOwningStyleContextSource
 #endif
   }
 
-  nsRuleNode* AsGeckoRuleNode() const {
-    MOZ_ASSERT(IsGeckoRuleNodeOrNull() && !IsNull());
+  nsRuleNode* AsGoannaRuleNode() const {
+    MOZ_ASSERT(IsGoannaRuleNodeOrNull() && !IsNull());
     return reinterpret_cast<nsRuleNode*>(mBits);
   }
 
@@ -71,8 +71,8 @@ struct NonOwningStyleContextSource
   }
 
   bool MatchesNoRules() const {
-    if (IsGeckoRuleNodeOrNull()) {
-      return AsGeckoRuleNode()->IsRoot();
+    if (IsGoannaRuleNodeOrNull()) {
+      return AsGoannaRuleNode()->IsRoot();
     }
 
     // Just assume a Servo-backed StyleContextSource always matches some rules.
@@ -122,8 +122,8 @@ struct OwningStyleContextSource
     MOZ_COUNT_DTOR(OwningStyleContextSource);
     if (mRaw.IsNull()) {
       // We must have invoked the move constructor.
-    } else if (IsGeckoRuleNode()) {
-      RefPtr<nsRuleNode> releaseme = dont_AddRef(AsGeckoRuleNode());
+    } else if (IsGoannaRuleNode()) {
+      RefPtr<nsRuleNode> releaseme = dont_AddRef(AsGoannaRuleNode());
     } else {
       MOZ_ASSERT(IsServoComputedValues());
       RefPtr<ServoComputedValues> releaseme =
@@ -138,14 +138,14 @@ struct OwningStyleContextSource
     return !(*this == aOther);
   }
   bool IsNull() const { return mRaw.IsNull(); }
-  bool IsGeckoRuleNode() const {
+  bool IsGoannaRuleNode() const {
     MOZ_ASSERT(!mRaw.IsNull());
-    return mRaw.IsGeckoRuleNodeOrNull();
+    return mRaw.IsGoannaRuleNodeOrNull();
   }
   bool IsServoComputedValues() const { return mRaw.IsServoComputedValues(); }
 
   NonOwningStyleContextSource AsRaw() const { return mRaw; }
-  nsRuleNode* AsGeckoRuleNode() const { return mRaw.AsGeckoRuleNode(); }
+  nsRuleNode* AsGoannaRuleNode() const { return mRaw.AsGoannaRuleNode(); }
   ServoComputedValues* AsServoComputedValues() const {
     return const_cast<ServoComputedValues*>(mRaw.AsServoComputedValues());
   }

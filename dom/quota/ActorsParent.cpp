@@ -24,7 +24,7 @@
 #include "nsPIDOMWindow.h"
 
 #include <algorithm>
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CondVar.h"

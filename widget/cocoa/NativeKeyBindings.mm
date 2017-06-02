@@ -70,7 +70,7 @@ NativeKeyBindings::Init(NativeKeyBindingsType aType)
   MOZ_LOG(gNativeKeyBindingsLog, LogLevel::Info,
     ("%p NativeKeyBindings::Init", this));
 
-  // Many selectors have a one-to-one mapping to a Gecko command. Those mappings
+  // Many selectors have a one-to-one mapping to a Goanna command. Those mappings
   // are registered in mSelectorToCommand.
 
   // Selectors from NSResponder's "Responding to Action Messages" section and
@@ -228,7 +228,7 @@ NativeKeyBindings::Execute(const WidgetKeyboardEvent& aEvent,
     ("%p NativeKeyBindings::KeyPress, bindingCommands=%u",
      this, bindingCommands.Length()));
 
-  AutoTArray<Command, 4> geckoCommands;
+  AutoTArray<Command, 4> goannaCommands;
 
   for (uint32_t i = 0; i < bindingCommands.Length(); i++) {
     SEL selector = bindingCommands[i].selector;
@@ -244,42 +244,42 @@ NativeKeyBindings::Execute(const WidgetKeyboardEvent& aEvent,
     }
 
     // Try to find a simple mapping in the hashtable
-    Command geckoCommand = static_cast<Command>(mSelectorToCommand.Get(
+    Command goannaCommand = static_cast<Command>(mSelectorToCommand.Get(
       reinterpret_cast<struct objc_selector*>(selector)));
 
-    if (geckoCommand) {
-      geckoCommands.AppendElement(geckoCommand);
+    if (goannaCommand) {
+      goannaCommands.AppendElement(goannaCommand);
     } else if (selector == @selector(selectLine:)) {
       // This is functional, but Cocoa's version is direction-less in that
       // selection direction is not determined until some future directed action
       // is taken. See bug 282097, comment 79 for more details.
-      geckoCommands.AppendElement(CommandBeginLine);
-      geckoCommands.AppendElement(CommandSelectEndLine);
+      goannaCommands.AppendElement(CommandBeginLine);
+      goannaCommands.AppendElement(CommandSelectEndLine);
     } else if (selector == @selector(selectWord:)) {
       // This is functional, but Cocoa's version is direction-less in that
       // selection direction is not determined until some future directed action
       // is taken. See bug 282097, comment 79 for more details.
-      geckoCommands.AppendElement(CommandWordPrevious);
-      geckoCommands.AppendElement(CommandSelectWordNext);
+      goannaCommands.AppendElement(CommandWordPrevious);
+      goannaCommands.AppendElement(CommandSelectWordNext);
     }
   }
 
-  if (geckoCommands.IsEmpty()) {
+  if (goannaCommands.IsEmpty()) {
     MOZ_LOG(gNativeKeyBindingsLog, LogLevel::Info,
       ("%p NativeKeyBindings::KeyPress, handled=false", this));
 
     return false;
   }
 
-  for (uint32_t i = 0; i < geckoCommands.Length(); i++) {
-    Command geckoCommand = geckoCommands[i];
+  for (uint32_t i = 0; i < goannaCommands.Length(); i++) {
+    Command goannaCommand = goannaCommands[i];
 
     MOZ_LOG(gNativeKeyBindingsLog, LogLevel::Info,
       ("%p NativeKeyBindings::KeyPress, command=%s",
-       this, WidgetKeyboardEvent::GetCommandStr(geckoCommand)));
+       this, WidgetKeyboardEvent::GetCommandStr(goannaCommand)));
 
-    // Execute the Gecko command
-    aCallback(geckoCommand, aCallbackData);
+    // Execute the Goanna command
+    aCallback(goannaCommand, aCallbackData);
   }
 
   MOZ_LOG(gNativeKeyBindingsLog, LogLevel::Info,

@@ -1950,8 +1950,8 @@ nsPresContext::MediaFeatureValuesChanged(nsRestyleHint aRestyleHint,
   if (mShell) {
     // XXXheycam ServoStyleSets don't support responding to medium
     // changes yet.
-    if (mShell->StyleSet()->IsGecko()) {
-      if (mShell->StyleSet()->AsGecko()->MediumFeaturesChanged()) {
+    if (mShell->StyleSet()->IsGoanna()) {
+      if (mShell->StyleSet()->AsGoanna()->MediumFeaturesChanged()) {
         aRestyleHint |= eRestyle_Subtree;
       }
     } else {
@@ -2235,7 +2235,7 @@ nsPresContext::NotifyMissingFonts()
 void
 nsPresContext::EnsureSafeToHandOutCSSRules()
 {
-  nsStyleSet* styleSet = mShell->StyleSet()->GetAsGecko();
+  nsStyleSet* styleSet = mShell->StyleSet()->GetAsGoanna();
   if (!styleSet) {
     // ServoStyleSets do not need to handle copy-on-write style sheet
     // innards like with CSSStyleSheets.
@@ -2581,7 +2581,7 @@ nsPresContext::HasCachedStyleData()
     return false;
   }
 
-  nsStyleSet* styleSet = mShell->StyleSet()->GetAsGecko();
+  nsStyleSet* styleSet = mShell->StyleSet()->GetAsGoanna();
   if (!styleSet) {
     // XXXheycam ServoStyleSets do not use the rule tree, so just assume for now
     // that we need to restyle when e.g. dppx changes assuming we're sufficiently
@@ -2614,38 +2614,38 @@ enum InterruptMode {
   ModeCounter,
   ModeEvent
 };
-// Controlled by the GECKO_REFLOW_INTERRUPT_MODE env var; allowed values are
+// Controlled by the GOANNA_REFLOW_INTERRUPT_MODE env var; allowed values are
 // "random" (except on Windows) or "counter".  If neither is used, the mode is
 // ModeEvent.
 static InterruptMode sInterruptMode = ModeEvent;
 #ifndef XP_WIN
-// Used for the "random" mode.  Controlled by the GECKO_REFLOW_INTERRUPT_SEED
+// Used for the "random" mode.  Controlled by the GOANNA_REFLOW_INTERRUPT_SEED
 // env var.
 static uint32_t sInterruptSeed = 1;
 #endif
 // Used for the "counter" mode.  This is the number of unskipped interrupt
 // checks that have to happen before we interrupt.  Controlled by the
-// GECKO_REFLOW_INTERRUPT_FREQUENCY env var.
+// GOANNA_REFLOW_INTERRUPT_FREQUENCY env var.
 static uint32_t sInterruptMaxCounter = 10;
 // Used for the "counter" mode.  This counts up to sInterruptMaxCounter and is
 // then reset to 0.
 static uint32_t sInterruptCounter;
 // Number of interrupt checks to skip before really trying to interrupt.
-// Controlled by the GECKO_REFLOW_INTERRUPT_CHECKS_TO_SKIP env var.
+// Controlled by the GOANNA_REFLOW_INTERRUPT_CHECKS_TO_SKIP env var.
 static uint32_t sInterruptChecksToSkip = 200;
 // Number of milliseconds that a reflow should be allowed to run for before we
 // actually allow interruption.  Controlled by the
-// GECKO_REFLOW_MIN_NOINTERRUPT_DURATION env var.  Can't be initialized here,
+// GOANNA_REFLOW_MIN_NOINTERRUPT_DURATION env var.  Can't be initialized here,
 // because TimeDuration/TimeStamp is not safe to use in static constructors..
 static TimeDuration sInterruptTimeout;
 
 static void GetInterruptEnv()
 {
-  char *ev = PR_GetEnv("GECKO_REFLOW_INTERRUPT_MODE");
+  char *ev = PR_GetEnv("GOANNA_REFLOW_INTERRUPT_MODE");
   if (ev) {
 #ifndef XP_WIN
     if (PL_strcasecmp(ev, "random") == 0) {
-      ev = PR_GetEnv("GECKO_REFLOW_INTERRUPT_SEED");
+      ev = PR_GetEnv("GOANNA_REFLOW_INTERRUPT_SEED");
       if (ev) {
         sInterruptSeed = atoi(ev);
       }
@@ -2654,7 +2654,7 @@ static void GetInterruptEnv()
     } else
 #endif
       if (PL_strcasecmp(ev, "counter") == 0) {
-      ev = PR_GetEnv("GECKO_REFLOW_INTERRUPT_FREQUENCY");
+      ev = PR_GetEnv("GOANNA_REFLOW_INTERRUPT_FREQUENCY");
       if (ev) {
         sInterruptMaxCounter = atoi(ev);
       }
@@ -2662,12 +2662,12 @@ static void GetInterruptEnv()
       sInterruptMode = ModeCounter;
     }
   }
-  ev = PR_GetEnv("GECKO_REFLOW_INTERRUPT_CHECKS_TO_SKIP");
+  ev = PR_GetEnv("GOANNA_REFLOW_INTERRUPT_CHECKS_TO_SKIP");
   if (ev) {
     sInterruptChecksToSkip = atoi(ev);
   }
 
-  ev = PR_GetEnv("GECKO_REFLOW_MIN_NOINTERRUPT_DURATION");
+  ev = PR_GetEnv("GOANNA_REFLOW_MIN_NOINTERRUPT_DURATION");
   int duration_ms = ev ? atoi(ev) : 100;
   sInterruptTimeout = TimeDuration::FromMilliseconds(duration_ms);
 }

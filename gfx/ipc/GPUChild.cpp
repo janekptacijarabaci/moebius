@@ -126,7 +126,7 @@ mozilla::ipc::IPCResult
 GPUChild::RecvInitCrashReporter(Shmem&& aShmem)
 {
 #ifdef MOZ_CRASHREPORTER
-  mCrashReporter = MakeUnique<ipc::CrashReporterHost>(GeckoProcessType_GPU, aShmem);
+  mCrashReporter = MakeUnique<ipc::CrashReporterHost>(GoannaProcessType_GPU, aShmem);
 #endif
   return IPC_OK();
 }
@@ -145,28 +145,28 @@ GPUChild::RecvNotifyUiObservers(const nsCString& aTopic)
 mozilla::ipc::IPCResult
 GPUChild::RecvAccumulateChildHistogram(InfallibleTArray<Accumulation>&& aAccumulations)
 {
-  Telemetry::AccumulateChild(GeckoProcessType_GPU, aAccumulations);
+  Telemetry::AccumulateChild(GoannaProcessType_GPU, aAccumulations);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
 GPUChild::RecvAccumulateChildKeyedHistogram(InfallibleTArray<KeyedAccumulation>&& aAccumulations)
 {
-  Telemetry::AccumulateChildKeyed(GeckoProcessType_GPU, aAccumulations);
+  Telemetry::AccumulateChildKeyed(GoannaProcessType_GPU, aAccumulations);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
 GPUChild::RecvUpdateChildScalars(InfallibleTArray<ScalarAction>&& aScalarActions)
 {
-  Telemetry::UpdateChildScalars(GeckoProcessType_GPU, aScalarActions);
+  Telemetry::UpdateChildScalars(GoannaProcessType_GPU, aScalarActions);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
 GPUChild::RecvUpdateChildKeyedScalars(InfallibleTArray<KeyedScalarAction>&& aScalarActions)
 {
-  Telemetry::UpdateChildKeyedScalars(GeckoProcessType_GPU, aScalarActions);
+  Telemetry::UpdateChildKeyedScalars(GoannaProcessType_GPU, aScalarActions);
   return IPC_OK();
 }
 
@@ -188,7 +188,7 @@ GPUChild::ActorDestroy(ActorDestroyReason aWhy)
     }
 #endif
     Telemetry::Accumulate(Telemetry::SUBPROCESS_ABNORMAL_ABORT,
-        nsDependentCString(XRE_ChildProcessTypeToString(GeckoProcessType_GPU), 1));
+        nsDependentCString(XRE_ChildProcessTypeToString(GoannaProcessType_GPU), 1));
 
     // Notify the Telemetry environment so that we can refresh and do a subsession split
     if (nsCOMPtr<nsIObserverService> obsvc = services::GetObserverService()) {

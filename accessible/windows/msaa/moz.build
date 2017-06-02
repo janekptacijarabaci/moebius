@@ -23,7 +23,7 @@ UNIFIED_SOURCES += [
     'Compatibility.cpp',
     'DocAccessibleWrap.cpp',
     'EnumVariant.cpp',
-    'GeckoCustom.cpp',
+    'GoannaCustom.cpp',
     'HTMLTableAccessibleWrap.cpp',
     'HTMLWin32ObjectAccessible.cpp',
     'HyperTextAccessibleWrap.cpp',

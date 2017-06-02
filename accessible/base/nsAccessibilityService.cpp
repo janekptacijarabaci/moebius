@@ -733,9 +733,9 @@ nsAccessibilityService::RecreateAccessible(nsIPresShell* aPresShell,
 void
 nsAccessibilityService::GetStringRole(uint32_t aRole, nsAString& aString)
 {
-#define ROLE(geckoRole, stringRole, atkRole, \
+#define ROLE(goannaRole, stringRole, atkRole, \
              macRole, msaaRole, ia2Role, nameRule) \
-  case roles::geckoRole: \
+  case roles::goannaRole: \
     CopyUTF8toUTF16(stringRole, aString); \
     return;
 
@@ -935,9 +935,9 @@ nsAccessibilityService::GetStringRelationType(uint32_t aRelationType,
 {
   NS_ENSURE_TRUE_VOID(aRelationType <= static_cast<uint32_t>(RelationType::LAST));
 
-#define RELATIONTYPE(geckoType, geckoTypeName, atkType, msaaType, ia2Type) \
-  case RelationType::geckoType: \
-    aString.AssignLiteral(geckoTypeName); \
+#define RELATIONTYPE(goannaType, goannaTypeName, atkType, msaaType, ia2Type) \
+  case RelationType::goannaType: \
+    aString.AssignLiteral(goannaTypeName); \
     return;
 
   RelationType relationType = static_cast<RelationType>(aRelationType);

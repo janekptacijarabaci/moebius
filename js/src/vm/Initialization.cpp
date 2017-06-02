@@ -137,7 +137,7 @@ JS_ShutDown(void)
                "JS_ShutDown must only be called after JS_Init and can't race with it");
 #ifdef DEBUG
     if (JSRuntime::hasLiveRuntimes()) {
-        // Gecko is too buggy to assert this just yet.
+        // Goanna is too buggy to assert this just yet.
         fprintf(stderr,
                 "WARNING: YOU ARE LEAKING THE WORLD (at least one JSRuntime "
                 "and everything alive inside it, that is) AT JS_ShutDown "

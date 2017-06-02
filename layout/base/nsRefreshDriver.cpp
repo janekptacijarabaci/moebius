@@ -42,7 +42,7 @@
 #include "mozilla/PendingAnimationTracker.h"
 #include "mozilla/Preferences.h"
 #include "nsViewManager.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "nsNPAPIPluginInstance.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/WindowBinding.h"
@@ -315,7 +315,7 @@ protected:
 
     LOG("[%p] ticking drivers...", this);
     // RD is short for RefreshDriver
-    GeckoProfilerTracingRAII tracer("Paint", "RD");
+    GoannaProfilerTracingRAII tracer("Paint", "RD");
 
     TickRefreshDrivers(jsnow, now, mContentRefreshDrivers);
     TickRefreshDrivers(jsnow, now, mRootRefreshDrivers);
@@ -1685,7 +1685,7 @@ nsRefreshDriver::RunFrameRequestCallbacks(TimeStamp aNowTime)
   mFrameRequestCallbackDocs.Clear();
 
   if (!frameRequestCallbacks.IsEmpty()) {
-    GeckoProfilerTracingRAII tracer("Paint", "Scripts");
+    GoannaProfilerTracingRAII tracer("Paint", "Scripts");
     for (const DocumentFrameCallbacks& docCallbacks : frameRequestCallbacks) {
       // XXXbz Bug 863140: GetInnerWindow can return the outer
       // window in some cases.
@@ -1813,7 +1813,7 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
       RunFrameRequestCallbacks(aNowTime);
 
       if (mPresContext && mPresContext->GetPresShell()) {
-        Maybe<GeckoProfilerTracingRAII> tracingStyleFlush;
+        Maybe<GoannaProfilerTracingRAII> tracingStyleFlush;
         AutoTArray<nsIPresShell*, 16> observers;
         observers.AppendElements(mStyleFlushObservers);
         for (uint32_t j = observers.Length();
@@ -1847,7 +1847,7 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
       }
     } else if  (i == 1) {
       // This is the FlushType::Layout case.
-      Maybe<GeckoProfilerTracingRAII> tracingLayoutFlush;
+      Maybe<GoannaProfilerTracingRAII> tracingLayoutFlush;
       AutoTArray<nsIPresShell*, 16> observers;
       observers.AppendElements(mLayoutFlushObservers);
       for (uint32_t j = observers.Length();
@@ -2104,7 +2104,7 @@ nsRefreshDriver::FinishedWaitingForTransaction()
   if (mSkippedPaints &&
       !IsInRefresh() &&
       (ObserverCount() || ImageRequestCount())) {
-    GeckoProfilerTracingRAII tracer("Paint", "RD");
+    GoannaProfilerTracingRAII tracer("Paint", "RD");
     DoRefresh();
   }
   mSkippedPaints = false;

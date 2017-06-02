@@ -7,7 +7,7 @@
 #define GMPService_h_
 
 #include "nsString.h"
-#include "mozIGeckoMediaPluginService.h"
+#include "mozIGoannaMediaPluginService.h"
 #include "nsIObserver.h"
 #include "nsTArray.h"
 #include "mozilla/Attributes.h"
@@ -36,17 +36,17 @@ namespace gmp {
 
 typedef MozPromise<RefPtr<GMPContentParent::CloseBlocker>, nsresult, /* IsExclusive = */ true> GetGMPContentParentPromise;
 
-class GeckoMediaPluginService : public mozIGeckoMediaPluginService
+class GoannaMediaPluginService : public mozIGoannaMediaPluginService
                               , public nsIObserver
 {
 public:
-  static already_AddRefed<GeckoMediaPluginService> GetGeckoMediaPluginService();
+  static already_AddRefed<GoannaMediaPluginService> GetGoannaMediaPluginService();
 
   virtual nsresult Init();
 
   NS_DECL_THREADSAFE_ISUPPORTS
 
-  // mozIGeckoMediaPluginService
+  // mozIGoannaMediaPluginService
   NS_IMETHOD GetThread(nsIThread** aThread) override;
   NS_IMETHOD GetDecryptingGMPVideoDecoder(GMPCrashHelper* aHelper,
                                           nsTArray<nsCString>* aTags,
@@ -84,8 +84,8 @@ public:
   void DisconnectCrashHelper(GMPCrashHelper* aHelper);
 
 protected:
-  GeckoMediaPluginService();
-  virtual ~GeckoMediaPluginService();
+  GoannaMediaPluginService();
+  virtual ~GoannaMediaPluginService();
 
   virtual void InitializePlugins(AbstractThread* aAbstractGMPThread) = 0;
 

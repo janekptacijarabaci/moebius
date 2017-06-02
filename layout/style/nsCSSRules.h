@@ -64,7 +64,7 @@ public:
   mozilla::CSSStyleSheet* GetStyleSheet() const
   {
     mozilla::StyleSheet* sheet = GroupRule::GetStyleSheet();
-    return sheet ? sheet->AsGecko() : nullptr;
+    return sheet ? sheet->AsGoanna() : nullptr;
   }
   virtual int32_t GetType() const override;
   using Rule::GetType;

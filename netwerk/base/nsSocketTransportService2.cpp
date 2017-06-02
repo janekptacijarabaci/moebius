@@ -29,7 +29,7 @@
 #include "mozilla/dom/FlyWebService.h"
 
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracer.h"
+#include "GoannaTaskTracer.h"
 #endif
 
 namespace mozilla {

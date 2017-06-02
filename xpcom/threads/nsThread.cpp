@@ -38,7 +38,7 @@
 #include "nsIIncrementalRunnable.h"
 #include "nsThreadSyncDispatch.h"
 #include "LeakRefPtr.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 #ifdef MOZ_CRASHREPORTER
 #include "nsServiceManagerUtils.h"
@@ -82,7 +82,7 @@
 #endif
 
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracer.h"
+#include "GoannaTaskTracer.h"
 #include "TracedTaskCommon.h"
 using namespace mozilla::tasktracer;
 #endif

@@ -48,7 +48,7 @@
 #include <pthread.h>
 #include <wchar.h>
 
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #ifdef MOZ_ANDROID_HISTORY
 #include "nsNetUtil.h"
 #include "nsIURI.h"
@@ -67,9 +67,9 @@
 #include "AndroidAlerts.h"
 #include "AndroidUiThread.h"
 #include "ANRReporter.h"
-#include "GeckoBatteryManager.h"
-#include "GeckoNetworkManager.h"
-#include "GeckoScreenOrientation.h"
+#include "GoannaBatteryManager.h"
+#include "GoannaNetworkManager.h"
+#include "GoannaScreenOrientation.h"
 #include "PrefsHelper.h"
 #include "fennec/MemoryMonitor.h"
 #include "fennec/Telemetry.h"
@@ -101,7 +101,7 @@ public:
   NS_DECL_ISUPPORTS;
 
   nsresult Callback(const nsAString& topic, const nsAString& state) override {
-    java::GeckoAppShell::NotifyWakeLockChanged(topic, state);
+    java::GoannaAppShell::NotifyWakeLockChanged(topic, state);
     return NS_OK;
   }
 };
@@ -111,8 +111,8 @@ nsCOMPtr<nsIPowerManagerService> sPowerManagerService = nullptr;
 StaticRefPtr<WakeLockListener> sWakeLockListener;
 
 
-class GeckoThreadSupport final
-    : public java::GeckoThread::Natives<GeckoThreadSupport>
+class GoannaThreadSupport final
+    : public java::GoannaThread::Natives<GoannaThreadSupport>
 {
     // When this number goes above 0, the app is paused. When less than or
     // equal to zero, the app is resumed.
@@ -124,7 +124,7 @@ public:
         if (!NS_IsMainThread()) {
             // We will be on the main thread if the call was queued on the Java
             // side during startup. Otherwise, the call was not queued, which
-            // means Gecko is already sufficiently loaded, and we don't really
+            // means Goanna is already sufficiently loaded, and we don't really
             // care about speculative connections at this point.
             return;
         }
@@ -142,7 +142,7 @@ public:
         specConn->SpeculativeConnect(uri, nullptr);
     }
 
-    static void WaitOnGecko()
+    static void WaitOnGoanna()
     {
         struct NoOpEvent : nsAppShell::Event {
             void Run() override {}
@@ -232,11 +232,11 @@ public:
     }
 };
 
-int32_t GeckoThreadSupport::sPauseCount;
+int32_t GoannaThreadSupport::sPauseCount;
 
 
-class GeckoAppShellSupport final
-    : public java::GeckoAppShell::Natives<GeckoAppShellSupport>
+class GoannaAppShellSupport final
+    : public java::GoannaAppShell::Natives<GoannaAppShellSupport>
 {
 public:
     static void ReportJavaCrash(const jni::Class::LocalRef& aCls,
@@ -325,7 +325,7 @@ public:
             break;
 
         default:
-            __android_log_print(ANDROID_LOG_ERROR, "Gecko",
+            __android_log_print(ANDROID_LOG_ERROR, "Goanna",
                                 "Unknown sensor type %d", aType);
         }
 
@@ -395,13 +395,13 @@ nsAppShell::nsAppShell()
     }
 
     if (jni::IsAvailable()) {
-        // Initialize JNI and Set the corresponding state in GeckoThread.
+        // Initialize JNI and Set the corresponding state in GoannaThread.
         AndroidBridge::ConstructBridge();
-        GeckoAppShellSupport::Init();
-        GeckoThreadSupport::Init();
-        mozilla::GeckoBatteryManager::Init();
-        mozilla::GeckoNetworkManager::Init();
-        mozilla::GeckoScreenOrientation::Init();
+        GoannaAppShellSupport::Init();
+        GoannaThreadSupport::Init();
+        mozilla::GoannaBatteryManager::Init();
+        mozilla::GoannaNetworkManager::Init();
+        mozilla::GoannaScreenOrientation::Init();
         mozilla::PrefsHelper::Init();
         nsWindow::InitNatives();
 
@@ -412,7 +412,7 @@ nsAppShell::nsAppShell()
             mozilla::ThumbnailHelper::Init();
         }
 
-        java::GeckoThread::SetState(java::GeckoThread::State::JNI_READY());
+        java::GoannaThread::SetState(java::GoannaThread::State::JNI_READY());
 
         CreateAndroidUiThread();
     }
@@ -554,17 +554,17 @@ nsAppShell::Observe(nsISupports* aSubject,
         if (jni::IsAvailable()) {
             // See if we want to force 16-bit color before doing anything
             if (Preferences::GetBool("gfx.android.rgb16.force", false)) {
-                java::GeckoAppShell::SetScreenDepthOverride(16);
+                java::GoannaAppShell::SetScreenDepthOverride(16);
             }
 
-            java::GeckoThread::SetState(
-                    java::GeckoThread::State::PROFILE_READY());
+            java::GoannaThread::SetState(
+                    java::GoannaThread::State::PROFILE_READY());
 
-            // Gecko on Android follows the Android app model where it never
+            // Goanna on Android follows the Android app model where it never
             // stops until it is killed by the system or told explicitly to
-            // quit. Therefore, we should *not* exit Gecko when there is no
+            // quit. Therefore, we should *not* exit Goanna when there is no
             // window or the last window is closed. nsIAppStartup::Quit will
-            // still force Gecko to exit.
+            // still force Goanna to exit.
             nsCOMPtr<nsIAppStartup> appStartup =
                 do_GetService(NS_APPSTARTUP_CONTRACTID);
             if (appStartup) {
@@ -591,18 +591,18 @@ nsAppShell::Observe(nsISupports* aSubject,
             widget->GetNativeData(NS_NATIVE_WIDGET) == widget) {
             if (jni::IsAvailable()) {
                 // When our first window has loaded, assume any JS
-                // initialization has run and set Gecko to ready.
-                java::GeckoThread::CheckAndSetState(
-                        java::GeckoThread::State::PROFILE_READY(),
-                        java::GeckoThread::State::RUNNING());
+                // initialization has run and set Goanna to ready.
+                java::GoannaThread::CheckAndSetState(
+                        java::GoannaThread::State::PROFILE_READY(),
+                        java::GoannaThread::State::RUNNING());
             }
             removeObserver = true;
         }
 
     } else if (!strcmp(aTopic, "quit-application-granted")) {
         if (jni::IsAvailable()) {
-            java::GeckoThread::SetState(
-                    java::GeckoThread::State::EXITING());
+            java::GoannaThread::SetState(
+                    java::GoannaThread::State::EXITING());
 
             // We are told explicitly to quit, perhaps due to
             // nsIAppStartup::Quit being called. We should release our hold on
@@ -646,7 +646,7 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
 
         if (!curEvent && mayWait) {
             // This processes messages in the Android Looper. Note that we only
-            // get here if the normal Gecko event loop has been awoken
+            // get here if the normal Goanna event loop has been awoken
             // (bug 750713). Looper messages effectively have the lowest
             // priority because we only process them before we're about to
             // wait for new events.
@@ -676,7 +676,7 @@ void
 nsAppShell::SyncRunEvent(Event&& event,
                          UniquePtr<Event>(*eventFactory)(UniquePtr<Event>&&))
 {
-    // Perform the call on the Gecko thread in a separate lambda, and wait
+    // Perform the call on the Goanna thread in a separate lambda, and wait
     // on the monitor on the current thread.
     MOZ_ASSERT(!NS_IsMainThread());
 

@@ -894,7 +894,7 @@ VARIABLES = {
         """),
 
     'ANDROID_APK_PACKAGE': (unicode, unicode,
-        """The name of the Android package to generate R.java for, like org.mozilla.gecko.
+        """The name of the Android package to generate R.java for, like org.mozilla.goanna.
         """),
 
     'ANDROID_EXTRA_PACKAGES': (StrictOrderingOnAppendList, list,

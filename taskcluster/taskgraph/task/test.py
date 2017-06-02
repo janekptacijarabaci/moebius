@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class TestTask(transform.TransformTask):
     """
-    A task implementing a Gecko test.
+    A task implementing a Goanna test.
     """
 
     @classmethod

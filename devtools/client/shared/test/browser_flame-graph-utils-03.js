@@ -84,12 +84,12 @@ var EXPECTED_OUTPUT = [{
 }, {
   blocks: [{
     startTime: 0,
-    frameKey: "Gecko",
+    frameKey: "Goanna",
     x: 0,
     y: 45,
     width: 50,
     height: 15,
-    text: "Gecko"
+    text: "Goanna"
   }]
 }, {
   blocks: []

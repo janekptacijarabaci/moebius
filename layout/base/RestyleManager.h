@@ -457,10 +457,10 @@ public:
 
 private:
   inline nsStyleSet* StyleSet() const {
-    MOZ_ASSERT(PresContext()->StyleSet()->IsGecko(),
-               "RestyleManager should only be used with a Gecko-flavored "
+    MOZ_ASSERT(PresContext()->StyleSet()->IsGoanna(),
+               "RestyleManager should only be used with a Goanna-flavored "
                "style backend");
-    return PresContext()->StyleSet()->AsGecko();
+    return PresContext()->StyleSet()->AsGoanna();
   }
 
   /* aMinHint is the minimal change that should be made to the element */

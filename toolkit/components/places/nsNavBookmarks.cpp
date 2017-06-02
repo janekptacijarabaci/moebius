@@ -18,7 +18,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/storage.h"
 
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 using namespace mozilla;
 

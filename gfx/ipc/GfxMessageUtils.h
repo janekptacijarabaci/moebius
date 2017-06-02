@@ -22,7 +22,7 @@
 #include "mozilla/layers/AsyncDragMetrics.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/CompositorTypes.h"
-#include "mozilla/layers/GeckoContentController.h"
+#include "mozilla/layers/GoannaContentController.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsRect.h"
 #include "nsRegion.h"
@@ -904,11 +904,11 @@ struct ParamTraits<mozilla::layers::ScrollMetadata>
 };
 
 template<>
-struct ParamTraits<GeckoProcessType>
+struct ParamTraits<GoannaProcessType>
   : public ContiguousEnumSerializer<
-             GeckoProcessType,
-             GeckoProcessType_Default,
-             GeckoProcessType_End>
+             GoannaProcessType,
+             GoannaProcessType_Default,
+             GoannaProcessType_End>
 {};
 
 template<>
@@ -1235,7 +1235,7 @@ struct ParamTraits<mozilla::gfx::FilterDescription>
   }
 };
 
-typedef mozilla::layers::GeckoContentController::TapType TapType;
+typedef mozilla::layers::GoannaContentController::TapType TapType;
 
 template <>
 struct ParamTraits<TapType>
@@ -1245,7 +1245,7 @@ struct ParamTraits<TapType>
              TapType::eSentinel>
 {};
 
-typedef mozilla::layers::GeckoContentController::APZStateChange APZStateChange;
+typedef mozilla::layers::GoannaContentController::APZStateChange APZStateChange;
 
 template <>
 struct ParamTraits<APZStateChange>

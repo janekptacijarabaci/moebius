@@ -13,7 +13,7 @@
 #include "chrome/common/file_descriptor_set_posix.h"
 #endif
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracerImpl.h"
+#include "GoannaTaskTracerImpl.h"
 #endif
 
 #include "mozilla/Move.h"

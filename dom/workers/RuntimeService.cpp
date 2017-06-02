@@ -24,7 +24,7 @@
 
 #include <algorithm>
 #include "BackgroundChild.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "jsfriendapi.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"

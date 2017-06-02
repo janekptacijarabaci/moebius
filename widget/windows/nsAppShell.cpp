@@ -21,7 +21,7 @@
 #include "mozilla/StaticPtr.h"
 #include "nsTHashtable.h"
 #include "nsHashKeys.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "nsComponentManagerUtils.h"
 #include "nsITimer.h"
 
@@ -38,7 +38,7 @@ PRLogModuleInfo* GetWinWakeLockLog() {
 }
 
 // A wake lock listener that disables screen saver when requested by
-// Gecko. For example when we're playing video in a foreground tab we
+// Goanna. For example when we're playing video in a foreground tab we
 // don't want the screen saver to turn on.
 class WinWakeLockListener final : public nsIDOMMozWakeLockListener
                                 , public nsITimerCallback {
@@ -161,7 +161,7 @@ RemoveScreenWakeLockListener()
 namespace mozilla {
 namespace widget {
 // Native event callback message.
-UINT sAppShellGeckoMsgId = RegisterWindowMessageW(L"nsAppShell:EventID");
+UINT sAppShellGoannaMsgId = RegisterWindowMessageW(L"nsAppShell:EventID");
 } }
 
 const wchar_t* kTaskbarButtonEventId = L"TaskbarButtonCreated";
@@ -185,7 +185,7 @@ using mozilla::crashreporter::LSPAnnotate;
 /*static*/ LRESULT CALLBACK
 nsAppShell::EventWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-  if (uMsg == sAppShellGeckoMsgId) {
+  if (uMsg == sAppShellGoannaMsgId) {
     nsAppShell *as = reinterpret_cast<nsAppShell *>(lParam);
     as->NativeEventCallback();
     NS_RELEASE(as);
@@ -255,7 +255,7 @@ nsAppShell::Run(void)
     mozilla::widget::StartAudioSession();
   }
 
-  // Add an observer that disables the screen saver when requested by Gecko.
+  // Add an observer that disables the screen saver when requested by Goanna.
   // For example when we're playing video in the foreground tab.
   AddScreenWakeLockListener();
 
@@ -273,20 +273,20 @@ nsAppShell::Exit(void)
 }
 
 void
-nsAppShell::DoProcessMoreGeckoEvents()
+nsAppShell::DoProcessMoreGoannaEvents()
 {
   // Called by nsBaseAppShell's NativeEventCallback() after it has finished
-  // processing pending gecko events and there are still gecko events pending
+  // processing pending goanna events and there are still goanna events pending
   // for the thread. (This can happen if NS_ProcessPendingEvents reached it's
   // starvation timeout limit.) The default behavior in nsBaseAppShell is to
   // call ScheduleNativeEventCallback to post a follow up native event callback
   // message. This triggers an additional call to NativeEventCallback for more
-  // gecko event processing.
+  // goanna event processing.
 
   // There's a deadlock risk here with certain internal Windows modal loops. In
   // our dispatch code, we prioritize messages so that input is handled first.
   // However Windows modal dispatch loops often prioritize posted messages. If
-  // we find ourselves in a tight gecko timer loop where NS_ProcessPendingEvents
+  // we find ourselves in a tight goanna timer loop where NS_ProcessPendingEvents
   // takes longer than the timer duration, NS_HasPendingEvents(thread) will
   // always be true. ScheduleNativeEventCallback will be called on every
   // NativeEventCallback callback, and in a Windows modal dispatch loop, the
@@ -297,7 +297,7 @@ nsAppShell::DoProcessMoreGeckoEvents()
   // dispatch loop dispatching input messages. Once we drop out of the modal
   // loop, we use mNativeCallbackPending to fire off a final NativeEventCallback
   // if we need it, which insures NS_ProcessPendingEvents gets called and all
-  // gecko events get processed.
+  // goanna events get processed.
   if (mEventloopNestingLevel < 2) {
     OnDispatchedEvent(nullptr);
     mNativeCallbackPending = false;
@@ -317,14 +317,14 @@ nsAppShell::ScheduleNativeEventCallback()
     // dropping in sub classes / modal loops we do not control.
     mLastNativeEventScheduled = TimeStamp::NowLoRes();
   }
-  ::PostMessage(mEventWnd, sAppShellGeckoMsgId, 0, reinterpret_cast<LPARAM>(this));
+  ::PostMessage(mEventWnd, sAppShellGoannaMsgId, 0, reinterpret_cast<LPARAM>(this));
 }
 
 bool
 nsAppShell::ProcessNextNativeEvent(bool mayWait)
 {
-  // Notify ipc we are spinning a (possibly nested) gecko event loop.
-  mozilla::ipc::MessageChannel::NotifyGeckoEventDispatch();
+  // Notify ipc we are spinning a (possibly nested) goanna event loop.
+  mozilla::ipc::MessageChannel::NotifyGoannaEventDispatch();
 
   bool gotMessage = false;
 
@@ -378,7 +378,7 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
       // Block and wait for any posted application message
       mozilla::HangMonitor::Suspend();
       {
-        GeckoProfilerSleepRAII profiler_sleep;
+        GoannaProfilerSleepRAII profiler_sleep;
         WinUtils::WaitForMessage();
       }
     }
@@ -387,7 +387,7 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
   // See DoProcessNextNativeEvent, mEventloopNestingLevel will be
   // one when a modal loop unwinds.
   if (mNativeCallbackPending && mEventloopNestingLevel == 1)
-    DoProcessMoreGeckoEvents();
+    DoProcessMoreGoannaEvents();
 
   // Check for starved native callbacks. If we haven't processed one
   // of these events in NATIVE_EVENT_STARVATION_LIMIT, fire one off.

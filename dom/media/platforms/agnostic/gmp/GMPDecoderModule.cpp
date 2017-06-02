@@ -11,7 +11,7 @@
 #include "MediaDataDecoderProxy.h"
 #include "MediaPrefs.h"
 #include "VideoUtils.h"
-#include "mozIGeckoMediaPluginService.h"
+#include "mozIGoannaMediaPluginService.h"
 #include "nsServiceManagerUtils.h"
 #include "mozilla/StaticMutex.h"
 #include "gmp-video-decode.h"
@@ -34,7 +34,7 @@ GMPDecoderModule::~GMPDecoderModule()
 static already_AddRefed<MediaDataDecoderProxy>
 CreateDecoderWrapper(MediaDataDecoderCallback* aCallback)
 {
-  RefPtr<gmp::GeckoMediaPluginService> s(gmp::GeckoMediaPluginService::GetGeckoMediaPluginService());
+  RefPtr<gmp::GoannaMediaPluginService> s(gmp::GoannaMediaPluginService::GetGoannaMediaPluginService());
   if (!s) {
     return nullptr;
   }

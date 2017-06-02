@@ -55,5 +55,5 @@ HeaderIncludes = (
 
 CppIncludes = (
     'nsIFile.h',
-    'GeckoProfiler.h',
+    'GoannaProfiler.h',
 )

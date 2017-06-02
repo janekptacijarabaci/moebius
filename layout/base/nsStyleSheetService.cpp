@@ -181,8 +181,8 @@ nsStyleSheetService::LoadAndRegisterSheet(nsIURI *aSheetURI,
       // XXXheycam Once the nsStyleSheetService can hold ServoStyleSheets too,
       // we'll need to include them in the notification.
       StyleSheet* sheet = mSheets[aSheetType].LastElement();
-      if (sheet->IsGecko()) {
-        CSSStyleSheet* cssSheet = sheet->AsGecko();
+      if (sheet->IsGoanna()) {
+        CSSStyleSheet* cssSheet = sheet->AsGoanna();
         serv->NotifyObservers(NS_ISUPPORTS_CAST(nsIDOMCSSStyleSheet*, cssSheet),
                               message, nullptr);
       } else {
@@ -234,9 +234,9 @@ nsStyleSheetService::LoadAndRegisterSheetInternal(nsIURI *aSheetURI,
       return NS_ERROR_INVALID_ARG;
   }
 
-  // XXXheycam We'll need to load and register both a Gecko- and Servo-backed
+  // XXXheycam We'll need to load and register both a Goanna- and Servo-backed
   // style sheet.
-  RefPtr<css::Loader> loader = new css::Loader(StyleBackendType::Gecko);
+  RefPtr<css::Loader> loader = new css::Loader(StyleBackendType::Goanna);
 
   RefPtr<StyleSheet> sheet;
   nsresult rv = loader->LoadSheetSync(aSheetURI, parsingMode, true, &sheet);
@@ -329,8 +329,8 @@ nsStyleSheetService::UnregisterSheet(nsIURI *aSheetURI, uint32_t aSheetType)
   if (serv) {
     // XXXheycam Once the nsStyleSheetService can hold ServoStyleSheets too,
     // we'll need to include them in the notification.
-    if (sheet->IsGecko()) {
-      CSSStyleSheet* cssSheet = sheet->AsGecko();
+    if (sheet->IsGoanna()) {
+      CSSStyleSheet* cssSheet = sheet->AsGoanna();
       serv->NotifyObservers(NS_ISUPPORTS_CAST(nsIDOMCSSStyleSheet*, cssSheet),
                             message, nullptr);
     } else {

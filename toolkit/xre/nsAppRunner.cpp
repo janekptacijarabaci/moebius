@@ -5,7 +5,7 @@
 
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentChild.h"
-#include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "mozilla/ipc/GoannaChildProcessHost.h"
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
@@ -839,13 +839,13 @@ nsXULAppInfo::GetWidgetToolkit(nsACString& aResult)
   return NS_OK;
 }
 
-// Ensure that the GeckoProcessType enum, defined in xpcom/build/nsXULAppAPI.h,
+// Ensure that the GoannaProcessType enum, defined in xpcom/build/nsXULAppAPI.h,
 // is synchronized with the const unsigned longs defined in
 // xpcom/system/nsIXULRuntime.idl.
 #define SYNC_ENUMS(a,b) \
   static_assert(nsIXULRuntime::PROCESS_TYPE_ ## a == \
-                static_cast<int>(GeckoProcessType_ ## b), \
-                "GeckoProcessType in nsXULAppAPI.h not synchronized with nsIXULRuntime.idl");
+                static_cast<int>(GoannaProcessType_ ## b), \
+                "GoannaProcessType in nsXULAppAPI.h not synchronized with nsIXULRuntime.idl");
 
 SYNC_ENUMS(DEFAULT, Default)
 SYNC_ENUMS(PLUGIN, Plugin)
@@ -855,8 +855,8 @@ SYNC_ENUMS(GMPLUGIN, GMPlugin)
 SYNC_ENUMS(GPU, GPU)
 
 // .. and ensure that that is all of them:
-static_assert(GeckoProcessType_GPU + 1 == GeckoProcessType_End,
-              "Did not find the final GeckoProcessType");
+static_assert(GoannaProcessType_GPU + 1 == GoannaProcessType_End,
+              "Did not find the final GoannaProcessType");
 
 NS_IMETHODIMP
 nsXULAppInfo::GetProcessType(uint32_t* aResult)
@@ -1794,7 +1794,7 @@ static nsresult LaunchChild(nsINativeAppSupport* aNative,
   SaveToEnv("MOZ_LAUNCHED_CHILD=1");
 
 #if defined(MOZ_WIDGET_ANDROID)
-  java::GeckoAppShell::ScheduleRestart();
+  java::GoannaAppShell::ScheduleRestart();
 #else
 #if defined(XP_MACOSX)
   CommandLineServiceMac::SetupMacCommandLine(gRestartArgc, gRestartArgv, true);
@@ -1930,7 +1930,7 @@ ProfileLockedDialog(nsIFile* aProfileDir, nsIFile* aProfileLocalDir,
     if (aUnlocker) {
       int32_t button;
 #ifdef MOZ_WIDGET_ANDROID
-      java::GeckoAppShell::KillAnyZombies();
+      java::GoannaAppShell::KillAnyZombies();
       button = 0;
 #else
       const uint32_t flags =
@@ -1959,7 +1959,7 @@ ProfileLockedDialog(nsIFile* aProfileDir, nsIFile* aProfileLocalDir,
       }
     } else {
 #ifdef MOZ_WIDGET_ANDROID
-      if (java::GeckoAppShell::UnlockProfile()) {
+      if (java::GoannaAppShell::UnlockProfile()) {
         return NS_LockProfilePath(aProfileDir, aProfileLocalDir,
                                   nullptr, aResult);
       }
@@ -3003,7 +3003,7 @@ static DWORD WINAPI InitDwriteBG(LPVOID lpdwThreadParam)
 bool fire_glxtest_process();
 #endif
 
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 // Encapsulates startup and shutdown state for XRE_main
 class XREMain
@@ -3186,7 +3186,7 @@ XREMain::XRE_mainInit(bool* aExitFlag)
   // XRE_mainInit.
 
   if (!mAppData->minVersion) {
-    Output(true, "Error: Gecko:MinVersion not specified in application.ini\n");
+    Output(true, "Error: Goanna:MinVersion not specified in application.ini\n");
     return 1;
   }
 
@@ -4537,7 +4537,7 @@ XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig)
 #endif
 
   char aLocal;
-  GeckoProfilerInitRAII profilerGuard(&aLocal);
+  GoannaProfilerInitRAII profilerGuard(&aLocal);
 
   PROFILER_LABEL("Startup", "XRE_Main",
     js::ProfileEntry::Category::OTHER);
@@ -4832,7 +4832,7 @@ XRE_DeinitCommandLine()
   return rv;
 }
 
-GeckoProcessType
+GoannaProcessType
 XRE_GetProcessType()
 {
   return mozilla::startup::sChildProcessType;
@@ -4841,19 +4841,19 @@ XRE_GetProcessType()
 bool
 XRE_IsGPUProcess()
 {
-  return XRE_GetProcessType() == GeckoProcessType_GPU;
+  return XRE_GetProcessType() == GoannaProcessType_GPU;
 }
 
 bool
 XRE_IsParentProcess()
 {
-  return XRE_GetProcessType() == GeckoProcessType_Default;
+  return XRE_GetProcessType() == GoannaProcessType_Default;
 }
 
 bool
 XRE_IsContentProcess()
 {
-  return XRE_GetProcessType() == GeckoProcessType_Content;
+  return XRE_GetProcessType() == GoannaProcessType_Content;
 }
 
 // If you add anything to this enum, please update about:support to reflect it
@@ -5096,6 +5096,6 @@ OverrideDefaultLocaleIfNeeded() {
 void
 XRE_EnableSameExecutableForContentProc() {
   if (!PR_GetEnv("MOZ_SEPARATE_CHILD_PROCESS")) {
-    mozilla::ipc::GeckoChildProcessHost::EnableSameExecutableForContentProc();
+    mozilla::ipc::GoannaChildProcessHost::EnableSameExecutableForContentProc();
   }
 }

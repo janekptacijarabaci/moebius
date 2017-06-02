@@ -10,9 +10,9 @@
 #include "nsThreadUtils.h"
 #include "nsIRunnable.h"
 #include "nsIWritablePropertyBag2.h"
-#include "mozIGeckoMediaPluginService.h"
+#include "mozIGoannaMediaPluginService.h"
 #include "mozilla/AbstractThread.h"
-#include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "mozilla/ipc/GoannaChildProcessHost.h"
 #include "mozilla/SSE.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/Unused.h"
@@ -28,7 +28,7 @@
 
 #include "mozilla/dom/CrashReporterParent.h"
 using mozilla::dom::CrashReporterParent;
-using mozilla::ipc::GeckoChildProcessHost;
+using mozilla::ipc::GoannaChildProcessHost;
 
 #ifdef MOZ_CRASHREPORTER
 #include "nsPrintfCString.h"
@@ -72,7 +72,7 @@ GMPParent::GMPParent()
   , mChildPid(0)
   , mHoldingSelfRef(false)
 {
-  mPluginId = GeckoChildProcessHost::GetUniqueID();
+  mPluginId = GoannaChildProcessHost::GetUniqueID();
   LOGD("GMPParent ctor id=%u", mPluginId);
 }
 
@@ -105,7 +105,7 @@ GMPParent::CloneFrom(const GMPParent* aOther)
 }
 
 RefPtr<GenericPromise>
-GMPParent::Init(GeckoMediaPluginServiceParent* aService, nsIFile* aPluginDir)
+GMPParent::Init(GoannaMediaPluginServiceParent* aService, nsIFile* aPluginDir)
 {
   MOZ_ASSERT(aPluginDir);
   MOZ_ASSERT(aService);
@@ -341,7 +341,7 @@ GMPParent::ChildTerminated()
   } else {
     gmpThread->Dispatch(NewRunnableMethod<RefPtr<GMPParent>>(
                          mService,
-                         &GeckoMediaPluginServiceParent::PluginTerminated,
+                         &GoannaMediaPluginServiceParent::PluginTerminated,
                          self),
                          NS_DISPATCH_NORMAL);
   }
@@ -384,7 +384,7 @@ nsIThread*
 GMPParent::GMPThread()
 {
   if (!mGMPThread) {
-    nsCOMPtr<mozIGeckoMediaPluginService> mps = do_GetService("@mozilla.org/gecko-media-plugin-service;1");
+    nsCOMPtr<mozIGoannaMediaPluginService> mps = do_GetService("@mozilla.org/goanna-media-plugin-service;1");
     MOZ_ASSERT(mps);
     if (!mps) {
       return nullptr;
@@ -511,8 +511,8 @@ GMPNotifyObservers(const uint32_t aPluginID, const nsACString& aPluginName, cons
     obs->NotifyObservers(propbag, "gmp-plugin-crash", nullptr);
   }
 
-  RefPtr<gmp::GeckoMediaPluginService> service =
-    gmp::GeckoMediaPluginService::GetGeckoMediaPluginService();
+  RefPtr<gmp::GoannaMediaPluginService> service =
+    gmp::GoannaMediaPluginService::GetGoannaMediaPluginService();
   if (service) {
     service->RunPluginCrashCallbacks(aPluginID, aPluginName);
   }
@@ -559,7 +559,7 @@ GMPParent::AllocPCrashReporterParent(const NativeThreadId& aThread)
   MOZ_ASSERT(false, "Should only be sent if crash reporting is enabled.");
 #endif
   CrashReporterParent* cr = new CrashReporterParent();
-  cr->SetChildData(aThread, GeckoProcessType_GMPlugin);
+  cr->SetChildData(aThread, GoannaProcessType_GMPlugin);
   return cr;
 }
 

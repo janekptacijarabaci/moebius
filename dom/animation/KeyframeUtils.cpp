@@ -1077,12 +1077,12 @@ MakePropertyValuePair(nsCSSPropertyID aProperty, const nsAString& aStringValue,
                " to unknown");
     value.SetTokenStreamValue(tokenStream);
   } else {
-    // If we succeeded in parsing with Gecko, but not Servo the animation is
+    // If we succeeded in parsing with Goanna, but not Servo the animation is
     // not going to work since, for the purposes of animation, we're going to
     // ignore |mValue| when the backend is Servo.
     NS_WARNING_ASSERTION(aDocument->GetStyleBackendType() !=
                            StyleBackendType::Servo,
-                         "Gecko succeeded in parsing where Servo failed");
+                         "Goanna succeeded in parsing where Servo failed");
   }
 
   result.mValue = value;
@@ -1574,7 +1574,7 @@ RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
       }
 
       if (nsCSSProps::IsShorthand(pair.mProperty)) {
-        if (styleBackend == StyleBackendType::Gecko) {
+        if (styleBackend == StyleBackendType::Goanna) {
           nsCSSValueTokenStream* tokenStream =
             pair.mValue.GetTokenStreamValue();
           nsCSSParser parser(aDocument->CSSLoader());

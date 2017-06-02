@@ -21,14 +21,14 @@ using std::vector;
 using std::string;
 
 using mozilla::gmp::GMPProcessParent;
-using mozilla::ipc::GeckoChildProcessHost;
+using mozilla::ipc::GoannaChildProcessHost;
 using base::ProcessArchitecture;
 
 namespace mozilla {
 namespace gmp {
 
 GMPProcessParent::GMPProcessParent(const std::string& aGMPPath)
-: GeckoChildProcessHost(GeckoProcessType_GMPlugin),
+: GoannaChildProcessHost(GoannaProcessType_GMPlugin),
   mGMPPath(aGMPPath)
 {
   MOZ_COUNT_CTOR(GMPProcessParent);

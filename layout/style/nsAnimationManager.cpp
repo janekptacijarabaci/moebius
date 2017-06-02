@@ -507,10 +507,10 @@ ResolvedStyleCache::Get(nsPresContext *aPresContext,
 
     nsCOMArray<nsIStyleRule> rules;
     rules.AppendObject(aKeyframeDeclaration);
-    MOZ_ASSERT(aPresContext->StyleSet()->IsGecko(),
+    MOZ_ASSERT(aPresContext->StyleSet()->IsGoanna(),
                "ServoStyleSet should not use nsAnimationManager for "
                "animations");
-    RefPtr<nsStyleContext> resultStrong = aPresContext->StyleSet()->AsGecko()->
+    RefPtr<nsStyleContext> resultStrong = aPresContext->StyleSet()->AsGoanna()->
       ResolveStyleByAddingRules(aParentStyleContext, rules);
     mCache.Put(aKeyframeDeclaration, resultStrong);
     result = resultStrong;
@@ -1037,10 +1037,10 @@ CSSAnimationBuilder::GetComputedValue(nsPresContext* aPresContext,
   StyleAnimationValue computedValue;
 
   if (!mStyleWithoutAnimation) {
-    MOZ_ASSERT(aPresContext->StyleSet()->IsGecko(),
+    MOZ_ASSERT(aPresContext->StyleSet()->IsGoanna(),
                "ServoStyleSet should not use nsAnimationManager for "
                "animations");
-    mStyleWithoutAnimation = aPresContext->StyleSet()->AsGecko()->
+    mStyleWithoutAnimation = aPresContext->StyleSet()->AsGoanna()->
       ResolveStyleByRemovingAnimation(mTarget, mStyleContext,
                                       eRestyle_AllHintsWithAnimations);
   }
@@ -1083,13 +1083,13 @@ nsAnimationManager::BuildAnimations(nsStyleContext* aStyleContext,
     // "none" which is represented by an empty name in the StyleAnimation.
     // Since such animations neither affect style nor dispatch events, we do
     // not generate a corresponding CSSAnimation for them.
-    MOZ_ASSERT(mPresContext->StyleSet()->IsGecko(),
+    MOZ_ASSERT(mPresContext->StyleSet()->IsGoanna(),
                "ServoStyleSet should not use nsAnimationManager for "
                "animations");
     nsCSSKeyframesRule* rule =
       src.GetName().IsEmpty()
       ? nullptr
-      : mPresContext->StyleSet()->AsGecko()->KeyframesRuleForName(src.GetName());
+      : mPresContext->StyleSet()->AsGoanna()->KeyframesRuleForName(src.GetName());
     if (!rule) {
       continue;
     }

@@ -5,7 +5,7 @@ let {Extension} = Components.utils.import("resource://gre/modules/Extension.jsm"
 
 function* makeAndInstallXPI(id, backgroundScript, loadedURL) {
   let xpi = Extension.generateXPI({
-    manifest: {applications: {gecko: {id}}},
+    manifest: {applications: {goanna: {id}}},
     background: backgroundScript,
   });
   SimpleTest.registerCleanupFunction(function cleanupXPI() {

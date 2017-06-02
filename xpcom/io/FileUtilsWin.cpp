@@ -11,7 +11,7 @@
 
 #include "mozilla/Unused.h"
 #include "nsWindowsHelpers.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 namespace {
 

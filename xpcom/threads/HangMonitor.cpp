@@ -21,7 +21,7 @@
 #endif
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 #ifdef MOZ_CRASHREPORTER
 #include "nsExceptionHandler.h"
@@ -115,7 +115,7 @@ Crash()
 #ifdef MOZ_CRASHREPORTER
   // If you change this, you must also deal with the threadsafety of AnnotateCrashReport in
   // non-chrome processes!
-  if (GeckoProcessType_Default == XRE_GetProcessType()) {
+  if (GoannaProcessType_Default == XRE_GetProcessType()) {
     CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("Hang"),
                                        NS_LITERAL_CSTRING("1"));
   }
@@ -293,8 +293,8 @@ ThreadMain(void*)
 void
 Startup()
 {
-  if (GeckoProcessType_Default != XRE_GetProcessType() &&
-      GeckoProcessType_Content != XRE_GetProcessType()) {
+  if (GoannaProcessType_Default != XRE_GetProcessType() &&
+      GoannaProcessType_Content != XRE_GetProcessType()) {
     return;
   }
 
@@ -328,8 +328,8 @@ Startup()
 void
 Shutdown()
 {
-  if (GeckoProcessType_Default != XRE_GetProcessType() &&
-      GeckoProcessType_Content != XRE_GetProcessType()) {
+  if (GoannaProcessType_Default != XRE_GetProcessType() &&
+      GoannaProcessType_Content != XRE_GetProcessType()) {
     return;
   }
 

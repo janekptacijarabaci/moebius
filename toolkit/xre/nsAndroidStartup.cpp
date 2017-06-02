@@ -25,9 +25,9 @@
 using namespace mozilla;
 
 extern "C" NS_EXPORT void
-GeckoStart(JNIEnv* env, char** argv, int argc, const StaticXREAppData& aAppData)
+GoannaStart(JNIEnv* env, char** argv, int argc, const StaticXREAppData& aAppData)
 {
-    mozilla::jni::SetGeckoThreadEnv(env);
+    mozilla::jni::SetGoannaThreadEnv(env);
 
 #ifdef MOZ_CRASHREPORTER
     const struct mapping_info *info = getLibraryMapping();
@@ -39,7 +39,7 @@ GeckoStart(JNIEnv* env, char** argv, int argc, const StaticXREAppData& aAppData)
 #endif
 
     if (!argv) {
-        LOG("Failed to get arguments for GeckoStart\n");
+        LOG("Failed to get arguments for GoannaStart\n");
         return;
     }
 

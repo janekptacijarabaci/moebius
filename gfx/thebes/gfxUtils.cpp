@@ -33,7 +33,7 @@
 #include "nsPresContext.h"
 #include "nsRegion.h"
 #include "nsServiceManagerUtils.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "ImageContainer.h"
 #include "ImageRegion.h"
 #include "gfx2DGlue.h"

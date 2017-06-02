@@ -4,7 +4,7 @@
 "use strict";
 
 /**
- * Many Gecko operations (painting, reflows, restyle, ...) can be tracked
+ * Many Goanna operations (painting, reflows, restyle, ...) can be tracked
  * in real time. A marker is a representation of one operation. A marker
  * has a name, start and end timestamps. Markers are stored in docShells.
  *

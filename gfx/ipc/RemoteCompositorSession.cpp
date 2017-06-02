@@ -62,13 +62,13 @@ RemoteCompositorSession::GetInProcessBridge() const
 }
 
 void
-RemoteCompositorSession::SetContentController(GeckoContentController* aController)
+RemoteCompositorSession::SetContentController(GoannaContentController* aController)
 {
   mContentController = aController;
   mCompositorBridgeChild->SendPAPZConstructor(new APZChild(aController), 0);
 }
 
-GeckoContentController*
+GoannaContentController*
 RemoteCompositorSession::GetContentController()
 {
   return mContentController.get();

@@ -168,12 +168,12 @@ scheme host and port.""")
     ssl_group.add_argument("--host-cert-path", action="store", type=abs_path,
                         help="Path to host certificate when using pregenerated ssl certificates")
 
-    gecko_group = parser.add_argument_group("Gecko-specific")
-    gecko_group.add_argument("--prefs-root", dest="prefs_root", action="store", type=abs_path,
+    goanna_group = parser.add_argument_group("Goanna-specific")
+    goanna_group.add_argument("--prefs-root", dest="prefs_root", action="store", type=abs_path,
                              help="Path to the folder containing browser prefs")
-    gecko_group.add_argument("--disable-e10s", dest="gecko_e10s", action="store_false", default=True,
+    goanna_group.add_argument("--disable-e10s", dest="goanna_e10s", action="store_false", default=True,
                              help="Run tests without electrolysis preferences")
-    gecko_group.add_argument("--stackfix-dir", dest="stackfix_dir", action="store",
+    goanna_group.add_argument("--stackfix-dir", dest="stackfix_dir", action="store",
                              help="Path to directory containing assertion stack fixing scripts")
 
     servo_group = parser.add_argument_group("Servo-specific")

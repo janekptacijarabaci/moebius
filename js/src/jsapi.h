@@ -2302,7 +2302,7 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
     bool getSharedMemoryAndAtomicsEnabled() const;
     CompartmentCreationOptions& setSharedMemoryAndAtomicsEnabled(bool flag);
 
-    // This flag doesn't affect JS engine behavior.  It is used by Gecko to
+    // This flag doesn't affect JS engine behavior.  It is used by Goanna to
     // mark whether content windows and workers are "Secure Context"s. See
     // https://w3c.github.io/webappsec-secure-contexts/
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1162772#c34

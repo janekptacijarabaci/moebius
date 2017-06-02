@@ -123,7 +123,7 @@ this.SafeMode = {
         contentBrowser.setVisible(true);
 
         // browser-ui-startup-complete is used by the AppShell to stop the
-        // boot animation and start gecko rendering.
+        // boot animation and start goanna rendering.
         Services.obs.notifyObservers(null, "browser-ui-startup-complete", "");
         content.addEventListener("mozContentEvent", handleEvent, true);
       }

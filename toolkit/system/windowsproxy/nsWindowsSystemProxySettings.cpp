@@ -16,7 +16,7 @@
 #include "nsNetCID.h"
 #include "nsISupportsPrimitives.h"
 #include "nsIURI.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "ProxyUtils.h"
 
 class nsWindowsSystemProxySettings final : public nsISystemProxySettings

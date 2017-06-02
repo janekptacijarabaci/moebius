@@ -22,7 +22,7 @@
 
 using namespace mozilla;
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracerImpl.h"
+#include "GoannaTaskTracerImpl.h"
 using namespace mozilla::tasktracer;
 #endif
 

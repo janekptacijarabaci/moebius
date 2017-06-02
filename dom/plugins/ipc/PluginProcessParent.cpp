@@ -22,7 +22,7 @@ using std::vector;
 using std::string;
 
 using mozilla::ipc::BrowserProcessSubThread;
-using mozilla::ipc::GeckoChildProcessHost;
+using mozilla::ipc::GoannaChildProcessHost;
 using mozilla::plugins::LaunchCompleteTask;
 using mozilla::plugins::PluginProcessParent;
 using base::ProcessArchitecture;
@@ -32,7 +32,7 @@ PluginProcessParent::PidSet* PluginProcessParent::sPidSet = nullptr;
 #endif
 
 PluginProcessParent::PluginProcessParent(const std::string& aPluginFilePath) :
-      GeckoChildProcessHost(GeckoProcessType_Plugin)
+      GoannaChildProcessHost(GoannaProcessType_Plugin)
     , mPluginFilePath(aPluginFilePath)
     , mTaskFactory(this)
     , mMainMsgLoop(MessageLoop::current())
@@ -147,7 +147,7 @@ PluginProcessParent::Launch(mozilla::UniquePtr<LaunchCompleteTask> aLaunchComple
 #endif
 
     ProcessArchitecture currentArchitecture = base::GetCurrentProcessArchitecture();
-    uint32_t containerArchitectures = GetSupportedArchitecturesForProcessType(GeckoProcessType_Plugin);
+    uint32_t containerArchitectures = GetSupportedArchitecturesForProcessType(GoannaProcessType_Plugin);
 
     uint32_t pluginLibArchitectures = currentArchitecture;
 #ifdef XP_MACOSX
@@ -233,7 +233,7 @@ PluginProcessParent::RunLaunchCompleteTask()
 bool
 PluginProcessParent::WaitUntilConnected(int32_t aTimeoutMs)
 {
-    bool result = GeckoChildProcessHost::WaitUntilConnected(aTimeoutMs);
+    bool result = GoannaChildProcessHost::WaitUntilConnected(aTimeoutMs);
     if (mRunCompleteTaskImmediately && mLaunchCompleteTask) {
         if (result) {
             mLaunchCompleteTask->SetLaunchSucceeded();
@@ -254,7 +254,7 @@ PluginProcessParent::OnChannelConnected(int32_t peer_pid)
     sPidSet->PutEntry(mChildPid);
 #endif
 
-    GeckoChildProcessHost::OnChannelConnected(peer_pid);
+    GoannaChildProcessHost::OnChannelConnected(peer_pid);
     if (mLaunchCompleteTask && !mRunCompleteTaskImmediately) {
         mLaunchCompleteTask->SetLaunchSucceeded();
         mMainMsgLoop->PostTask(mTaskFactory.NewRunnableMethod(
@@ -265,7 +265,7 @@ PluginProcessParent::OnChannelConnected(int32_t peer_pid)
 void
 PluginProcessParent::OnChannelError()
 {
-    GeckoChildProcessHost::OnChannelError();
+    GoannaChildProcessHost::OnChannelError();
     if (mLaunchCompleteTask && !mRunCompleteTaskImmediately) {
         mMainMsgLoop->PostTask(mTaskFactory.NewRunnableMethod(
                                    &PluginProcessParent::RunLaunchCompleteTask));

@@ -723,7 +723,7 @@ pref("browser.audioFeeds.handler", "ask");
 // region.properties file is newer than the version number in the handler
 // service datastore, it will add any new handlers it finds in the prefs (as
 // seeded by this file) to its datastore.
-pref("gecko.handlerService.defaultHandlersVersion", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.defaultHandlersVersion", "chrome://browser-region/locale/region.properties");
 
 // The default set of web-based protocol handlers shown in the application
 // selection dialog for webcal: ; I've arbitrarily picked 4 default handlers
@@ -731,44 +731,44 @@ pref("gecko.handlerService.defaultHandlersVersion", "chrome://browser-region/loc
 // protocol not currently listed here), we should go ahead and add those.
 
 // webcal
-pref("gecko.handlerService.schemes.webcal.0.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.webcal.0.uriTemplate", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.webcal.1.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.webcal.1.uriTemplate", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.webcal.2.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.webcal.2.uriTemplate", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.webcal.3.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.webcal.3.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.webcal.0.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.webcal.0.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.webcal.1.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.webcal.1.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.webcal.2.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.webcal.2.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.webcal.3.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.webcal.3.uriTemplate", "chrome://browser-region/locale/region.properties");
 
 // mailto
-pref("gecko.handlerService.schemes.mailto.0.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.mailto.0.uriTemplate", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.mailto.1.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.mailto.1.uriTemplate", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.mailto.2.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.mailto.2.uriTemplate", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.mailto.3.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.mailto.3.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.mailto.0.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.mailto.0.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.mailto.1.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.mailto.1.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.mailto.2.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.mailto.2.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.mailto.3.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.mailto.3.uriTemplate", "chrome://browser-region/locale/region.properties");
 
 // irc
-pref("gecko.handlerService.schemes.irc.0.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.irc.0.uriTemplate", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.irc.1.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.irc.1.uriTemplate", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.irc.2.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.irc.2.uriTemplate", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.irc.3.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.irc.3.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.irc.0.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.irc.0.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.irc.1.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.irc.1.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.irc.2.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.irc.2.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.irc.3.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.irc.3.uriTemplate", "chrome://browser-region/locale/region.properties");
 
 // ircs
-pref("gecko.handlerService.schemes.ircs.0.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.ircs.0.uriTemplate", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.ircs.1.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.ircs.1.uriTemplate", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.ircs.2.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.ircs.2.uriTemplate", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.ircs.3.name", "chrome://browser-region/locale/region.properties");
-pref("gecko.handlerService.schemes.ircs.3.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.ircs.0.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.ircs.0.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.ircs.1.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.ircs.1.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.ircs.2.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.ircs.2.uriTemplate", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.ircs.3.name", "chrome://browser-region/locale/region.properties");
+pref("goanna.handlerService.schemes.ircs.3.uriTemplate", "chrome://browser-region/locale/region.properties");
 
 pref("browser.geolocation.warning.infoURL", "https://www.mozilla.org/%LOCALE%/firefox/geolocation/");
 
@@ -1026,7 +1026,7 @@ pref("security.sandbox.content.level", 2);
 
 #if defined(XP_MACOSX) || defined(XP_WIN)
 #if defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
-// ID (a UUID when set by gecko) that is used to form the name of a
+// ID (a UUID when set by goanna) that is used to form the name of a
 // sandbox-writable temporary directory to be used by content processes
 // when a temporary writable file is required in a level 1 sandbox.
 pref("security.sandbox.content.tempDirSuffix", "");
@@ -1260,7 +1260,7 @@ pref("security.insecure_field_warning.contextual.enabled", true);
 pref("security.cert_pinning.enforcement_level", 1);
 
 
-// Override the Gecko-default value of false for Firefox.
+// Override the Goanna-default value of false for Firefox.
 pref("plain_text.wrap_long_lines", true);
 
 // If this turns true, Moz*Gesture events are not called stopPropagation()

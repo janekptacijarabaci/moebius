@@ -79,7 +79,7 @@ public:
 
   GMPParent();
 
-  RefPtr<GenericPromise> Init(GeckoMediaPluginServiceParent* aService, nsIFile* aPluginDir);
+  RefPtr<GenericPromise> Init(GoannaMediaPluginServiceParent* aService, nsIFile* aPluginDir);
   nsresult CloneFrom(const GMPParent* aOther);
 
   void Crash();
@@ -156,7 +156,7 @@ public:
 private:
   ~GMPParent();
 
-  RefPtr<GeckoMediaPluginServiceParent> mService;
+  RefPtr<GoannaMediaPluginServiceParent> mService;
   bool EnsureProcessLoaded();
   RefPtr<GenericPromise> ReadGMPMetaData();
   RefPtr<GenericPromise> ReadGMPInfoFile(nsIFile* aFile);

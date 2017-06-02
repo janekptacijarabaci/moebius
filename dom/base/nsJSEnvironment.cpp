@@ -79,7 +79,7 @@
 #include "mozilla/ContentEvents.h"
 
 #include "nsCycleCollectionNoteRootCallback.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -220,7 +220,7 @@ static const int32_t kPokesBetweenExpensiveCollectorTriggers = 5;
 static const char*
 ProcessNameForCollectorLog()
 {
-  return XRE_GetProcessType() == GeckoProcessType_Default ?
+  return XRE_GetProcessType() == GoannaProcessType_Default ?
     "default" : "content";
 }
 

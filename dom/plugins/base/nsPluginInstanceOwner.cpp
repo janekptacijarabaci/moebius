@@ -98,7 +98,7 @@ static nsPluginInstanceOwner* sFullScreenInstance = nullptr;
 using namespace mozilla::dom;
 
 #include <android/log.h>
-#define LOG(args...)  __android_log_print(ANDROID_LOG_INFO, "GeckoPlugins" , ## args)
+#define LOG(args...)  __android_log_print(ANDROID_LOG_INFO, "GoannaPlugins" , ## args)
 #endif
 
 using namespace mozilla;
@@ -1194,27 +1194,27 @@ NPBool nsPluginInstanceOwner::ConvertPointNoPuppet(nsIWidget *widget,
 
   nsIntRect pluginScreenRect = pluginFrame->GetScreenRect();
 
-  double screenXGecko, screenYGecko;
+  double screenXGoanna, screenYGoanna;
   switch (sourceSpace) {
     case NPCoordinateSpacePlugin:
-      screenXGecko = pluginScreenRect.x + sourceX;
-      screenYGecko = pluginScreenRect.y + sourceY;
+      screenXGoanna = pluginScreenRect.x + sourceX;
+      screenYGoanna = pluginScreenRect.y + sourceY;
       break;
     case NPCoordinateSpaceWindow:
-      screenXGecko = windowX + sourceX;
-      screenYGecko = windowY + (windowHeight - sourceY);
+      screenXGoanna = windowX + sourceX;
+      screenYGoanna = windowY + (windowHeight - sourceY);
       break;
     case NPCoordinateSpaceFlippedWindow:
-      screenXGecko = windowX + sourceX;
-      screenYGecko = windowY + sourceY;
+      screenXGoanna = windowX + sourceX;
+      screenYGoanna = windowY + sourceY;
       break;
     case NPCoordinateSpaceScreen:
-      screenXGecko = sourceX;
-      screenYGecko = screenHeight - sourceY;
+      screenXGoanna = sourceX;
+      screenYGoanna = screenHeight - sourceY;
       break;
     case NPCoordinateSpaceFlippedScreen:
-      screenXGecko = sourceX;
-      screenYGecko = sourceY;
+      screenXGoanna = sourceX;
+      screenYGoanna = sourceY;
       break;
     default:
       return false;
@@ -1223,24 +1223,24 @@ NPBool nsPluginInstanceOwner::ConvertPointNoPuppet(nsIWidget *widget,
   double destXCocoa, destYCocoa;
   switch (destSpace) {
     case NPCoordinateSpacePlugin:
-      destXCocoa = screenXGecko - pluginScreenRect.x;
-      destYCocoa = screenYGecko - pluginScreenRect.y;
+      destXCocoa = screenXGoanna - pluginScreenRect.x;
+      destYCocoa = screenYGoanna - pluginScreenRect.y;
       break;
     case NPCoordinateSpaceWindow:
-      destXCocoa = screenXGecko - windowX;
-      destYCocoa = windowHeight - (screenYGecko - windowY);
+      destXCocoa = screenXGoanna - windowX;
+      destYCocoa = windowHeight - (screenYGoanna - windowY);
       break;
     case NPCoordinateSpaceFlippedWindow:
-      destXCocoa = screenXGecko - windowX;
-      destYCocoa = screenYGecko - windowY;
+      destXCocoa = screenXGoanna - windowX;
+      destYCocoa = screenYGoanna - windowY;
       break;
     case NPCoordinateSpaceScreen:
-      destXCocoa = screenXGecko;
-      destYCocoa = screenHeight - screenYGecko;
+      destXCocoa = screenXGoanna;
+      destYCocoa = screenHeight - screenYGoanna;
       break;
     case NPCoordinateSpaceFlippedScreen:
-      destXCocoa = screenXGecko;
-      destYCocoa = screenYGecko;
+      destXCocoa = screenXGoanna;
+      destYCocoa = screenYGoanna;
       break;
     default:
       return false;
@@ -1543,11 +1543,11 @@ bool nsPluginInstanceOwner::AddPluginView(const LayoutDeviceRect& aRect /* = Lay
     if (!mJavaView)
       return false;
 
-    mJavaView = (void*)jni::GetGeckoThreadEnv()->NewGlobalRef((jobject)mJavaView);
+    mJavaView = (void*)jni::GetGoannaThreadEnv()->NewGlobalRef((jobject)mJavaView);
   }
 
   if (mFullScreen) {
-    java::GeckoAppShell::AddFullScreenPluginView(jni::Object::Ref::From(jobject(mJavaView)));
+    java::GoannaAppShell::AddFullScreenPluginView(jni::Object::Ref::From(jobject(mJavaView)));
     sFullScreenInstance = this;
   }
 
@@ -1560,9 +1560,9 @@ void nsPluginInstanceOwner::RemovePluginView()
     return;
 
   if (mFullScreen) {
-    java::GeckoAppShell::RemoveFullScreenPluginView(jni::Object::Ref::From(jobject(mJavaView)));
+    java::GoannaAppShell::RemoveFullScreenPluginView(jni::Object::Ref::From(jobject(mJavaView)));
   }
-  jni::GetGeckoThreadEnv()->DeleteGlobalRef((jobject)mJavaView);
+  jni::GetGoannaThreadEnv()->DeleteGlobalRef((jobject)mJavaView);
   mJavaView = nullptr;
 
   if (mFullScreen)
@@ -1654,7 +1654,7 @@ void nsPluginInstanceOwner::ExitFullScreen() {
 }
 
 void nsPluginInstanceOwner::ExitFullScreen(jobject view) {
-  JNIEnv* env = jni::GetGeckoThreadEnv();
+  JNIEnv* env = jni::GetGoannaThreadEnv();
 
   if (sFullScreenInstance && sFullScreenInstance->mInstance &&
       env->IsSameObject(view, (jobject)sFullScreenInstance->mInstance->GetJavaSurface())) {
@@ -2356,7 +2356,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
   int16_t response = kNPEventNotHandled;
   mInstance->HandleEvent(&cocoaEvent,
                          &response,
-                         NS_PLUGIN_CALL_SAFE_TO_REENTER_GECKO);
+                         NS_PLUGIN_CALL_SAFE_TO_REENTER_GOANNA);
   if ((response == kNPEventStartIME) && (cocoaEvent.type == NPCocoaEventKeyDown)) {
     nsIWidget* widget = mPluginFrame->GetNearestWidget();
     if (widget) {
@@ -2580,7 +2580,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
     int16_t response = kNPEventNotHandled;
     mInstance->HandleEvent(const_cast<NPEvent*>(pPluginEvent),
                            &response,
-                           NS_PLUGIN_CALL_SAFE_TO_REENTER_GECKO);
+                           NS_PLUGIN_CALL_SAFE_TO_REENTER_GOANNA);
     if (response == kNPEventHandled)
       rv = nsEventStatus_eConsumeNoDefault;
   }
@@ -2781,7 +2781,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
   event.send_event = False;
 
   int16_t response = kNPEventNotHandled;
-  mInstance->HandleEvent(&pluginEvent, &response, NS_PLUGIN_CALL_SAFE_TO_REENTER_GECKO);
+  mInstance->HandleEvent(&pluginEvent, &response, NS_PLUGIN_CALL_SAFE_TO_REENTER_GOANNA);
   if (response == kNPEventHandled)
     rv = nsEventStatus_eConsumeNoDefault;
 #endif
@@ -2833,7 +2833,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
               event.data.mouse.action = kDown_ANPMouseAction;
               event.data.mouse.x = pluginPoint.x;
               event.data.mouse.y = pluginPoint.y;
-              mInstance->HandleEvent(&event, nullptr, NS_PLUGIN_CALL_SAFE_TO_REENTER_GECKO);
+              mInstance->HandleEvent(&event, nullptr, NS_PLUGIN_CALL_SAFE_TO_REENTER_GOANNA);
             }
             break;
           case eMouseUp:
@@ -2844,7 +2844,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
               event.data.mouse.action = kUp_ANPMouseAction;
               event.data.mouse.x = pluginPoint.x;
               event.data.mouse.y = pluginPoint.y;
-              mInstance->HandleEvent(&event, nullptr, NS_PLUGIN_CALL_SAFE_TO_REENTER_GECKO);
+              mInstance->HandleEvent(&event, nullptr, NS_PLUGIN_CALL_SAFE_TO_REENTER_GOANNA);
             }
             break;
           default:
@@ -2865,7 +2865,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
          MOZ_ASSERT(pluginEvent->eventType == kKey_ANPEventType);
          mInstance->HandleEvent(const_cast<ANPEvent*>(pluginEvent),
                                 nullptr,
-                                NS_PLUGIN_CALL_SAFE_TO_REENTER_GECKO);
+                                NS_PLUGIN_CALL_SAFE_TO_REENTER_GOANNA);
        }
      }
      break;
@@ -3559,7 +3559,7 @@ nsPluginInstanceOwner::SendWindowFocusChanged(bool aIsActive)
   cocoaEvent.data.focus.hasFocus = aIsActive;
   mInstance->HandleEvent(&cocoaEvent,
                          nullptr,
-                         NS_PLUGIN_CALL_SAFE_TO_REENTER_GECKO);
+                         NS_PLUGIN_CALL_SAFE_TO_REENTER_GOANNA);
 }
 
 void

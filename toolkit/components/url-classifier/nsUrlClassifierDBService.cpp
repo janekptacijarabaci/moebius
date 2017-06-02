@@ -1324,10 +1324,10 @@ nsUrlClassifierDBService::Init()
   }
 
   switch (XRE_GetProcessType()) {
-  case GeckoProcessType_Default:
+  case GoannaProcessType_Default:
     // The parent process is supported.
     break;
-  case GeckoProcessType_Content:
+  case GoannaProcessType_Content:
     // In a content process, we simply forward all requests to the parent process,
     // so we can skip the initialization steps here.
     // Note that since we never register an observer, Shutdown() will also never

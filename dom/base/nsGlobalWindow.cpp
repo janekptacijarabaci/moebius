@@ -6627,7 +6627,7 @@ nsGlobalWindow::SetWidgetFullscreen(FullscreenReason aReason, bool aIsFullscreen
   MOZ_ASSERT(IsOuterWindow());
   MOZ_ASSERT(this == GetTopInternal(), "Only topmost window should call this");
   MOZ_ASSERT(!AsOuter()->GetFrameElementInternal(), "Content window should not call this");
-  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
+  MOZ_ASSERT(XRE_GetProcessType() == GoannaProcessType_Default);
 
   if (!NS_WARN_IF(!IsChromeWindow())) {
     auto chromeWin = static_cast<nsGlobalChromeWindow*>(this);
@@ -6793,7 +6793,7 @@ nsGlobalWindow::Dump(const nsAString& aStr)
     PrintToDebugger(cstr);
 #endif
 #ifdef ANDROID
-    __android_log_write(ANDROID_LOG_INFO, "GeckoDump", cstr);
+    __android_log_write(ANDROID_LOG_INFO, "GoannaDump", cstr);
 #endif
     FILE *fp = gDumpFile ? gDumpFile : stdout;
     fputs(cstr, fp);
@@ -8809,7 +8809,7 @@ void
 nsGlobalWindow::ForceClose()
 {
   MOZ_ASSERT(IsOuterWindow());
-  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
+  MOZ_ASSERT(XRE_GetProcessType() == GoannaProcessType_Default);
 
   if (IsFrame() || !mDocShell) {
     // This may be a frame in a frameset, or a window that's already closed.
@@ -8840,7 +8840,7 @@ nsGlobalWindow::FinalClose()
 
   // If we get here from CloseOuter then it means that the parent process is
   // going to close our window for us. It's just important to set mIsClosed.
-  if (XRE_GetProcessType() == GeckoProcessType_Content) {
+  if (XRE_GetProcessType() == GoannaProcessType_Content) {
     return;
   }
 
@@ -14120,7 +14120,7 @@ nsGlobalWindow::FireOnNewGlobalObject()
   MOZ_ASSERT(IsInnerWindow());
 
   // AutoEntryScript required to invoke debugger hook, which is a
-  // Gecko-specific concept at present.
+  // Goanna-specific concept at present.
   AutoEntryScript aes(this, "nsGlobalWindow report new global");
   JS::Rooted<JSObject*> global(aes.cx(), GetWrapper());
   JS_FireOnNewGlobalObject(aes.cx(), global);

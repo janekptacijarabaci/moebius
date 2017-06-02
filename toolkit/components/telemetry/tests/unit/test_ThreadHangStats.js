@@ -5,7 +5,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 function getMainThreadHangStats() {
   let threads = Services.telemetry.threadHangStats;
-  return threads.find((thread) => (thread.name === "Gecko"));
+  return threads.find((thread) => (thread.name === "Goanna"));
 }
 
 function run_test() {

@@ -6,7 +6,7 @@
 
 #include "nsDOMNavigationTiming.h"
 
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsIScriptSecurityManager.h"

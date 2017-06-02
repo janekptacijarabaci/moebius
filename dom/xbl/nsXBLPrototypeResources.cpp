@@ -148,11 +148,11 @@ nsXBLPrototypeResources::GatherRuleProcessor()
 {
   nsTArray<RefPtr<CSSStyleSheet>> sheets(mStyleSheetList.Length());
   for (StyleSheet* sheet : mStyleSheetList) {
-    MOZ_ASSERT(sheet->IsGecko(),
+    MOZ_ASSERT(sheet->IsGoanna(),
                "GatherRuleProcessor must only be called for "
-               "nsXBLPrototypeResources objects with Gecko-flavored style "
+               "nsXBLPrototypeResources objects with Goanna-flavored style "
                "backends");
-    sheets.AppendElement(sheet->AsGecko());
+    sheets.AppendElement(sheet->AsGoanna());
   }
   mRuleProcessor = new nsCSSRuleProcessor(Move(sheets),
                                           SheetType::Doc,

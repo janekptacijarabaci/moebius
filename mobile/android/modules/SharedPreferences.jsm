@@ -20,7 +20,7 @@ var Scope = Object.freeze({
 });
 
 /**
- * Public API to getting a SharedPreferencesImpl instance. These scopes mirror GeckoSharedPrefs.
+ * Public API to getting a SharedPreferencesImpl instance. These scopes mirror GoannaSharedPrefs.
  */
 var SharedPreferences = {
   forApp: function() {
@@ -111,7 +111,7 @@ SharedPreferencesImpl.prototype = Object.freeze({
     let result = null;
 
     // Use dispatch instead of sendRequestForResult because callbacks for
-    // Gecko thread events are synchronous when used with dispatch(), so we
+    // Goanna thread events are synchronous when used with dispatch(), so we
     // don't have to spin the event loop here to wait for a result.
     EventDispatcher.instance.dispatch("SharedPreferences:Get", {
       preferences: prefs,

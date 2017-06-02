@@ -351,7 +351,7 @@ nsComponentManagerImpl::Init()
     RegisterModule((*sStaticModules)[i], nullptr);
   }
 
-  bool loadChromeManifests = (XRE_GetProcessType() != GeckoProcessType_GPU);
+  bool loadChromeManifests = (XRE_GetProcessType() != GoannaProcessType_GPU);
   if (loadChromeManifests) {
     // The overall order in which chrome.manifests are expected to be treated
     // is the following:
@@ -430,16 +430,16 @@ nsComponentManagerImpl::Init()
 static bool
 ProcessSelectorMatches(Module::ProcessSelector aSelector)
 {
-  GeckoProcessType type = XRE_GetProcessType();
-  if (type == GeckoProcessType_GPU) {
+  GoannaProcessType type = XRE_GetProcessType();
+  if (type == GoannaProcessType_GPU) {
     return !!(aSelector & Module::ALLOW_IN_GPU_PROCESS);
   }
 
   if (aSelector & Module::MAIN_PROCESS_ONLY) {
-    return type == GeckoProcessType_Default;
+    return type == GoannaProcessType_Default;
   }
   if (aSelector & Module::CONTENT_PROCESS_ONLY) {
-    return type == GeckoProcessType_Content;
+    return type == GoannaProcessType_Content;
   }
   return true;
 }

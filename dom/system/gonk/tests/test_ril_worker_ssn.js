@@ -80,25 +80,25 @@ add_test(function test_notification() {
   }
 
   testNotification(oneCall, SUPP_SVC_NOTIFICATION_CODE2_PUT_ON_HOLD, null,
-                   GECKO_SUPP_SVC_NOTIFICATION_REMOTE_HELD);
+                   GOANNA_SUPP_SVC_NOTIFICATION_REMOTE_HELD);
 
   testNotification(oneCall, SUPP_SVC_NOTIFICATION_CODE2_RETRIEVED, null,
-                   GECKO_SUPP_SVC_NOTIFICATION_REMOTE_RESUMED);
+                   GOANNA_SUPP_SVC_NOTIFICATION_REMOTE_RESUMED);
 
   testNotification(twoCalls, SUPP_SVC_NOTIFICATION_CODE2_PUT_ON_HOLD, null,
-                   GECKO_SUPP_SVC_NOTIFICATION_REMOTE_HELD);
+                   GOANNA_SUPP_SVC_NOTIFICATION_REMOTE_HELD);
 
   testNotification(twoCalls, SUPP_SVC_NOTIFICATION_CODE2_RETRIEVED, null,
-                   GECKO_SUPP_SVC_NOTIFICATION_REMOTE_RESUMED);
+                   GOANNA_SUPP_SVC_NOTIFICATION_REMOTE_RESUMED);
 
   testNotification(twoCalls, SUPP_SVC_NOTIFICATION_CODE2_PUT_ON_HOLD, '00000',
-                   GECKO_SUPP_SVC_NOTIFICATION_REMOTE_HELD);
+                   GOANNA_SUPP_SVC_NOTIFICATION_REMOTE_HELD);
 
   testNotification(twoCalls, SUPP_SVC_NOTIFICATION_CODE2_PUT_ON_HOLD, '11111',
-                   GECKO_SUPP_SVC_NOTIFICATION_REMOTE_HELD);
+                   GOANNA_SUPP_SVC_NOTIFICATION_REMOTE_HELD);
 
   testNotification(twoCalls, SUPP_SVC_NOTIFICATION_CODE2_PUT_ON_HOLD, '22222',
-                   GECKO_SUPP_SVC_NOTIFICATION_REMOTE_HELD);
+                   GOANNA_SUPP_SVC_NOTIFICATION_REMOTE_HELD);
 
   run_next_test();
 });

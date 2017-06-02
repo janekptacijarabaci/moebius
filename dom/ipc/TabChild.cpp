@@ -143,7 +143,7 @@ using namespace mozilla::layout;
 using namespace mozilla::docshell;
 using namespace mozilla::widget;
 using namespace mozilla::jsipc;
-using mozilla::layers::GeckoContentController;
+using mozilla::layers::GoannaContentController;
 
 NS_IMPL_ISUPPORTS(ContentListener, nsIDOMEventListener)
 NS_IMPL_ISUPPORTS(TabChildSHistoryListener,
@@ -1366,7 +1366,7 @@ TabChild::HandleDoubleTap(const CSSPoint& aPoint, const Modifiers& aModifiers,
 }
 
 mozilla::ipc::IPCResult
-TabChild::RecvHandleTap(const GeckoContentController::TapType& aType,
+TabChild::RecvHandleTap(const GoannaContentController::TapType& aType,
                         const LayoutDevicePoint& aPoint,
                         const Modifiers& aModifiers,
                         const ScrollableLayerGuid& aGuid,
@@ -1383,31 +1383,31 @@ TabChild::RecvHandleTap(const GeckoContentController::TapType& aType,
   CSSPoint point = APZCCallbackHelper::ApplyCallbackTransform(aPoint / scale, aGuid);
 
   switch (aType) {
-  case GeckoContentController::TapType::eSingleTap:
+  case GoannaContentController::TapType::eSingleTap:
     if (mGlobal && mTabChildGlobal) {
       mAPZEventState->ProcessSingleTap(point, scale, aModifiers, aGuid, 1);
     }
     break;
-  case GeckoContentController::TapType::eDoubleTap:
+  case GoannaContentController::TapType::eDoubleTap:
     HandleDoubleTap(point, aModifiers, aGuid);
     break;
-  case GeckoContentController::TapType::eSecondTap:
+  case GoannaContentController::TapType::eSecondTap:
     if (mGlobal && mTabChildGlobal) {
       mAPZEventState->ProcessSingleTap(point, scale, aModifiers, aGuid, 2);
     }
     break;
-  case GeckoContentController::TapType::eLongTap:
+  case GoannaContentController::TapType::eLongTap:
     if (mGlobal && mTabChildGlobal) {
       mAPZEventState->ProcessLongTap(presShell, point, scale, aModifiers, aGuid,
           aInputBlockId);
     }
     break;
-  case GeckoContentController::TapType::eLongTapUp:
+  case GoannaContentController::TapType::eLongTapUp:
     if (mGlobal && mTabChildGlobal) {
       mAPZEventState->ProcessLongTapUp(presShell, point, scale, aModifiers);
     }
     break;
-  case GeckoContentController::TapType::eSentinel:
+  case GoannaContentController::TapType::eSentinel:
     // Should never happen, but we need to handle this case to make the compiler
     // happy.
     MOZ_ASSERT(false);
@@ -1418,11 +1418,11 @@ TabChild::RecvHandleTap(const GeckoContentController::TapType& aType,
 
 bool
 TabChild::NotifyAPZStateChange(const ViewID& aViewId,
-                               const layers::GeckoContentController::APZStateChange& aChange,
+                               const layers::GoannaContentController::APZStateChange& aChange,
                                const int& aArg)
 {
   mAPZEventState->ProcessAPZStateChange(aViewId, aChange, aArg);
-  if (aChange == layers::GeckoContentController::APZStateChange::eTransformEnd) {
+  if (aChange == layers::GoannaContentController::APZStateChange::eTransformEnd) {
     // This is used by tests to determine when the APZ is done doing whatever
     // it's doing. XXX generify this as needed when writing additional tests.
     nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
@@ -2639,10 +2639,10 @@ TabChild::InitAPZState()
 
   mApzcTreeManager = RefPtr<IAPZCTreeManager>(derivedProtocol);
 
-  // Initialize the GeckoContentController for this tab. We don't hold a reference because we don't need it.
+  // Initialize the GoannaContentController for this tab. We don't hold a reference because we don't need it.
   // The ContentProcessController will hold a reference to the tab, and will be destroyed by the compositor or ipdl
   // during destruction.
-  RefPtr<GeckoContentController> contentController = new ContentProcessController(this);
+  RefPtr<GoannaContentController> contentController = new ContentProcessController(this);
   cbc->SendPAPZConstructor(new APZChild(contentController), mLayersId);
 }
 

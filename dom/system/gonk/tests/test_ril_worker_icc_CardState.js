@@ -14,7 +14,7 @@ add_test(function test_personalization_state() {
 
   context.ICCRecordHelper.readICCID = function fakeReadICCID() {};
 
-  function testPersonalization(isCdma, cardPersoState, geckoCardState) {
+  function testPersonalization(isCdma, cardPersoState, goannaCardState) {
     let iccStatus = {
       cardState: CARD_STATE_PRESENT,
       gsmUmtsSubscriptionAppIndex: (!isCdma) ? 0 : -1,
@@ -28,7 +28,7 @@ add_test(function test_personalization_state() {
 
     ril._isCdma = isCdma;
     ril._processICCStatus(iccStatus);
-    equal(ril.cardState, geckoCardState);
+    equal(ril.cardState, goannaCardState);
   }
 
   // Test GSM personalization state.
@@ -106,7 +106,7 @@ add_test(function test_card_app_state() {
 
   context.ICCRecordHelper.readICCID = function fakeReadICCID() {};
 
-  function testCardAppState(cardAppState, geckoCardState) {
+  function testCardAppState(cardAppState, goannaCardState) {
     let iccStatus = {
       cardState: CARD_STATE_PRESENT,
       gsmUmtsSubscriptionAppIndex: 0,
@@ -117,7 +117,7 @@ add_test(function test_card_app_state() {
     };
 
     ril._processICCStatus(iccStatus);
-    equal(ril.cardState, geckoCardState);
+    equal(ril.cardState, goannaCardState);
   }
 
   testCardAppState(CARD_APPSTATE_ILLEGAL,
@@ -204,7 +204,7 @@ add_test(function test_icc_without_app_index() {
   // Should read icc id event if the app index is -1.
   equal(ril.iccInfo.iccid, ICCID);
   // cardState is "unknown" if the app index is -1.
-  equal(ril.cardState, GECKO_CARDSTATE_UNKNOWN);
+  equal(ril.cardState, GOANNA_CARDSTATE_UNKNOWN);
 
   run_next_test();
 });

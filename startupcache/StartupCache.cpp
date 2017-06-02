@@ -36,7 +36,7 @@
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 #include "nsIProtocolHandler.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 #ifdef IS_BIG_ENDIAN
 #define SC_ENDIAN "big"

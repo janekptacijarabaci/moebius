@@ -933,7 +933,7 @@ endif
 
 # Cargo currently supports only two interesting profiles for building:
 # development and release.  Those map (roughly) to --enable-debug and
-# --disable-debug in Gecko, respectively, but there's another axis that we'd
+# --disable-debug in Goanna, respectively, but there's another axis that we'd
 # like to support: --{disable,enable}-optimize.  Since that would be four
 # choices, and Cargo only supports two, we choose to enable various
 # optimization levels in our Cargo.toml files all the time, and override the

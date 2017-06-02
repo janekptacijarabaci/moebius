@@ -914,7 +914,7 @@ nsSVGElement::WalkContentStyleRules(nsRuleWalker* aRuleWalker)
   }
 
   if (mContentDeclarationBlock) {
-    css::Declaration* declaration = mContentDeclarationBlock->AsGecko();
+    css::Declaration* declaration = mContentDeclarationBlock->AsGoanna();
     declaration->SetImmutable();
     aRuleWalker->Forward(declaration);
   }
@@ -932,10 +932,10 @@ nsSVGElement::WalkAnimatedContentStyleRules(nsRuleWalker* aRuleWalker)
   // apply the SMILOverrideStyle.)
   RestyleManagerHandle restyleManager =
     aRuleWalker->PresContext()->RestyleManager();
-  MOZ_ASSERT(restyleManager->IsGecko(),
+  MOZ_ASSERT(restyleManager->IsGoanna(),
              "stylo: Servo-backed style system should not be calling "
              "WalkAnimatedContentStyleRules");
-  if (!restyleManager->AsGecko()->SkipAnimationRules()) {
+  if (!restyleManager->AsGoanna()->SkipAnimationRules()) {
     // update/walk the animated content style rule.
     DeclarationBlock* animContentDeclBlock = GetAnimatedContentDeclarationBlock();
     if (!animContentDeclBlock) {
@@ -943,7 +943,7 @@ nsSVGElement::WalkAnimatedContentStyleRules(nsRuleWalker* aRuleWalker)
       animContentDeclBlock = GetAnimatedContentDeclarationBlock();
     }
     if (animContentDeclBlock) {
-      css::Declaration* declaration = animContentDeclBlock->AsGecko();
+      css::Declaration* declaration = animContentDeclBlock->AsGoanna();
       declaration->SetImmutable();
       aRuleWalker->Forward(declaration);
     }

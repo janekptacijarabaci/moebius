@@ -6,12 +6,12 @@
 
 import gdb
 import itertools
-from gdbpp import GeckoPrettyPrinter
+from gdbpp import GoannaPrettyPrinter
 
-@GeckoPrettyPrinter('InfallibleTArray', '^InfallibleTArray<.*>$')
-@GeckoPrettyPrinter('FallibleTArray', '^FallibleTArray<.*>$')
-@GeckoPrettyPrinter('AutoTArray', '^AutoTArray<.*>$')
-@GeckoPrettyPrinter('nsTArray', '^nsTArray<.*>$')
+@GoannaPrettyPrinter('InfallibleTArray', '^InfallibleTArray<.*>$')
+@GoannaPrettyPrinter('FallibleTArray', '^FallibleTArray<.*>$')
+@GoannaPrettyPrinter('AutoTArray', '^AutoTArray<.*>$')
+@GoannaPrettyPrinter('nsTArray', '^nsTArray<.*>$')
 class tarray_printer(object):
     def __init__(self, value):
         self.value = value

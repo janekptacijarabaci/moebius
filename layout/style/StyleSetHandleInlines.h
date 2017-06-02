@@ -11,9 +11,9 @@
 #include "mozilla/ServoStyleSet.h"
 #include "nsStyleSet.h"
 
-#define FORWARD_CONCRETE(method_, geckoargs_, servoargs_) \
-  if (IsGecko()) { \
-    return AsGecko()->method_ geckoargs_; \
+#define FORWARD_CONCRETE(method_, goannaargs_, servoargs_) \
+  if (IsGoanna()) { \
+    return AsGoanna()->method_ goannaargs_; \
   } else { \
     return AsServo()->method_ servoargs_; \
   }
@@ -26,8 +26,8 @@ void
 StyleSetHandle::Ptr::Delete()
 {
   if (mValue) {
-    if (IsGecko()) {
-      delete AsGecko();
+    if (IsGoanna()) {
+      delete AsGoanna();
     } else {
       delete AsServo();
     }
@@ -130,21 +130,21 @@ StyleSetHandle::Ptr::ResolveAnonymousBoxStyle(nsIAtom* aPseudoTag,
 nsresult
 StyleSetHandle::Ptr::AppendStyleSheet(SheetType aType, StyleSheet* aSheet)
 {
-  FORWARD_CONCRETE(AppendStyleSheet, (aType, aSheet->AsGecko()),
+  FORWARD_CONCRETE(AppendStyleSheet, (aType, aSheet->AsGoanna()),
                                      (aType, aSheet->AsServo()));
 }
 
 nsresult
 StyleSetHandle::Ptr::PrependStyleSheet(SheetType aType, StyleSheet* aSheet)
 {
-  FORWARD_CONCRETE(PrependStyleSheet, (aType, aSheet->AsGecko()),
+  FORWARD_CONCRETE(PrependStyleSheet, (aType, aSheet->AsGoanna()),
                                       (aType, aSheet->AsServo()));
 }
 
 nsresult
 StyleSetHandle::Ptr::RemoveStyleSheet(SheetType aType, StyleSheet* aSheet)
 {
-  FORWARD_CONCRETE(RemoveStyleSheet, (aType, aSheet->AsGecko()),
+  FORWARD_CONCRETE(RemoveStyleSheet, (aType, aSheet->AsGoanna()),
                                      (aType, aSheet->AsServo()));
 }
 
@@ -152,12 +152,12 @@ nsresult
 StyleSetHandle::Ptr::ReplaceSheets(SheetType aType,
                        const nsTArray<RefPtr<StyleSheet>>& aNewSheets)
 {
-  if (IsGecko()) {
+  if (IsGoanna()) {
     nsTArray<RefPtr<CSSStyleSheet>> newSheets(aNewSheets.Length());
     for (auto& sheet : aNewSheets) {
-      newSheets.AppendElement(sheet->AsGecko());
+      newSheets.AppendElement(sheet->AsGoanna());
     }
-    return AsGecko()->ReplaceSheets(aType, newSheets);
+    return AsGoanna()->ReplaceSheets(aType, newSheets);
   } else {
     nsTArray<RefPtr<ServoStyleSheet>> newSheets(aNewSheets.Length());
     for (auto& sheet : aNewSheets) {
@@ -174,7 +174,7 @@ StyleSetHandle::Ptr::InsertStyleSheetBefore(SheetType aType,
 {
   FORWARD_CONCRETE(
     InsertStyleSheetBefore,
-    (aType, aNewSheet->AsGecko(), aReferenceSheet->AsGecko()),
+    (aType, aNewSheet->AsGoanna(), aReferenceSheet->AsGoanna()),
     (aType, aReferenceSheet->AsServo(), aReferenceSheet->AsServo()));
 }
 
@@ -193,7 +193,7 @@ StyleSetHandle::Ptr::StyleSheetAt(SheetType aType, int32_t aIndex) const
 nsresult
 StyleSetHandle::Ptr::RemoveDocStyleSheet(StyleSheet* aSheet)
 {
-  FORWARD_CONCRETE(RemoveDocStyleSheet, (aSheet->AsGecko()),
+  FORWARD_CONCRETE(RemoveDocStyleSheet, (aSheet->AsGoanna()),
                                         (aSheet->AsServo()));
 }
 
@@ -201,7 +201,7 @@ nsresult
 StyleSetHandle::Ptr::AddDocStyleSheet(StyleSheet* aSheet,
                                       nsIDocument* aDocument)
 {
-  FORWARD_CONCRETE(AddDocStyleSheet, (aSheet->AsGecko(), aDocument),
+  FORWARD_CONCRETE(AddDocStyleSheet, (aSheet->AsGoanna(), aDocument),
                                      (aSheet->AsServo(), aDocument));
 }
 
@@ -245,8 +245,8 @@ StyleSetHandle::Ptr::HasStateDependentStyle(dom::Element* aElement,
 void
 StyleSetHandle::Ptr::RootStyleContextAdded()
 {
-  if (IsGecko()) {
-    AsGecko()->RootStyleContextAdded();
+  if (IsGoanna()) {
+    AsGoanna()->RootStyleContextAdded();
   } else {
     // Not needed.
   }
@@ -255,7 +255,7 @@ StyleSetHandle::Ptr::RootStyleContextAdded()
 void
 StyleSetHandle::Ptr::RootStyleContextRemoved()
 {
-  if (IsGecko()) {
+  if (IsGoanna()) {
     RootStyleContextAdded();
   } else {
     // Not needed.

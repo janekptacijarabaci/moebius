@@ -181,7 +181,7 @@ typedef std::string xpstring;
 static const XP_CHAR dumpFileExtension[] = XP_TEXT(".dmp");
 #endif
 
-static const XP_CHAR childCrashAnnotationBaseName[] = XP_TEXT("GeckoChildCrash");
+static const XP_CHAR childCrashAnnotationBaseName[] = XP_TEXT("GoannaChildCrash");
 static const XP_CHAR extraFileExtension[] = XP_TEXT(".extra");
 static const XP_CHAR memoryReportExtension[] = XP_TEXT(".memory.json.gz");
 static xpstring *defaultMemoryReportPath = nullptr;
@@ -918,7 +918,7 @@ LaunchCrashReporterActivity(XP_CHAR* aProgramPath, XP_CHAR* aMinidumpPath,
                        "/system/bin/am",
                        "start",
                        "--user", androidUserSerial,
-                       "-a", "org.mozilla.gecko.reportCrash",
+                       "-a", "org.mozilla.goanna.reportCrash",
                        "-n", aProgramPath,
                        "--es", "minidumpPath", aMinidumpPath,
                        "--ez", "minidumpSuccess", aSucceeded ? "true" : "false",
@@ -927,7 +927,7 @@ LaunchCrashReporterActivity(XP_CHAR* aProgramPath, XP_CHAR* aMinidumpPath,
       Unused << execlp("/system/bin/am",
                        "/system/bin/am",
                        "start",
-                       "-a", "org.mozilla.gecko.reportCrash",
+                       "-a", "org.mozilla.goanna.reportCrash",
                        "-n", aProgramPath,
                        "--es", "minidumpPath", aMinidumpPath,
                        "--ez", "minidumpSuccess", aSucceeded ? "true" : "false",
@@ -1284,7 +1284,7 @@ BuildTempPath(char* aBuf, size_t aBufLen)
 static size_t
 BuildTempPath(char* aBuf, size_t aBufLen)
 {
-  // GeckoAppShell or Gonk's init.rc sets this in the environment
+  // GoannaAppShell or Gonk's init.rc sets this in the environment
   const char *tempenv = PR_GetEnv("TMPDIR");
   if (!tempenv) {
     return false;
@@ -1669,10 +1669,10 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory,
     const char* androidPackageName = PR_GetEnv("MOZ_ANDROID_PACKAGE_NAME");
     if (androidPackageName != nullptr) {
       nsCString package(androidPackageName);
-      package.Append("/org.mozilla.gecko.CrashReporter");
+      package.Append("/org.mozilla.goanna.CrashReporter");
       crashReporterPath = ToNewCString(package);
     } else {
-      nsCString package(ANDROID_PACKAGE_NAME "/org.mozilla.gecko.CrashReporter");
+      nsCString package(ANDROID_PACKAGE_NAME "/org.mozilla.goanna.CrashReporter");
       crashReporterPath = ToNewCString(package);
     }
 #endif // !defined(MOZ_WIDGET_ANDROID)
@@ -3307,7 +3307,7 @@ ReadAndValidateExceptionTimeAnnotations(FILE*& aFd,
 
 /**
  * NOTE: One side effect of this function is that it deletes the
- * GeckoChildCrash<pid>.extra file if it exists, once processed.
+ * GoannaChildCrash<pid>.extra file if it exists, once processed.
  */
 static bool
 WriteExtraForMinidump(nsIFile* minidump,
@@ -3510,7 +3510,7 @@ OOPInit()
 
 #if defined(XP_WIN)
   childCrashNotifyPipe =
-    PR_smprintf("\\\\.\\pipe\\gecko-crash-server-pipe.%i",
+    PR_smprintf("\\\\.\\pipe\\goanna-crash-server-pipe.%i",
                 static_cast<int>(::GetCurrentProcessId()));
 
   const std::wstring dumpPath = gExceptionHandler->dump_path();
@@ -3540,7 +3540,7 @@ OOPInit()
 
 #elif defined(XP_MACOSX)
   childCrashNotifyPipe =
-    PR_smprintf("gecko-crash-server-pipe.%i",
+    PR_smprintf("goanna-crash-server-pipe.%i",
                 static_cast<int>(getpid()));
   const std::string dumpPath = gExceptionHandler->dump_path();
 

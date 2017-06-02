@@ -673,7 +673,7 @@ pub unsafe extern fn mp4parse_is_fragmented(parser: *mut mp4parse_parser, track_
 
 /// Get 'pssh' system id and 'pssh' box content for eme playback.
 ///
-/// The data format in 'info' passing to gecko is:
+/// The data format in 'info' passing to goanna is:
 ///   system_id
 ///   pssh box size (in native endian)
 ///   pssh box content (including header)

@@ -40,7 +40,7 @@ PreloadedStyleSheet::Create(nsIURI* aURI,
   RefPtr<PreloadedStyleSheet> preloadedSheet =
     new PreloadedStyleSheet(aURI, aParsingMode);
   auto type = nsLayoutUtils::StyloEnabled() ? StyleBackendType::Servo
-                                            : StyleBackendType::Gecko;
+                                            : StyleBackendType::Goanna;
   StyleSheet* sheet;
   nsresult rv = preloadedSheet->GetSheet(type, &sheet);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -57,7 +57,7 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(PreloadedStyleSheet)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(PreloadedStyleSheet)
 
-NS_IMPL_CYCLE_COLLECTION(PreloadedStyleSheet, mGecko, mServo)
+NS_IMPL_CYCLE_COLLECTION(PreloadedStyleSheet, mGoanna, mServo)
 
 nsresult
 PreloadedStyleSheet::GetSheet(StyleBackendType aType, StyleSheet** aResult)
@@ -65,7 +65,7 @@ PreloadedStyleSheet::GetSheet(StyleBackendType aType, StyleSheet** aResult)
   *aResult = nullptr;
 
   RefPtr<StyleSheet>& sheet =
-    aType == StyleBackendType::Gecko ? mGecko : mServo;
+    aType == StyleBackendType::Goanna ? mGoanna : mServo;
 
   if (!sheet) {
     RefPtr<css::Loader> loader = new css::Loader(aType);

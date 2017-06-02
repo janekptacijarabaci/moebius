@@ -7,7 +7,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "nsPKCS11Slot.h"
 #include "nsProtectedAuthThread.h"
 #include "nsReadableUtils.h"

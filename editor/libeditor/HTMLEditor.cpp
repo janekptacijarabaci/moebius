@@ -2880,7 +2880,7 @@ HTMLEditor::AddOverrideStyleSheet(const nsAString& aURL)
   // XXXbz Except this will actually try to load remote files
   // synchronously, of course..
   RefPtr<StyleSheet> sheet;
-  // Editor override style sheets may want to style Gecko anonymous boxes
+  // Editor override style sheets may want to style Goanna anonymous boxes
   rv = ps->GetDocument()->CSSLoader()->
     LoadSheetSync(uaURI, mozilla::css::eAgentSheetFeatures, true,
                   &sheet);
@@ -2959,7 +2959,7 @@ HTMLEditor::EnableStyleSheet(const nsAString& aURL,
     NS_ERROR("stylo: ServoStyleSheets can't be disabled yet");
     return NS_ERROR_FAILURE;
   }
-  return sheet->AsGecko()->SetDisabled(!aEnable);
+  return sheet->AsGoanna()->SetDisabled(!aEnable);
 }
 
 bool
@@ -2981,7 +2981,7 @@ HTMLEditor::EnableExistingStyleSheet(const nsAString& aURL)
     NS_ERROR("stylo: ServoStyleSheets can't be disabled yet");
     return true;
   }
-  sheet->AsGecko()->SetDisabled(false);
+  sheet->AsGoanna()->SetDisabled(false);
   return true;
 }
 

@@ -277,13 +277,13 @@ void CrashStatsLogForwarder::UpdateCrashReport()
   std::string logAnnotation;
 
   switch (XRE_GetProcessType()) {
-  case GeckoProcessType_Default:
+  case GoannaProcessType_Default:
     logAnnotation = "|[";
     break;
-  case GeckoProcessType_Content:
+  case GoannaProcessType_Content:
     logAnnotation = "|[C";
     break;
-  case GeckoProcessType_GPU:
+  case GoannaProcessType_GPU:
     logAnnotation = "|[G";
     break;
   default:
@@ -2345,7 +2345,7 @@ gfxPlatform::GetScaledFontForFontWithCairoSkia(DrawTarget* aTarget, gfxFont* aFo
 /* static */ bool
 gfxPlatform::UsesOffMainThreadCompositing()
 {
-  if (XRE_GetProcessType() == GeckoProcessType_GPU) {
+  if (XRE_GetProcessType() == GoannaProcessType_GPU) {
     return true;
   }
 

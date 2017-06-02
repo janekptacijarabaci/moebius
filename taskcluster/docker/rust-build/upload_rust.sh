@@ -13,7 +13,7 @@ if test -n "$TASK_ID"; then
   TOOLTOOL_OPTS="--url=http://relengapi/tooltool/"
   MESSAGE="Taskcluster upload ${TASK_ID}/${RUN_ID} $0"
 else
-  MESSAGE="Rust toolchain build for gecko"
+  MESSAGE="Rust toolchain build for goanna"
 fi
 if test -r rust-version; then
   MESSAGE="$MESSAGE $(cat rust-version)"

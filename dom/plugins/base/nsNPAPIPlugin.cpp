@@ -103,7 +103,7 @@ using mozilla::plugins::PluginModuleContentParent;
 #include "ANPBase.h"
 #include "GeneratedJNIWrappers.h"
 #undef LOG
-#define LOG(args...)  __android_log_print(ANDROID_LOG_INFO, "GeckoPlugins" , ## args)
+#define LOG(args...)  __android_log_print(ANDROID_LOG_INFO, "GoannaPlugins" , ## args)
 #endif
 
 #include "nsIAudioChannelAgent.h"
@@ -620,7 +620,7 @@ nsPluginThreadRunnable::Run()
     PluginDestructionGuard guard(mInstance);
 
     NS_TRY_SAFE_CALL_VOID(mFunc(mUserData), nullptr,
-                          NS_PLUGIN_CALL_SAFE_TO_REENTER_GECKO);
+                          NS_PLUGIN_CALL_SAFE_TO_REENTER_GOANNA);
   }
 
   return NS_OK;
@@ -2087,7 +2087,7 @@ _getvalue(NPP npp, NPNVariable variable, void *result)
 
     case kJavaContext_ANPGetValue: {
       LOG("get java context");
-      auto ret = java::GeckoAppShell::GetContext();
+      auto ret = java::GoannaAppShell::GetContext();
       if (!ret)
         return NPERR_GENERIC_ERROR;
 

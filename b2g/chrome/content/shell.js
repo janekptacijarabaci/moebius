@@ -4,7 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-window.performance.mark('gecko-shell-loadstart');
+window.performance.mark('goanna-shell-loadstart');
 
 Cu.import('resource://gre/modules/NotificationDB.jsm');
 Cu.import('resource://gre/modules/UserAgentOverrides.jsm');
@@ -66,7 +66,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "SafeBrowsing",
 XPCOMUtils.defineLazyModuleGetter(this, "SafeMode",
                                   "resource://gre/modules/SafeMode.jsm");
 
-window.performance.measure('gecko-shell-jsm-loaded', 'gecko-shell-loadstart');
+window.performance.measure('goanna-shell-jsm-loaded', 'goanna-shell-loadstart');
 
 function debug(str) {
   dump(' -*- Shell.js: ' + str + '\n');
@@ -246,7 +246,7 @@ var shell = {
   },
 
   bootstrap: function() {
-    window.performance.mark('gecko-shell-bootstrap');
+    window.performance.mark('goanna-shell-bootstrap');
 
     // Before anything, check if we want to start in safe mode.
     SafeMode.check(window).then(() => {
@@ -287,7 +287,7 @@ var shell = {
   },
 
   start: function shell_start() {
-    window.performance.mark('gecko-shell-start');
+    window.performance.mark('goanna-shell-start');
     this._started = true;
 
     // This forces the initialization of the cookie service before we hit the
@@ -419,7 +419,7 @@ var shell = {
 
     this._isEventListenerReady = false;
 
-    window.performance.mark('gecko-shell-system-frame-set');
+    window.performance.mark('goanna-shell-system-frame-set');
 
     ppmm.addMessageListener("content-handler", this);
     ppmm.addMessageListener("dial-handler", this);
@@ -687,7 +687,7 @@ var shell = {
   },
 
   notifyContentStart: function shell_notifyContentStart() {
-    window.performance.mark('gecko-shell-notify-content-start');
+    window.performance.mark('goanna-shell-notify-content-start');
     this.contentBrowser.removeEventListener('mozbrowserloadstart', this, true);
     this.contentBrowser.removeEventListener('mozbrowserlocationchange', this, true);
 
@@ -1180,8 +1180,8 @@ if (isGonk) {
   })();
 
   try {
-    let gmpService = Cc["@mozilla.org/gecko-media-plugin-service;1"]
-                       .getService(Ci.mozIGeckoMediaPluginChromeService);
+    let gmpService = Cc["@mozilla.org/goanna-media-plugin-service;1"]
+                       .getService(Ci.mozIGoannaMediaPluginChromeService);
     gmpService.addPluginDirectory("/system/b2g/gmp-clearkey/0.1");
   } catch(e) {
     dump("Failed to add clearkey path! " + e + "\n");

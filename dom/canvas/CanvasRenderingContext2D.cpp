@@ -2635,7 +2635,7 @@ GetFontParentStyleContext(Element* aElement, nsIPresShell* aPresShell,
 
   // otherwise inherit from default (10px sans-serif)
 
-  nsStyleSet* styleSet = aPresShell->StyleSet()->GetAsGecko();
+  nsStyleSet* styleSet = aPresShell->StyleSet()->GetAsGoanna();
   if (!styleSet) {
     // XXXheycam ServoStyleSets do not support resolving style from a list of
     // rules yet.
@@ -2679,7 +2679,7 @@ GetFontStyleContext(Element* aElement, const nsAString& aFont,
                     nsAString& aOutUsedFont,
                     ErrorResult& aError)
 {
-  nsStyleSet* styleSet = aPresShell->StyleSet()->GetAsGecko();
+  nsStyleSet* styleSet = aPresShell->StyleSet()->GetAsGoanna();
   if (!styleSet) {
     // XXXheycam ServoStyleSets do not support resolving style from a list of
     // rules yet.
@@ -2756,7 +2756,7 @@ ResolveStyleForFilter(const nsAString& aFilterString,
                       nsStyleContext* aParentContext,
                       ErrorResult& aError)
 {
-  nsStyleSet* styleSet = aPresShell->StyleSet()->GetAsGecko();
+  nsStyleSet* styleSet = aPresShell->StyleSet()->GetAsGoanna();
   if (!styleSet) {
     // XXXheycam ServoStyleSets do not support resolving style from a list of
     // rules yet.

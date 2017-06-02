@@ -32,7 +32,7 @@
 #if defined(MOZ_CRASHREPORTER)
 #include "nsExceptionHandler.h"
 #endif
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 #if defined(XP_WIN)
 #include <windows.h>

@@ -313,7 +313,7 @@ void
 DataTransfer::GetTypes(nsTArray<nsString>& aTypes, CallerType aCallerType) const
 {
   // When called from bindings, aTypes will be empty, but since we might have
-  // Gecko-internal callers too, clear it to be safe.
+  // Goanna-internal callers too, clear it to be safe.
   aTypes.Clear();
   
   const nsTArray<RefPtr<DataTransferItem>>* items = mItems->MozItemsAt(0);

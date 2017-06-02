@@ -292,7 +292,7 @@ var contains = function() {
         return function(needle, haystack) {
             return haystack.contains(needle);
         };
-    } else if ( document.documentElement.compareDocumentPosition ) { // gecko
+    } else if ( document.documentElement.compareDocumentPosition ) { // goanna
         return function(needle, haystack) {
             return !!(haystack.compareDocumentPosition(needle) & 16);
         };
@@ -389,7 +389,7 @@ var clearFoundCache = function() {
 };
 
 var clearParentCache = function() {
-    if (!document.documentElement.children) { // caching children lookups for gecko
+    if (!document.documentElement.children) { // caching children lookups for goanna
         return function() {
             for (var i = 0, len = parentCache.length; i < len; ++i) {
                 delete parentCache[i]._children;

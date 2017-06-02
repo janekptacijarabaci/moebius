@@ -1143,7 +1143,7 @@ DOMCSSDeclarationImpl::SetCSSDeclaration(DeclarationBlock* aDecl)
 
   mozAutoDocUpdate updateBatch(doc, UPDATE_STYLE, true);
 
-  mRule->SetDeclaration(aDecl->AsGecko());
+  mRule->SetDeclaration(aDecl->AsGoanna());
 
   if (sheet) {
     sheet->DidDirty();

@@ -313,7 +313,7 @@ pub struct ProtectionSystemSpecificHeaderBox {
     pub kid: Vec<ByteData>,
     pub data: ByteData,
 
-    // The entire pssh box (include header) required by Gecko.
+    // The entire pssh box (include header) required by Goanna.
     pub box_content: ByteData,
 }
 

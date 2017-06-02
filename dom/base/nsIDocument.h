@@ -205,7 +205,7 @@ class nsContentList;
 //----------------------------------------------------------------------
 
 // Document interface.  This is implemented by all document objects in
-// Gecko.
+// Goanna.
 class nsIDocument : public nsINode,
                     public mozilla::dom::DispatcherTrait
 {
@@ -1100,7 +1100,7 @@ public:
    * front.
    *
    * By "built-in" user-agent style sheets we mean the user-agent style sheets
-   * that gecko itself supplies (such as html.css and svg.css) as opposed to
+   * that goanna itself supplies (such as html.css and svg.css) as opposed to
    * user-agent level style sheets inserted by add-ons or the like.
    *
    * This function prepends the given style sheet to the document's style set
@@ -1539,8 +1539,8 @@ public:
   }
 
   /**
-   * Only to be used inside Gecko, you can't really do anything with the
-   * pointer outside Gecko anyway.
+   * Only to be used inside Goanna, you can't really do anything with the
+   * pointer outside Goanna anyway.
    */
   nsNodeInfoManager* NodeInfoManager() const
   {
@@ -3222,7 +3222,7 @@ protected:
   ReadyState mReadyState;
 
   // Whether this document has (or will have, once we have a pres shell) a
-  // Gecko- or Servo-backed style system.
+  // Goanna- or Servo-backed style system.
   mozilla::StyleBackendType mStyleBackendType;
 
 #ifdef MOZILLA_INTERNAL_API

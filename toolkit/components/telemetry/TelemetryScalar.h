@@ -59,10 +59,10 @@ void ClearScalars();
 size_t GetMapShallowSizesOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 size_t GetScalarSizesOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
-void UpdateChildData(GeckoProcessType aProcessType,
+void UpdateChildData(GoannaProcessType aProcessType,
                      const nsTArray<mozilla::Telemetry::ScalarAction>& aScalarActions);
 
-void UpdateChildKeyedData(GeckoProcessType aProcessType,
+void UpdateChildKeyedData(GoannaProcessType aProcessType,
                           const nsTArray<mozilla::Telemetry::KeyedScalarAction>& aScalarActions);
 
 } // namespace TelemetryScalar

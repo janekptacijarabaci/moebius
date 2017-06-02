@@ -138,7 +138,7 @@ bool EnsureNSSInitializedChromeOrContent()
 // creating any other components.
 bool EnsureNSSInitialized(EnsureNSSOperator op)
 {
-  if (GeckoProcessType_Default != XRE_GetProcessType())
+  if (GoannaProcessType_Default != XRE_GetProcessType())
   {
     if (op == nssEnsureOnChromeOnly)
     {

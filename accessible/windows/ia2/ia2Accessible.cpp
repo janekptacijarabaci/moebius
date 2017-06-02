@@ -163,16 +163,16 @@ ia2Accessible::role(long* aRole)
   if (acc->IsDefunct())
     return CO_E_OBJNOTCONNECTED;
 
-#define ROLE(_geckoRole, stringRole, atkRole, macRole, \
+#define ROLE(_goannaRole, stringRole, atkRole, macRole, \
              msaaRole, ia2Role, nameRule) \
-  case roles::_geckoRole: \
+  case roles::_goannaRole: \
     *aRole = ia2Role; \
     break;
 
-  a11y::role geckoRole;
+  a11y::role goannaRole;
   MOZ_ASSERT(!acc->IsProxy());
-  geckoRole = acc->Role();
-  switch (geckoRole) {
+  goannaRole = acc->Role();
+  switch (goannaRole) {
 #include "RoleMap.h"
     default:
       MOZ_CRASH("Unknown role.");
@@ -183,7 +183,7 @@ ia2Accessible::role(long* aRole)
   // Special case, if there is a ROLE_ROW inside of a ROLE_TREE_TABLE, then call
   // the IA2 role a ROLE_OUTLINEITEM.
   MOZ_ASSERT(!acc->IsProxy());
-  if (geckoRole == roles::ROW) {
+  if (goannaRole == roles::ROW) {
     Accessible* xpParent = acc->Parent();
     if (xpParent && xpParent->Role() == roles::TREE_TABLE)
       *aRole = ROLE_SYSTEM_OUTLINEITEM;
@@ -214,12 +214,12 @@ ia2Accessible::scrollToPoint(enum IA2CoordinateType aCoordType,
   if (acc->IsDefunct())
     return CO_E_OBJNOTCONNECTED;
 
-  uint32_t geckoCoordType = (aCoordType == IA2_COORDTYPE_SCREEN_RELATIVE) ?
+  uint32_t goannaCoordType = (aCoordType == IA2_COORDTYPE_SCREEN_RELATIVE) ?
     nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE :
     nsIAccessibleCoordinateType::COORDTYPE_PARENT_RELATIVE;
 
   MOZ_ASSERT(!acc->IsProxy());
-  acc->ScrollToPoint(geckoCoordType, aX, aY);
+  acc->ScrollToPoint(goannaCoordType, aX, aY);
 
   return S_OK;
 }
@@ -279,7 +279,7 @@ ia2Accessible::get_states(AccessibleStates* aStates)
   if (state & states::REQUIRED)
     *aStates |= IA2_STATE_REQUIRED;
 
-  // The following IA2 states are not supported by Gecko
+  // The following IA2 states are not supported by Goanna
   // IA2_STATE_ARMED
   // IA2_STATE_MANAGES_DESCENDANTS
   // IA2_STATE_ICONIFIED

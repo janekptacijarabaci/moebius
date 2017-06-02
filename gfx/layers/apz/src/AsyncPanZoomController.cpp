@@ -99,8 +99,8 @@ namespace mozilla {
 namespace layers {
 
 typedef mozilla::layers::AllowedTouchBehavior AllowedTouchBehavior;
-typedef GeckoContentController::APZStateChange APZStateChange;
-typedef GeckoContentController::TapType TapType;
+typedef GoannaContentController::APZStateChange APZStateChange;
+typedef GoannaContentController::TapType TapType;
 typedef mozilla::gfx::Point Point;
 typedef mozilla::gfx::Matrix4x4 Matrix4x4;
 using mozilla::gfx::PointTyped;
@@ -692,10 +692,10 @@ AsyncPanZoomController::InitializeGlobalState()
 AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
                                                APZCTreeManager* aTreeManager,
                                                const RefPtr<InputQueue>& aInputQueue,
-                                               GeckoContentController* aGeckoContentController,
+                                               GoannaContentController* aGoannaContentController,
                                                GestureBehavior aGestures)
   :  mLayersId(aLayersId),
-     mGeckoContentController(aGeckoContentController),
+     mGoannaContentController(aGoannaContentController),
      mRefPtrMonitor("RefPtrMonitor"),
      // mTreeManager must be initialized before GetFrameTime() is called
      mTreeManager(aTreeManager),
@@ -739,10 +739,10 @@ AsyncPanZoomController::GetPlatformSpecificState()
   return mPlatformSpecificState.get();
 }
 
-already_AddRefed<GeckoContentController>
-AsyncPanZoomController::GetGeckoContentController() const {
+already_AddRefed<GoannaContentController>
+AsyncPanZoomController::GetGoannaContentController() const {
   MonitorAutoLock lock(mRefPtrMonitor);
-  RefPtr<GeckoContentController> controller = mGeckoContentController;
+  RefPtr<GoannaContentController> controller = mGoannaContentController;
   return controller.forget();
 }
 
@@ -767,7 +767,7 @@ AsyncPanZoomController::Destroy()
 
   { // scope the lock
     MonitorAutoLock lock(mRefPtrMonitor);
-    mGeckoContentController = nullptr;
+    mGoannaContentController = nullptr;
     mGestureEventListener = nullptr;
   }
   mParent = nullptr;
@@ -1109,7 +1109,7 @@ nsEventStatus AsyncPanZoomController::OnTouchStart(const MultiTouchInput& aEvent
     case NOTHING: {
       mX.StartTouch(point.x, aEvent.mTime);
       mY.StartTouch(point.y, aEvent.mTime);
-      if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
+      if (RefPtr<GoannaContentController> controller = GetGoannaContentController()) {
         MOZ_ASSERT(GetCurrentTouchBlock());
         controller->NotifyAPZStateChange(
             GetGuid(), APZStateChange::eStartTouch,
@@ -1192,7 +1192,7 @@ nsEventStatus AsyncPanZoomController::OnTouchMove(const MultiTouchInput& aEvent)
 nsEventStatus AsyncPanZoomController::OnTouchEnd(const MultiTouchInput& aEvent) {
   APZC_LOG("%p got a touch-end in state %d\n", this, mState);
 
-  RefPtr<GeckoContentController> controller = GetGeckoContentController();
+  RefPtr<GoannaContentController> controller = GetGoannaContentController();
   if (controller) {
     controller->SetScrollingRootContent(false);
   }
@@ -1326,7 +1326,7 @@ nsEventStatus AsyncPanZoomController::OnScaleBegin(const PinchGestureInput& aEve
   // For platforms that don't support APZ zooming, dispatch a message to the
   // content controller, it may want to do something else with this gesture.
   if (!gfxPrefs::APZAllowZooming()) {
-    if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
+    if (RefPtr<GoannaContentController> controller = GetGoannaContentController()) {
       controller->NotifyPinchGesture(aEvent.mType, GetGuid(), 0, aEvent.modifiers);
     }
   }
@@ -1351,7 +1351,7 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
   }
 
   if (!gfxPrefs::APZAllowZooming()) {
-    if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
+    if (RefPtr<GoannaContentController> controller = GetGoannaContentController()) {
       controller->NotifyPinchGesture(aEvent.mType, GetGuid(),
           ViewAs<LayoutDevicePixel>(aEvent.mCurrentSpan - aEvent.mPreviousSpan,
             PixelCastJustification::LayoutDeviceIsParentLayerForRCDRSF),
@@ -1431,7 +1431,7 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
       if (!mPinchPaintTimerSet) {
         const int delay = gfxPrefs::APZScaleRepaintDelay();
         if (delay >= 0) {
-          if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
+          if (RefPtr<GoannaContentController> controller = GetGoannaContentController()) {
             mPinchPaintTimerSet = true;
             controller->PostDelayedTask(
               NewRunnableMethod(this,
@@ -1464,7 +1464,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
   }
 
   if (!gfxPrefs::APZAllowZooming()) {
-    if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
+    if (RefPtr<GoannaContentController> controller = GetGoannaContentController()) {
       controller->NotifyPinchGesture(aEvent.mType, GetGuid(), 0, aEvent.modifiers);
     }
   }
@@ -1510,15 +1510,15 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
 }
 
 bool
-AsyncPanZoomController::ConvertToGecko(const ScreenIntPoint& aPoint, LayoutDevicePoint* aOut)
+AsyncPanZoomController::ConvertToGoanna(const ScreenIntPoint& aPoint, LayoutDevicePoint* aOut)
 {
   if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
-    ScreenToScreenMatrix4x4 transformScreenToGecko =
+    ScreenToScreenMatrix4x4 transformScreenToGoanna =
         treeManagerLocal->GetScreenToApzcTransform(this)
-      * treeManagerLocal->GetApzcToGeckoTransform(this);
+      * treeManagerLocal->GetApzcToGoannaTransform(this);
 
     Maybe<ScreenIntPoint> layoutPoint = UntransformBy(
-        transformScreenToGecko, aPoint);
+        transformScreenToGoanna, aPoint);
     if (!layoutPoint) {
       return false;
     }
@@ -1718,7 +1718,7 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
     // We can't scroll this apz anymore, so we simply drop the event.
     if (mInputQueue->GetActiveWheelTransaction() &&
         gfxPrefs::MouseScrollTestingEnabled()) {
-      if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
+      if (RefPtr<GoannaContentController> controller = GetGoannaContentController()) {
         controller->NotifyMozMouseScrollEvent(
           mFrameMetrics.GetScrollId(),
           NS_LITERAL_STRING("MozMouseScrollFailed"));
@@ -1828,7 +1828,7 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
 void
 AsyncPanZoomController::NotifyMozMouseScrollEvent(const nsString& aString) const
 {
-  RefPtr<GeckoContentController> controller = GetGeckoContentController();
+  RefPtr<GoannaContentController> controller = GetGoannaContentController();
   if (!controller) {
     return;
   }
@@ -2028,10 +2028,10 @@ nsEventStatus AsyncPanZoomController::OnPanMomentumEnd(const PanGestureInput& aE
 
 nsEventStatus AsyncPanZoomController::OnLongPress(const TapGestureInput& aEvent) {
   APZC_LOG("%p got a long-press in state %d\n", this, mState);
-  RefPtr<GeckoContentController> controller = GetGeckoContentController();
+  RefPtr<GoannaContentController> controller = GetGoannaContentController();
   if (controller) {
-    LayoutDevicePoint geckoScreenPoint;
-    if (ConvertToGecko(aEvent.mPoint, &geckoScreenPoint)) {
+    LayoutDevicePoint goannaScreenPoint;
+    if (ConvertToGoanna(aEvent.mPoint, &goannaScreenPoint)) {
       TouchBlockState* touch = GetCurrentTouchBlock();
       if (!touch) {
         APZC_LOG("%p dropping long-press because some non-touch block interrupted it\n", this);
@@ -2042,7 +2042,7 @@ nsEventStatus AsyncPanZoomController::OnLongPress(const TapGestureInput& aEvent)
         return nsEventStatus_eIgnore;
       }
       uint64_t blockId = GetInputQueue()->InjectNewTouchBlock(this);
-      controller->HandleTap(TapType::eLongTap, geckoScreenPoint, aEvent.modifiers, GetGuid(), blockId);
+      controller->HandleTap(TapType::eLongTap, goannaScreenPoint, aEvent.modifiers, GetGuid(), blockId);
       return nsEventStatus_eConsumeNoDefault;
     }
   }
@@ -2056,10 +2056,10 @@ nsEventStatus AsyncPanZoomController::OnLongPressUp(const TapGestureInput& aEven
 
 nsEventStatus AsyncPanZoomController::GenerateSingleTap(TapType aType,
       const ScreenIntPoint& aPoint, mozilla::Modifiers aModifiers) {
-  RefPtr<GeckoContentController> controller = GetGeckoContentController();
+  RefPtr<GoannaContentController> controller = GetGoannaContentController();
   if (controller) {
-    LayoutDevicePoint geckoScreenPoint;
-    if (ConvertToGecko(aPoint, &geckoScreenPoint)) {
+    LayoutDevicePoint goannaScreenPoint;
+    if (ConvertToGoanna(aPoint, &goannaScreenPoint)) {
       TouchBlockState* touch = GetCurrentTouchBlock();
       // |touch| may be null in the case where this function is
       // invoked by GestureEventListener on a timeout. In that case we already
@@ -2082,8 +2082,8 @@ nsEventStatus AsyncPanZoomController::GenerateSingleTap(TapType aType,
       RefPtr<Runnable> runnable =
         NewRunnableMethod<TapType, LayoutDevicePoint, mozilla::Modifiers,
                           ScrollableLayerGuid, uint64_t>(controller,
-                            &GeckoContentController::HandleTap,
-                            aType, geckoScreenPoint,
+                            &GoannaContentController::HandleTap,
+                            aType, goannaScreenPoint,
                             aModifiers, GetGuid(),
                             touch ? touch->GetBlockId() : 0);
 
@@ -2095,7 +2095,7 @@ nsEventStatus AsyncPanZoomController::GenerateSingleTap(TapType aType,
 }
 
 void AsyncPanZoomController::OnTouchEndOrCancel() {
-  if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
+  if (RefPtr<GoannaContentController> controller = GetGoannaContentController()) {
     MOZ_ASSERT(GetCurrentTouchBlock());
     controller->NotifyAPZStateChange(
         GetGuid(), APZStateChange::eEndTouch, GetCurrentTouchBlock()->SingleTapOccurred());
@@ -2120,13 +2120,13 @@ nsEventStatus AsyncPanZoomController::OnSingleTapConfirmed(const TapGestureInput
 
 nsEventStatus AsyncPanZoomController::OnDoubleTap(const TapGestureInput& aEvent) {
   APZC_LOG("%p got a double-tap in state %d\n", this, mState);
-  RefPtr<GeckoContentController> controller = GetGeckoContentController();
+  RefPtr<GoannaContentController> controller = GetGoannaContentController();
   if (controller) {
     MOZ_ASSERT(GetCurrentTouchBlock());
     if (mZoomConstraints.mAllowDoubleTapZoom && GetCurrentTouchBlock()->TouchActionAllowsDoubleTapZoom()) {
-      LayoutDevicePoint geckoScreenPoint;
-      if (ConvertToGecko(aEvent.mPoint, &geckoScreenPoint)) {
-        controller->HandleTap(TapType::eDoubleTap, geckoScreenPoint,
+      LayoutDevicePoint goannaScreenPoint;
+      if (ConvertToGoanna(aEvent.mPoint, &goannaScreenPoint)) {
+        controller->HandleTap(TapType::eDoubleTap, goannaScreenPoint,
             aEvent.modifiers, GetGuid(), GetCurrentTouchBlock()->GetBlockId());
       }
     }
@@ -2331,7 +2331,7 @@ nsEventStatus AsyncPanZoomController::StartPanning(const MultiTouchInput& aEvent
   }
 
   if (IsInPanningState()) {
-    if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
+    if (RefPtr<GoannaContentController> controller = GetGoannaContentController()) {
       controller->NotifyAPZStateChange(GetGuid(), APZStateChange::eStartPanning);
     }
     return nsEventStatus_eConsumeNoDefault;
@@ -2386,7 +2386,7 @@ bool AsyncPanZoomController::AttemptScroll(ParentLayerPoint& aStartPoint,
       ScrollBy(adjustedDisplacement / mFrameMetrics.GetZoom());
       if (CancelableBlockState* block = GetCurrentInputBlock()) {
         if (block->AsTouchBlock() && (block->GetScrolledApzc() != this)) {
-          RefPtr<GeckoContentController> controller = GetGeckoContentController();
+          RefPtr<GoannaContentController> controller = GetGoannaContentController();
           if (controller) {
             controller->SetScrollingRootContent(IsRootContent());
           }
@@ -2910,7 +2910,7 @@ void AsyncPanZoomController::RequestContentRepaint(bool aUserAction) {
   // important to do this before the call to CalculatePendingDisplayPort, so
   // that CalculatePendingDisplayPort uses the most recent available version of
   // mFrameMetrics, just before the paint request is dispatched to content.
-  RefPtr<GeckoContentController> controller = GetGeckoContentController();
+  RefPtr<GoannaContentController> controller = GetGoannaContentController();
   if (!controller) {
     return;
   }
@@ -2948,7 +2948,7 @@ void
 AsyncPanZoomController::RequestContentRepaint(const FrameMetrics& aFrameMetrics,
                                               const ParentLayerPoint& aVelocity)
 {
-  RefPtr<GeckoContentController> controller = GetGeckoContentController();
+  RefPtr<GoannaContentController> controller = GetGoannaContentController();
   if (!controller) {
     return;
   }
@@ -2995,7 +2995,7 @@ AsyncPanZoomController::RequestContentRepaint(const FrameMetrics& aFrameMetrics,
   MOZ_ASSERT(aFrameMetrics.GetScrollUpdateType() == FrameMetrics::eNone ||
              aFrameMetrics.GetScrollUpdateType() == FrameMetrics::eUserAction);
   controller->RequestContentRepaint(aFrameMetrics);
-  mExpectedGeckoMetrics = aFrameMetrics;
+  mExpectedGoannaMetrics = aFrameMetrics;
   mLastPaintRequestMetrics = aFrameMetrics;
 }
 
@@ -3023,7 +3023,7 @@ bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
       SetState(NOTHING);
     }
     // Request a repaint at the end of the animation in case something such as a
-    // call to NotifyLayersUpdated was invoked during the animation and Gecko's
+    // call to NotifyLayersUpdated was invoked during the animation and Goanna's
     // current state is some intermediate point of the animation.
     if (!continueAnimation || wantsRepaints) {
       RequestContentRepaint();
@@ -3213,7 +3213,7 @@ Matrix4x4 AsyncPanZoomController::GetTransformToLastDispatchedPaint() const {
   ReentrantMonitorAutoEnter lock(mMonitor);
 
   LayerPoint scrollChange =
-    (mLastContentPaintMetrics.GetScrollOffset() - mExpectedGeckoMetrics.GetScrollOffset())
+    (mLastContentPaintMetrics.GetScrollOffset() - mExpectedGoannaMetrics.GetScrollOffset())
     * mLastContentPaintMetrics.GetDevPixelsPerCSSPixel()
     * mLastContentPaintMetrics.GetCumulativeResolution();
 
@@ -3223,7 +3223,7 @@ Matrix4x4 AsyncPanZoomController::GetTransformToLastDispatchedPaint() const {
   LayoutDeviceToParentLayerScale2D lastContentZoom =
     mLastContentPaintMetrics.GetZoom() / mLastContentPaintMetrics.GetDevPixelsPerCSSPixel();
   LayoutDeviceToParentLayerScale2D lastDispatchedZoom =
-    mExpectedGeckoMetrics.GetZoom() / mExpectedGeckoMetrics.GetDevPixelsPerCSSPixel();
+    mExpectedGoannaMetrics.GetZoom() / mExpectedGoannaMetrics.GetDevPixelsPerCSSPixel();
   gfxSize zoomChange = lastContentZoom / lastDispatchedZoom;
 
   return Matrix4x4::Translation(scrollChange.x, scrollChange.y, 0).
@@ -3440,7 +3440,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
     CancelAnimation();
 
     mScrollMetadata = aScrollMetadata;
-    mExpectedGeckoMetrics = aLayerMetrics;
+    mExpectedGoannaMetrics = aLayerMetrics;
     ShareCompositorFrameMetrics();
 
     if (mFrameMetrics.GetDisplayPortMargins() != ScreenMargin()) {
@@ -3454,7 +3454,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
   } else {
     // If we're not taking the aLayerMetrics wholesale we still need to pull
     // in some things into our local mFrameMetrics because these things are
-    // determined by Gecko and our copy in mFrameMetrics may be stale.
+    // determined by Goanna and our copy in mFrameMetrics may be stale.
 
     if (FuzzyEqualsAdditive(mFrameMetrics.GetCompositionBounds().width, aLayerMetrics.GetCompositionBounds().width) &&
         mFrameMetrics.GetDevPixelsPerCSSPixel() == aLayerMetrics.GetDevPixelsPerCSSPixel() &&
@@ -3510,12 +3510,12 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
       // Send an acknowledgement with the new scroll generation so that any
       // repaint requests later in this function go through.
       // Because of the scroll generation update, any inflight paint requests are
-      // going to be ignored by layout, and so mExpectedGeckoMetrics
+      // going to be ignored by layout, and so mExpectedGoannaMetrics
       // becomes incorrect for the purposes of calculating the LD transform. To
-      // correct this we need to update mExpectedGeckoMetrics to be the
-      // last thing we know was painted by Gecko.
+      // correct this we need to update mExpectedGoannaMetrics to be the
+      // last thing we know was painted by Goanna.
       mFrameMetrics.CopyScrollInfoFrom(aLayerMetrics);
-      mExpectedGeckoMetrics = aLayerMetrics;
+      mExpectedGoannaMetrics = aLayerMetrics;
 
       // Cancel the animation (which might also trigger a repaint request)
       // after we update the scroll offset above. Otherwise we can be left
@@ -3547,7 +3547,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
     // above.
     mFrameMetrics.CopySmoothScrollInfoFrom(aLayerMetrics);
     needContentRepaint = true;
-    mExpectedGeckoMetrics = aLayerMetrics;
+    mExpectedGoannaMetrics = aLayerMetrics;
 
     SmoothScrollTo(mFrameMetrics.GetSmoothScrollOffset());
   }
@@ -3704,7 +3704,7 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
     endZoomToMetrics.SetPaintRequestTime(TimeStamp::Now());
     endZoomToMetrics.SetRepaintDrivenByUserAction(true);
 
-    RefPtr<GeckoContentController> controller = GetGeckoContentController();
+    RefPtr<GoannaContentController> controller = GetGoannaContentController();
     if (!controller) {
       return;
     }
@@ -3794,7 +3794,7 @@ void AsyncPanZoomController::DispatchStateChangeNotification(PanZoomState aOldSt
     }
   }
 
-  if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
+  if (RefPtr<GoannaContentController> controller = GetGoannaContentController()) {
     if (!IsTransformingState(aOldState) && IsTransformingState(aNewState)) {
       controller->NotifyAPZStateChange(
           GetGuid(), APZStateChange::eTransformBegin);
@@ -3858,7 +3858,7 @@ AsyncPanZoomController::GetZoomConstraints() const
 void AsyncPanZoomController::PostDelayedTask(already_AddRefed<Runnable> aTask, int aDelayMs) {
   APZThreadUtils::AssertOnControllerThread();
   RefPtr<Runnable> task = aTask;
-  RefPtr<GeckoContentController> controller = GetGeckoContentController();
+  RefPtr<GoannaContentController> controller = GetGoannaContentController();
   if (controller) {
     controller->PostDelayedTask(task.forget(), aDelayMs);
   }

@@ -10,7 +10,7 @@
 #include "nsIObserverService.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "nspr.h"
 #include "pk11func.h"
 

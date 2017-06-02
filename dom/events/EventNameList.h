@@ -473,7 +473,7 @@ EVENT(paste,
       ePaste,
       EventNameType_HTMLXUL,
       eClipboardEventClass)
-// Gecko-specific extensions that apply to elements
+// Goanna-specific extensions that apply to elements
 EVENT(beforescriptexecute,
       eBeforeScriptExecute,
       EventNameType_HTMLXUL,

@@ -48,7 +48,7 @@
 #include "TexturePoolOGL.h"
 #endif
 
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 namespace mozilla {
 

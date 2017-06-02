@@ -49,7 +49,7 @@
 #include "nsPrintfCString.h"
 #include "nsAlgorithm.h"
 #include "nsQueryObject.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "nsIConsoleService.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
@@ -105,7 +105,7 @@
 #include "HttpChannelParent.h"
 
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracer.h"
+#include "GoannaTaskTracer.h"
 #endif
 
 namespace mozilla { namespace net {

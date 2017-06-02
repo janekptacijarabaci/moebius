@@ -8,7 +8,7 @@
 
 #include "GMPService.h"
 #include "mozilla/gmp/PGMPServiceParent.h"
-#include "mozIGeckoMediaPluginChromeService.h"
+#include "mozIGoannaMediaPluginChromeService.h"
 #include "nsClassHashtable.h"
 #include "nsDataHashtable.h"
 #include "mozilla/Atomics.h"
@@ -24,20 +24,20 @@ namespace gmp {
 
 class GMPParent;
 
-class GeckoMediaPluginServiceParent final : public GeckoMediaPluginService
-                                          , public mozIGeckoMediaPluginChromeService
+class GoannaMediaPluginServiceParent final : public GoannaMediaPluginService
+                                          , public mozIGoannaMediaPluginChromeService
                                           , public nsIAsyncShutdownBlocker
 {
 public:
-  static already_AddRefed<GeckoMediaPluginServiceParent> GetSingleton();
+  static already_AddRefed<GoannaMediaPluginServiceParent> GetSingleton();
 
-  GeckoMediaPluginServiceParent();
+  GoannaMediaPluginServiceParent();
   nsresult Init() override;
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
-  // mozIGeckoMediaPluginService
+  // mozIGoannaMediaPluginService
   NS_IMETHOD HasPluginForAPI(const nsACString& aAPI,
                              nsTArray<nsCString>* aTags,
                              bool *aRetVal) override;
@@ -46,7 +46,7 @@ public:
                        const nsAString& aGMPName,
                        UniquePtr<GetNodeIdCallback>&& aCallback) override;
 
-  NS_DECL_MOZIGECKOMEDIAPLUGINCHROMESERVICE
+  NS_DECL_MOZIGOANNAMEDIAPLUGINCHROMESERVICE
   NS_DECL_NSIOBSERVER
 
   RefPtr<GenericPromise> EnsureInitialized();
@@ -68,7 +68,7 @@ public:
 private:
   friend class GMPServiceParent;
 
-  virtual ~GeckoMediaPluginServiceParent();
+  virtual ~GoannaMediaPluginServiceParent();
 
   void ClearStorage();
 
@@ -123,7 +123,7 @@ protected:
 
 private:
   // Creates a copy of aOriginal. Note that the caller is responsible for
-  // adding this to GeckoMediaPluginServiceParent::mPlugins.
+  // adding this to GoannaMediaPluginServiceParent::mPlugins.
   already_AddRefed<GMPParent> ClonePlugin(const GMPParent* aOriginal);
   nsresult EnsurePluginsOnDiskScanned();
   nsresult InitStorage();
@@ -136,7 +136,7 @@ private:
       REMOVE_AND_DELETE_FROM_DISK,
     };
 
-    PathRunnable(GeckoMediaPluginServiceParent* aService, const nsAString& aPath,
+    PathRunnable(GoannaMediaPluginServiceParent* aService, const nsAString& aPath,
                  EOperation aOperation, bool aDefer = false)
       : mService(aService)
       , mPath(aPath)
@@ -147,7 +147,7 @@ private:
     NS_DECL_NSIRUNNABLE
 
   private:
-    RefPtr<GeckoMediaPluginServiceParent> mService;
+    RefPtr<GoannaMediaPluginServiceParent> mService;
     nsString mPath;
     EOperation mOperation;
     bool mDefer;
@@ -212,7 +212,7 @@ bool MatchOrigin(nsIFile* aPath,
 class GMPServiceParent final : public PGMPServiceParent
 {
 public:
-  explicit GMPServiceParent(GeckoMediaPluginServiceParent* aService)
+  explicit GMPServiceParent(GoannaMediaPluginServiceParent* aService)
     : mService(aService)
   {
     mService->ServiceUserCreated();
@@ -239,7 +239,7 @@ public:
 private:
   void CloseTransport(Monitor* aSyncMonitor, bool* aCompleted);
 
-  RefPtr<GeckoMediaPluginServiceParent> mService;
+  RefPtr<GoannaMediaPluginServiceParent> mService;
 };
 
 } // namespace gmp

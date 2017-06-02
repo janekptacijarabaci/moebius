@@ -5,9 +5,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import gdb
-from gdbpp import GeckoPrettyPrinter
+from gdbpp import GoannaPrettyPrinter
 
-@GeckoPrettyPrinter('nsAutoOwningThread', '^nsAutoOwningThread$')
+@GoannaPrettyPrinter('nsAutoOwningThread', '^nsAutoOwningThread$')
 class owning_thread_printer(object):
     def __init__(self, value):
         self.value = value

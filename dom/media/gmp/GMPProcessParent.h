@@ -12,14 +12,14 @@
 #include "base/file_path.h"
 #include "base/thread.h"
 #include "chrome/common/child_process_host.h"
-#include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "mozilla/ipc/GoannaChildProcessHost.h"
 
 class nsIRunnable;
 
 namespace mozilla {
 namespace gmp {
 
-class GMPProcessParent final : public mozilla::ipc::GeckoChildProcessHost
+class GMPProcessParent final : public mozilla::ipc::GoannaChildProcessHost
 {
 public:
   explicit GMPProcessParent(const std::string& aGMPPath);
@@ -34,8 +34,8 @@ public:
   bool CanShutdown() override { return true; }
   const std::string& GetPluginFilePath() { return mGMPPath; }
 
-  using mozilla::ipc::GeckoChildProcessHost::GetChannel;
-  using mozilla::ipc::GeckoChildProcessHost::GetChildProcessHandle;
+  using mozilla::ipc::GoannaChildProcessHost::GetChannel;
+  using mozilla::ipc::GoannaChildProcessHost::GetChildProcessHandle;
 
 private:
   void DoDelete();

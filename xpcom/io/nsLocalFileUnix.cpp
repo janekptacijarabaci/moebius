@@ -2024,7 +2024,7 @@ nsLocalFile::Launch()
   }
 
   nsAutoCString fileUri = NS_LITERAL_CSTRING("file://") + mPath;
-  return java::GeckoAppShell::OpenUriExternal(
+  return java::GoannaAppShell::OpenUriExternal(
     NS_ConvertUTF8toUTF16(fileUri),
     NS_ConvertUTF8toUTF16(type),
     EmptyString(),

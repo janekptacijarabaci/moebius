@@ -113,7 +113,7 @@ protected:
     return PresContext()->FrameConstructor();
   }
 
-  inline bool IsGecko() const {
+  inline bool IsGoanna() const {
     return !IsServo();
   }
 

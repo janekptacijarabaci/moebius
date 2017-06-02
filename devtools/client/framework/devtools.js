@@ -49,7 +49,7 @@ function DevTools() {
 
 DevTools.prototype = {
   // The windowtype of the main window, used in various tools. This may be set
-  // to something different by other gecko apps.
+  // to something different by other goanna apps.
   chromeWindowType: "navigator:browser",
 
   registerDefaults() {
