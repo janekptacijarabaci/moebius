@@ -41,12 +41,12 @@ function promiseNotification(topic) {
 
   return new Promise((resolve, reject) => {
     function observe(subject, topic, data) {
-      info("Received " + topic + " notification from Gecko");
+      info("Received " + topic + " notification from Goanna");
       Services.obs.removeObserver(observe, topic);
       resolve();
     }
     Services.obs.addObserver(observe, topic, false);
-    info("Now waiting for " + topic + " notification from Gecko");
+    info("Now waiting for " + topic + " notification from Goanna");
   });
 }
 
@@ -56,7 +56,7 @@ function promiseLinkVisit(url) {
   var topic = "link-visited";
   return new Promise((resolve, reject) => {
     function observe(subject, topic, data) {
-      info("Received " + topic + " notification from Gecko");
+      info("Received " + topic + " notification from Goanna");
       var uri = subject.QueryInterface(Ci.nsIURI);
       if (uri.spec != url) {
         info("Visited URL " + uri.spec + " is not desired URL " + url + "; ignoring.");
@@ -67,6 +67,6 @@ function promiseLinkVisit(url) {
       resolve();
     };
     Services.obs.addObserver(observe, topic, false);
-    info("Now waiting for " + topic + " notification from Gecko with URL " + url);
+    info("Now waiting for " + topic + " notification from Goanna with URL " + url);
   });
 }

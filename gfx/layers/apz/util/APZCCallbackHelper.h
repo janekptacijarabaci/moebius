@@ -9,9 +9,10 @@
 #include "FrameMetrics.h"
 #include "InputData.h"
 #include "mozilla/EventForwards.h"
-#include "mozilla/Function.h"
 #include "mozilla/layers/APZUtils.h"
 #include "nsIDOMWindowUtils.h"
+
+#include <functional>
 
 class nsIContent;
 class nsIDocument;
@@ -24,11 +25,11 @@ template<class T> class nsCOMPtr;
 namespace mozilla {
 namespace layers {
 
-typedef function<void(uint64_t, const nsTArray<TouchBehaviorFlags>&)>
+typedef std::function<void(uint64_t, const nsTArray<TouchBehaviorFlags>&)>
         SetAllowedTouchBehaviorCallback;
 
 /* This class contains some helper methods that facilitate implementing the
-   GeckoContentController callback interface required by the AsyncPanZoomController.
+   GoannaContentController callback interface required by the AsyncPanZoomController.
    Since different platforms need to implement this interface in similar-but-
    not-quite-the-same ways, this utility class provides some helpful methods
    to hold code that can be shared across the different platform implementations.
@@ -120,7 +121,8 @@ public:
                                    int32_t aClickCount,
                                    int32_t aModifiers,
                                    bool aIgnoreRootScrollFrame,
-                                   unsigned short aInputSourceArg);
+                                   unsigned short aInputSourceArg,
+                                   uint32_t aPointerId);
 
     /* Fire a single-tap event at the given point. The event is dispatched
      * via the given widget. */
@@ -137,8 +139,12 @@ public:
      * sent to the compositor, which will then post a message back to APZ's
      * controller thread. Otherwise, the provided widget's SetConfirmedTargetAPZC
      * method is invoked immediately.
+     *
+     * Returns true if any displayports need to be set. (A caller may be
+     * interested to know this, because they may need to delay certain actions
+     * until after the displayport comes into effect.)
      */
-    static void SendSetTargetAPZCNotification(nsIWidget* aWidget,
+    static bool SendSetTargetAPZCNotification(nsIWidget* aWidget,
                                               nsIDocument* aDocument,
                                               const WidgetGUIEvent& aEvent,
                                               const ScrollableLayerGuid& aGuid,
@@ -193,7 +199,7 @@ public:
 
     /* Notify content of the progress of a pinch gesture that APZ won't do
      * zooming for (because the apz.allow_zooming pref is false). This function
-     * will dispatch appropriate WidgetSimpleGestureEvent events to gecko.
+     * will dispatch appropriate WidgetSimpleGestureEvent events to goanna.
      */
     static void NotifyPinchGesture(PinchGestureInput::PinchGestureType aType,
                                    LayoutDeviceCoord aSpanChange,

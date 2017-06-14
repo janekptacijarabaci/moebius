@@ -21,7 +21,7 @@ StyleSheet::SheetInfo()
   if (IsServo()) {
     return AsServo()->mSheetInfo;
   }
-  return *AsGecko()->mInner;
+  return *AsGoanna()->mInner;
 }
 
 const StyleSheetInfo&
@@ -30,7 +30,7 @@ StyleSheet::SheetInfo() const
   if (IsServo()) {
     return AsServo()->mSheetInfo;
   }
-  return *AsGecko()->mInner;
+  return *AsGoanna()->mInner;
 }
 
 bool
@@ -83,9 +83,17 @@ StyleSheet::HasRules() const
 }
 
 void
-StyleSheet::SetOwningDocument(nsIDocument* aDocument)
+StyleSheet::SetAssociatedDocument(nsIDocument* aDocument,
+                                  DocumentAssociationMode aAssociationMode)
 {
-  MOZ_STYLO_FORWARD(SetOwningDocument, (aDocument))
+  MOZ_ASSERT(aDocument);
+  MOZ_STYLO_FORWARD(SetAssociatedDocument, (aDocument, aAssociationMode))
+}
+
+void
+StyleSheet::ClearAssociatedDocument()
+{
+  MOZ_STYLO_FORWARD(SetAssociatedDocument, (nullptr, NotOwnedByDocument));
 }
 
 StyleSheet*
@@ -113,7 +121,7 @@ void
 StyleSheet::AppendStyleSheet(StyleSheet* aSheet)
 {
   MOZ_STYLO_FORWARD_CONCRETE(AppendStyleSheet,
-                             (aSheet->AsGecko()), (aSheet->AsServo()))
+                             (aSheet->AsGoanna()), (aSheet->AsServo()))
 }
 
 nsIPrincipal*

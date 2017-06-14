@@ -4,7 +4,7 @@ var Cu = Components.utils;
 
 Cu.import("resource://gre/modules/Services.jsm");
 var ssm = Services.scriptSecurityManager;
-function makeURI(uri) { return Services.io.newURI(uri, null, null); }
+function makeURI(uri) { return Services.io.newURI(uri); }
 
 function checkThrows(f) {
   var threw = false;
@@ -93,7 +93,7 @@ function run_test() {
   // nsEP origins should be in lexical order.
   do_check_eq(ep.origin, `[Expanded Principal [${exampleOrg.origin}, ${exampleCom.origin}, ${nullPrin.origin}]]`);
 
-  // Make sure createCodebasePrincipal does what the rest of gecko does.
+  // Make sure createCodebasePrincipal does what the rest of goanna does.
   do_check_true(exampleOrg.equals(Cu.getObjectPrincipal(new Cu.Sandbox('http://example.org'))));
 
   //

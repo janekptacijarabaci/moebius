@@ -115,7 +115,7 @@ function processStsHeader(host, header, status, securityInfo) {
   var error = ERROR_NONE;
   if (header != null && securityInfo != null) {
     try {
-      var uri = Services.io.newURI("https://" + host.name, null, null);
+      var uri = Services.io.newURI("https://" + host.name);
       var sslStatus = securityInfo.QueryInterface(Ci.nsISSLStatusProvider)
                                   .SSLStatus;
       gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS,
@@ -321,7 +321,7 @@ function output(sortedStatuses, currentList) {
       // lengths of string literals, and the preload list is large enough
       // that it runs into said limits.
       for (let c of status.name) {
-	writeTo("'" + c + "', ", fos);
+        writeTo("'" + c + "', ", fos);
       }
       writeTo("'\\0',\n", fos);
     }
@@ -438,33 +438,6 @@ function combineLists(newHosts, currentHosts) {
   }
 }
 
-const TEST_ENTRIES = [
-  { name: "includesubdomains.preloaded.test", includeSubdomains: true },
-  { name: "includesubdomains2.preloaded.test", includeSubdomains: true },
-  { name: "noincludesubdomains.preloaded.test", includeSubdomains: false },
-];
-
-function deleteTestHosts(currentHosts) {
-  for (let testEntry of TEST_ENTRIES) {
-    delete currentHosts[testEntry.name];
-  }
-}
-
-function insertTestHosts(hstsStatuses) {
-  for (let testEntry of TEST_ENTRIES) {
-    hstsStatuses.push({
-      name: testEntry.name,
-      maxAge: MINIMUM_REQUIRED_MAX_AGE,
-      includeSubdomains: testEntry.includeSubdomains,
-      error: ERROR_NONE,
-      // This deliberately doesn't have a value for `retries` (because we should
-      // never attempt to connect to this host).
-      forceInclude: true,
-      originalIncludeSubdomains: testEntry.includeSubdomains,
-    });
-  }
-}
-
 // ****************************************************************************
 // This is where the action happens:
 if (arguments.length != 1) {
@@ -473,8 +446,6 @@ if (arguments.length != 1) {
 }
 // get the current preload list
 var currentHosts = readCurrentList(arguments[0]);
-// delete any hosts we use in tests so we don't actually connect to them
-deleteTestHosts(currentHosts);
 // disable the current preload list so it won't interfere with requests we make
 Services.prefs.setBoolPref("network.stricttransportsecurity.preloadlist", false);
 // download and parse the raw json file from the Chromium source
@@ -486,8 +457,6 @@ combineLists(hosts, currentHosts);
 // get the HSTS status of each host
 var hstsStatuses = [];
 getHSTSStatuses(hosts, hstsStatuses);
-// add the hosts we use in tests
-insertTestHosts(hstsStatuses);
 // sort the hosts alphabetically
 hstsStatuses.sort(compareHSTSStatus);
 // write the results to a file (this is where we filter out hosts that we

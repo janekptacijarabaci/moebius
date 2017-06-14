@@ -28,7 +28,7 @@ interface CacheStorage {
   Promise<sequence<DOMString>> keys();
 };
 
-// chrome-only, gecko specific extension
+// chrome-only, goanna specific extension
 enum CacheStorageNamespace {
   "content", "chrome"
 };

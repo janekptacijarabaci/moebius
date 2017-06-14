@@ -15,7 +15,7 @@ from voluptuous import Schema, Required, Optional, Any
 from taskgraph.transforms.job import run_job_using
 from taskgraph.transforms.job.common import (
     docker_worker_add_workspace_cache,
-    docker_worker_add_gecko_vcs_env_vars,
+    docker_worker_add_goanna_vcs_env_vars,
     docker_worker_setup_secrets,
     docker_worker_add_public_artifacts,
     docker_worker_support_vcs_checkout,
@@ -54,7 +54,7 @@ mozharness_run_schema = Schema({
     ),
 
     # The set of secret names to which the task has access; these are prefixed
-    # with `project/releng/gecko/{treeherder.kind}/level-{level}/`.  Setting
+    # with `project/releng/goanna/{treeherder.kind}/level-{level}/`.  Setting
     # this will enable any worker features required and set the task's scopes
     # appropriately.  `true` here means ['*'], all secrets.  Not supported on
     # Windows
@@ -142,8 +142,6 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
             taskdesc['scopes'].append(
                 'docker-worker:relengapi-proxy:tooltool.download.internal')
         env['TOOLTOOL_CACHE'] = '/home/worker/tooltool-cache'
-        env['TOOLTOOL_REPO'] = 'https://github.com/mozilla/build-tooltool'
-        env['TOOLTOOL_REV'] = 'master'
 
     # Retry if mozharness returns TBPL_RETRY
     worker['retry-exit-status'] = 4
@@ -192,14 +190,12 @@ def mozharness_on_windows(config, job, taskdesc):
         'type': 'directory',
     }]
 
-    docker_worker_add_gecko_vcs_env_vars(config, job, taskdesc)
+    docker_worker_add_goanna_vcs_env_vars(config, job, taskdesc)
 
     env = worker['env']
     env.update({
         'MOZ_BUILD_DATE': config.params['moz_build_date'],
         'MOZ_SCM_LEVEL': config.params['level'],
-        'TOOLTOOL_REPO': 'https://github.com/mozilla/build-tooltool',
-        'TOOLTOOL_REV': 'master',
     })
 
     mh_command = [r'c:\mozilla-build\python\python.exe']
@@ -216,11 +212,24 @@ def mozharness_on_windows(config, job, taskdesc):
     hg_command.extend(['--sharebase', 'y:\\hg-shared'])
     hg_command.append('--purge')
     hg_command.extend(['--upstream', 'https://hg.mozilla.org/mozilla-unified'])
-    hg_command.extend(['--revision', env['GECKO_HEAD_REV']])
-    hg_command.append(env['GECKO_HEAD_REPOSITORY'])
+    hg_command.extend(['--revision', env['GOANNA_HEAD_REV']])
+    hg_command.append(env['GOANNA_HEAD_REPOSITORY'])
     hg_command.append('.\\build\\src')
 
-    worker['command'] = [
+    worker['command'] = []
+    # sccache currently uses the full compiler commandline as input to the
+    # cache hash key, so create a symlink to the task dir and build from
+    # the symlink dir to get consistent paths.
+    if taskdesc.get('needs-sccache'):
+        worker['command'].extend([
+            r'if exist z:\build rmdir z:\build',
+            r'mklink /d z:\build %cd%',
+            # Grant delete permission on the link to everyone.
+            r'icacls z:\build /grant *S-1-1-0:D /L',
+            r'cd /d z:\build',
+        ])
+
+    worker['command'].extend([
         ' '.join(hg_command),
         ' '.join(mh_command)
-    ]
+    ])

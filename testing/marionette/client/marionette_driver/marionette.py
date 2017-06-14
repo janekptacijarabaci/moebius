@@ -18,7 +18,7 @@ import errors
 import transport
 
 from .decorators import do_process_check
-from .geckoinstance import GeckoInstance
+from .goannainstance import GoannaInstance
 from .keys import Keys
 from .timeout import Timeouts
 
@@ -98,10 +98,15 @@ class HTMLElement(object):
         body = {"id": self.id}
         return self.marionette._send_message("getElementText", body, key="value")
 
-    def send_keys(self, *string):
-        """Sends the string via synthesized keypresses to the element."""
-        keys = Marionette.convert_keys(*string)
-        body = {"id": self.id, "value": keys}
+    def send_keys(self, *strings):
+        """Sends the string via synthesized keypresses to the element.
+           If an array is passed in like `marionette.send_keys(Keys.SHIFT, "a")` it
+           will be joined into a string.
+           If an integer is passed in like `marionette.send_keys(1234)` it will be
+           coerced into a string.
+        """
+        keys = Marionette.convert_keys(*strings)
+        body = {"id": self.id, "text": keys}
         self.marionette._send_message("sendKeysToElement", body)
 
     def clear(self):
@@ -513,7 +518,7 @@ class Alert(object):
     ::
 
         Alert(marionette).accept()
-        Alert(merionette).dismiss()
+        Alert(marionette).dismiss()
     """
 
     def __init__(self, marionette):
@@ -535,7 +540,7 @@ class Alert(object):
     def send_keys(self, *string):
         """Send keys to the currently displayed text input area in an open
         tab modal dialog."""
-        body = {"value": Marionette.convert_keys(*string)}
+        body = {"text": Marionette.convert_keys(*string)}
         self.marionette._send_message("sendKeysToDialog", body)
 
 
@@ -571,10 +576,10 @@ class Marionette(object):
         :param startup_timeout: Seconds to wait for a connection with
             binary.
         :param bin: Path to browser binary.  If any truthy value is given
-            this will attempt to start a Gecko instance with the specified
+            this will attempt to start a Goanna instance with the specified
             `app`.
         :param app: Type of ``instance_class`` to use for managing app
-            instance. See ``marionette_driver.geckoinstance``.
+            instance. See ``marionette_driver.goannainstance``.
         :param instance_args: Arguments to pass to ``instance_class``.
 
         """
@@ -600,7 +605,7 @@ class Marionette(object):
                 ex_msg = "{0}:{1} is unavailable.".format(self.host, self.port)
                 raise errors.MarionetteException(message=ex_msg)
 
-            self.instance = GeckoInstance.create(
+            self.instance = GoannaInstance.create(
                 app, host=self.host, port=self.port, bin=self.bin, **instance_args)
             self.instance.start()
             self.raise_for_port(timeout=startup_timeout)
@@ -800,7 +805,7 @@ class Marionette(object):
 
             if returncode is None:
                 message = ('Process killed because the connection to Marionette server is '
-                           'lost. Check gecko.log for errors')
+                           'lost. Check goanna.log for errors')
                 # This will force-close the application without sending any other message.
                 self.cleanup()
             else:
@@ -834,7 +839,7 @@ class Marionette(object):
             else:
                 for i in range(len(val)):
                     typing.append(val[i])
-        return typing
+        return "".join(typing)
 
     def get_permission(self, perm):
         script = """
@@ -1079,7 +1084,7 @@ class Marionette(object):
             self.set_prefs(original_prefs, default_branch=default_branch)
 
     @do_process_check
-    def enforce_gecko_prefs(self, prefs):
+    def enforce_goanna_prefs(self, prefs):
         """Checks if the running instance has the given prefs. If not,
         it will kill the currently running instance, and spawn a new
         instance with the requested preferences.
@@ -1087,8 +1092,8 @@ class Marionette(object):
         : param prefs: A dictionary whose keys are preference names.
         """
         if not self.instance:
-            raise errors.MarionetteException("enforce_gecko_prefs() can only be called "
-                                             "on Gecko instances launched by Marionette")
+            raise errors.MarionetteException("enforce_goanna_prefs() can only be called "
+                                             "on Goanna instances launched by Marionette")
         pref_exists = True
         with self.using_context(self.CONTEXT_CHROME):
             for pref, value in prefs.iteritems():
@@ -1166,7 +1171,7 @@ class Marionette(object):
         """
         if not self.instance:
             raise errors.MarionetteException("quit() can only be called "
-                                             "on Gecko instances launched by Marionette")
+                                             "on Goanna instances launched by Marionette")
 
         if in_app:
             if callable(callback):
@@ -1201,7 +1206,7 @@ class Marionette(object):
         """
         if not self.instance:
             raise errors.MarionetteException("restart() can only be called "
-                                             "on Gecko instances launched by Marionette")
+                                             "on Goanna instances launched by Marionette")
 
         context = self._send_message("getContext", key="value")
         session_id = self.session_id
@@ -1279,7 +1284,7 @@ class Marionette(object):
             self.socket_timeout)
 
         # Call wait_for_port() before attempting to connect in
-        # the event gecko hasn't started yet.
+        # the event goanna hasn't started yet.
         self.wait_for_port(timeout=timeout)
         self.protocol, _ = self.client.connect()
 
@@ -1431,6 +1436,8 @@ class Marionette(object):
 
         :returns: a dictionary with x and y
         """
+        warnings.warn("get_window_position() has been deprecated, please use get_window_rect()",
+                      DeprecationWarning)
         return self._send_message(
             "getWindowPosition", key="value" if self.protocol == 1 else None)
 
@@ -1440,7 +1447,34 @@ class Marionette(object):
         :param x: x coordinate for the top left of the window
         :param y: y coordinate for the top left of the window
         """
+        warnings.warn("set_window_position() has been deprecated, please use set_window_rect()",
+                      DeprecationWarning)
         self._send_message("setWindowPosition", {"x": x, "y": y})
+
+    def set_window_rect(self, x=None, y=None, height=None, width=None):
+        """Set the position and size of the current window.
+
+        The supplied width and height values refer to the window outerWidth
+        and outerHeight values, which include scroll bars, title bars, etc.
+
+        An error will be returned if the requested window size would result
+        in the window being in the maximised state.
+
+        :param x: x coordinate for the top left of the window
+        :param y: y coordinate for the top left of the window
+        :param width: The width to resize the window to.
+        :param height: The height to resize the window to.
+        """
+        if (x is None and y is None) and (height is None and width is None):
+            raise errors.InvalidArgumentException("x and y or height and width need values")
+
+        return self._send_message("setWindowRect", {"x": x, "y": y,
+                                                    "height": height,
+                                                    "width": width})
+
+    @property
+    def window_rect(self):
+        return self._send_message("getWindowRect")
 
     @property
     def title(self):
@@ -2126,14 +2160,16 @@ class Marionette(object):
 
         :returns: dictionary representation of current window width and height
         """
+        warnings.warn("window_size property has been deprecated, please use get_window_rect()",
+                      DeprecationWarning)
         return self._send_message("getWindowSize",
                                   key="value" if self.protocol == 1 else None)
 
     def set_window_size(self, width, height):
         """Resize the browser window currently in focus.
 
-        The supplied width and height values refer to the window outerWidth
-        and outerHeight values, which include scroll bars, title bars, etc.
+        The supplied ``width`` and ``height`` values refer to the window `outerWidth`
+        and `outerHeight` values, which include scroll bars, title bars, etc.
 
         An error will be returned if the requested window size would result
         in the window being in the maximised state.
@@ -2142,6 +2178,8 @@ class Marionette(object):
         :param height: The height to resize the window to.
 
         """
+        warnings.warn("set_window_size() has been deprecated, please use set_window_rect()",
+                      DeprecationWarning)
         body = {"width": width, "height": height}
         return self._send_message("setWindowSize", body)
 

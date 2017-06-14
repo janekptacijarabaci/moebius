@@ -111,7 +111,7 @@ JS::detail::InitWithFailureDiagnostic(bool isDebugBuild)
 
     RETURN_IF_FAIL(js::jit::InitializeIon());
 
-    js::DateTimeInfo::init();
+    RETURN_IF_FAIL(js::InitDateTimeState());
 
 #if EXPOSE_INTL_API
     UErrorCode err = U_ZERO_ERROR;
@@ -137,7 +137,7 @@ JS_ShutDown(void)
                "JS_ShutDown must only be called after JS_Init and can't race with it");
 #ifdef DEBUG
     if (JSRuntime::hasLiveRuntimes()) {
-        // Gecko is too buggy to assert this just yet.
+        // Goanna is too buggy to assert this just yet.
         fprintf(stderr,
                 "WARNING: YOU ARE LEAKING THE WORLD (at least one JSRuntime "
                 "and everything alive inside it, that is) AT JS_ShutDown "
@@ -174,6 +174,8 @@ JS_ShutDown(void)
 #if EXPOSE_INTL_API
     u_cleanup();
 #endif // EXPOSE_INTL_API
+
+    js::FinishDateTimeState();
 
     if (!JSRuntime::hasLiveRuntimes())
         js::jit::ReleaseProcessExecutableMemory();

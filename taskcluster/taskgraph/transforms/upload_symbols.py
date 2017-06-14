@@ -21,16 +21,32 @@ def fill_template(config, tasks):
         # Fill out the dynamic fields in the task description
         task['label'] = task['build-label'] + '-upload-symbols'
         task['dependencies'] = {'build': task['build-label']}
-        task['worker']['env']['GECKO_HEAD_REPOSITORY'] = config.params['head_repository']
-        task['worker']['env']['GECKO_HEAD_REV'] = config.params['head_rev']
+        task['worker']['env']['GOANNA_HEAD_REPOSITORY'] = config.params['head_repository']
+        task['worker']['env']['GOANNA_HEAD_REV'] = config.params['head_rev']
 
         build_platform, build_type = task['build-platform'].split('/')
         attributes = task.setdefault('attributes', {})
         attributes['build_platform'] = build_platform
         attributes['build_type'] = build_type
+        if 'nightly' in build_platform:
+            attributes['nightly'] = True
+
+        treeherder = task.get('treeherder', {})
+        th = task['build-task'].task.get('extra')['treeherder']
+        treeherder.setdefault('platform',
+                              "{}/{}".format(th['machine']['platform'],
+                                             build_type))
+        treeherder.setdefault('tier', th['tier'])
+        treeherder.setdefault('kind', th['jobKind'])
+        if 'nightly' in task['build-label']:
+            treeherder.setdefault('symbol', 'tc(SymN)')
+        else:
+            treeherder.setdefault('symbol', 'tc(Sym)')
+        task['treeherder'] = treeherder
 
         # clear out the stuff that's not part of a task description
         del task['build-label']
         del task['build-platform']
+        del task['build-task']
 
         yield task

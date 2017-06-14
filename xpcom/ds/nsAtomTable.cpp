@@ -634,8 +634,13 @@ RegisterStaticAtoms(const nsStaticAtom* aAtoms, uint32_t aAtomCount)
       if (!atom->IsStaticAtom()) {
         nsAutoCString name;
         atom->ToUTF8String(name);
-        MOZ_CRASH_UNSAFE_PRINTF(
-          "Static atom registration for %s should be pushed back", name.get());
+
+        static char sCrashReason[1024];
+        SprintfLiteral(sCrashReason,
+                       "static atom registration for %s should be pushed back",
+                       name.get());
+        MOZ_CRASH_ANNOTATE(sCrashReason);
+        MOZ_REALLY_CRASH();
       }
     } else {
       atom = new StaticAtom(stringBuffer, stringLen, hash);

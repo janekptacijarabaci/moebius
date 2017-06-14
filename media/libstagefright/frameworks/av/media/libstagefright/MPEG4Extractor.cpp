@@ -753,7 +753,6 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
         case FOURCC('m', 'o', 'o', 'f'):
         case FOURCC('t', 'r', 'a', 'f'):
         case FOURCC('m', 'f', 'r', 'a'):
-        case FOURCC('u', 'd', 't', 'a'):
         case FOURCC('i', 'l', 's', 't'):
         case FOURCC('s', 'i', 'n', 'f'):
         case FOURCC('s', 'c', 'h', 'i'):
@@ -1651,7 +1650,8 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
 
             if (mPath.Length() >= 2
                     && (mPath[mPath.Length() - 2] == FOURCC('m', 'p', '4', 'a') ||
-                       (mPath[mPath.Length() - 2] == FOURCC('e', 'n', 'c', 'a')))) {
+                       (mPath[mPath.Length() - 2] == FOURCC('e', 'n', 'c', 'a')) ||
+                       (mPath[mPath.Length() - 2] == FOURCC('w', 'a', 'v', 'e')))) {
                 // Information from the ESDS must be relied on for proper
                 // setup of sample rate and channel count for MPEG4 Audio.
                 // The generic header appears to only contain generic

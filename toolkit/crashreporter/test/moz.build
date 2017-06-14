@@ -20,7 +20,7 @@ UNIFIED_SOURCES += [
     'nsTestCrasher.cpp',
 ]
 
-GeckoSharedLibrary('testcrasher')
+GoannaSharedLibrary('testcrasher')
 
 DEFINES['SHARED_LIBRARY'] = '%s%s%s' % (
     CONFIG['DLL_PREFIX'],

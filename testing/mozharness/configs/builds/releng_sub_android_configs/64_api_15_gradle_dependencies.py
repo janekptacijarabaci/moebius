@@ -11,11 +11,13 @@ config = {
          'assembleAutomationDebug',
          'assembleAutomationDebugAndroidTest',
          'checkstyle',
-         # Does not include Gecko binaries -- see mobile/android/gradle/with_gecko_binaries.gradle.
-         'geckoview:assembleWithoutGeckoBinaries',
+         'findbugsAutomationDebug',
+         # Does not include Goanna binaries -- see mobile/android/gradle/with_goanna_binaries.gradle.
+         'goannaview:assembleWithoutGoannaBinaries',
          # So that we pick up the test dependencies for the builders.
-         'geckoview_example:assembleWithoutGeckoBinaries',
-         'geckoview_example:assembleWithoutGeckoBinariesAndroidTest',
+         'goannaview_example:assembleWithoutGoannaBinaries',
+         'goannaview_example:assembleWithoutGoannaBinariesAndroidTest',
         ],
     ],
+    'artifact_flag_build_variant_in_try': None, # There's no artifact equivalent.
 }

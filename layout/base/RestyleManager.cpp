@@ -13,10 +13,12 @@
 #include <algorithm> // For std::max
 #include "mozilla/EffectSet.h"
 #include "mozilla/EventStates.h"
+#include "mozilla/ViewportFrame.h"
+#include "mozilla/css/StyleRule.h" // For nsCSSSelector
 #include "nsLayoutUtils.h"
 #include "AnimationCommon.h" // For GetLayerAnimationInfo
 #include "FrameLayerBuilder.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "LayerAnimationInfo.h" // For LayerAnimationInfo::sRecords
 #include "nsAutoPtr.h"
 #include "nsStyleChangeList.h"
@@ -36,7 +38,6 @@
 #include "nsContainerFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsBlockFrame.h"
-#include "nsViewportFrame.h"
 #include "SVGTextFrame.h"
 #include "StickyScrollContainer.h"
 #include "nsIRootBox.h"
@@ -699,7 +700,7 @@ RestyleManager::RebuildAllStyleData(nsChangeHint aExtraHint,
 
   // We may reconstruct frames below and hence process anything that is in the
   // tree. We don't want to get notified to process those items again after.
-  presShell->GetDocument()->FlushPendingNotifications(Flush_ContentAndNotify);
+  presShell->GetDocument()->FlushPendingNotifications(FlushType::ContentAndNotify);
 
   nsAutoScriptBlocker scriptBlocker;
 
@@ -3849,10 +3850,10 @@ RestyleManager::ComputeAndProcessStyleChange(nsStyleContext*        aNewContext,
 nsStyleSet*
 ElementRestyler::StyleSet() const
 {
-  MOZ_ASSERT(mPresContext->StyleSet()->IsGecko(),
-             "ElementRestyler should only be used with a Gecko-flavored "
+  MOZ_ASSERT(mPresContext->StyleSet()->IsGoanna(),
+             "ElementRestyler should only be used with a Goanna-flavored "
              "style backend");
-  return mPresContext->StyleSet()->AsGecko();
+  return mPresContext->StyleSet()->AsGoanna();
 }
 
 AutoDisplayContentsAncestorPusher::AutoDisplayContentsAncestorPusher(

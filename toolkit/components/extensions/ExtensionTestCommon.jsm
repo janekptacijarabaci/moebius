@@ -132,8 +132,11 @@ class MockExtension {
   }
 
   cleanupGeneratedFile() {
-    flushJarCache(this.file);
-    return OS.File.remove(this.file.path);
+    return this._extensionPromise.then(extension => {
+      return extension.broadcast("Extension:FlushJarCache", {path: this.file.path});
+    }).then(() => {
+      return OS.File.remove(this.file.path);
+    });
   }
 }
 
@@ -212,7 +215,7 @@ class ExtensionTestCommon {
           <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
                xmlns:em="http://www.mozilla.org/2004/em-rdf#">
               <Description about="urn:mozilla:install-manifest"
-                  em:id="${manifest.applications.gecko.id}"
+                  em:id="${manifest.applications.goanna.id}"
                   em:name="${manifest.name}"
                   em:type="2"
                   em:version="${manifest.version}"
@@ -311,11 +314,11 @@ class ExtensionTestCommon {
   static generate(data) {
     let file = this.generateXPI(data);
 
-    flushJarCache(file);
+    flushJarCache(file.path);
     Services.ppmm.broadcastAsyncMessage("Extension:FlushJarCache", {path: file.path});
 
     let fileURI = Services.io.newFileURI(file);
-    let jarURI = Services.io.newURI("jar:" + fileURI.spec + "!/", null, null);
+    let jarURI = Services.io.newURI("jar:" + fileURI.spec + "!/");
 
     // This may be "temporary" or "permanent".
     if (data.useAddonManager) {
@@ -324,10 +327,10 @@ class ExtensionTestCommon {
 
     let id;
     if (data.manifest) {
-      if (data.manifest.applications && data.manifest.applications.gecko) {
-        id = data.manifest.applications.gecko.id;
-      } else if (data.manifest.browser_specific_settings && data.manifest.browser_specific_settings.gecko) {
-        id = data.manifest.browser_specific_settings.gecko.id;
+      if (data.manifest.applications && data.manifest.applications.goanna) {
+        id = data.manifest.applications.goanna.id;
+      } else if (data.manifest.browser_specific_settings && data.manifest.browser_specific_settings.goanna) {
+        id = data.manifest.browser_specific_settings.goanna.id;
       }
     }
     if (!id) {

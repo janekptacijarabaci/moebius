@@ -39,4 +39,10 @@ private:
 
   static int32_t mOSXVersion;
 };
+
+// C-callable helper for cairo-quartz-font.c
+extern "C" {
+    bool Goanna_OnSierraOrLater();
+}
+
 #endif // nsCocoaFeatures_h_

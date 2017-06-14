@@ -33,6 +33,8 @@
 #include "ElfLoader.h"
 #include "application.ini.h"
 
+#include "mozilla/arm.h"
+#include "mozilla/Bootstrap.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "XREChildData.h"
@@ -69,7 +71,7 @@ extern "C" {
  * either because the way __dso_handle was used was already broken (and
  * the custom linker works around it).
  */
-  NS_EXPORT __attribute__((weak)) void *__dso_handle;
+  APKOPEN_EXPORT __attribute__((weak)) void *__dso_handle;
 }
 
 typedef int mozglueresult;
@@ -86,7 +88,7 @@ using namespace mozilla;
 static const int MAX_MAPPING_INFO = 32;
 static mapping_info lib_mapping[MAX_MAPPING_INFO];
 
-NS_EXPORT const struct mapping_info *
+APKOPEN_EXPORT const struct mapping_info *
 getLibraryMapping()
 {
   return lib_mapping;
@@ -95,15 +97,15 @@ getLibraryMapping()
 void
 JNI_Throw(JNIEnv* jenv, const char* classname, const char* msg)
 {
-    __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Throw\n");
+    __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Throw\n");
     jclass cls = jenv->FindClass(classname);
     if (cls == nullptr) {
-        __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Couldn't find exception class (or exception pending) %s\n", classname);
+        __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Couldn't find exception class (or exception pending) %s\n", classname);
         exit(FAILURE);
     }
     int rc = jenv->ThrowNew(cls, msg);
     if (rc < 0) {
-        __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Error throwing exception %s\n", msg);
+        __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Error throwing exception %s\n", msg);
         exit(FAILURE);
     }
     jenv->DeleteLocalRef(cls);
@@ -139,7 +141,7 @@ abortThroughJava(const char* msg)
         return;
     }
 
-    jclass loader = env->FindClass("org/mozilla/gecko/mozglue/GeckoLoader");
+    jclass loader = env->FindClass("org/mozilla/goanna/mozglue/GoannaLoader");
     if (!loader) {
         return;
     }
@@ -154,19 +156,19 @@ abortThroughJava(const char* msg)
     env->PopLocalFrame(nullptr);
 }
 
-NS_EXPORT pthread_t
+APKOPEN_EXPORT pthread_t
 getJavaUiThread()
 {
     return sJavaUiThread;
 }
 
-extern "C" NS_EXPORT void MOZ_JNICALL
-Java_org_mozilla_gecko_GeckoThread_registerUiThread(JNIEnv*, jclass)
+extern "C" APKOPEN_EXPORT void MOZ_JNICALL
+Java_org_mozilla_goanna_GoannaThread_registerUiThread(JNIEnv*, jclass)
 {
     sJavaUiThread = pthread_self();
 }
 
-static void * xul_handle = nullptr;
+Bootstrap::UniquePtr gBootstrap;
 #ifndef MOZ_FOLD_LIBS
 static void * sqlite_handle = nullptr;
 static void * nspr_handle = nullptr;
@@ -177,12 +179,6 @@ static void * plc_handle = nullptr;
 #define plc_handle nss_handle
 #endif
 static void * nss_handle = nullptr;
-
-template <typename T> inline void
-xul_dlsym(const char *symbolName, T *value)
-{
-  *value = (T) (uintptr_t) __wrap_dlsym(xul_handle, symbolName);
-}
 
 static int mapping_count = 0;
 
@@ -214,8 +210,8 @@ delete_mapping(const char *name)
   }
 }
 
-static void*
-dlopenAPKLibrary(const char* apkName, const char* libraryName)
+static UniquePtr<char[]>
+getAPKLibraryName(const char* apkName, const char* libraryName)
 {
 #define APK_ASSETS_PATH "!/assets/" ANDROID_CPU_ARCH "/"
   size_t filenameLength = strlen(apkName) +
@@ -224,25 +220,29 @@ dlopenAPKLibrary(const char* apkName, const char* libraryName)
   auto file = MakeUnique<char[]>(filenameLength);
   snprintf(file.get(), filenameLength, "%s" APK_ASSETS_PATH "%s",
 	   apkName, libraryName);
-  return __wrap_dlopen(file.get(), RTLD_GLOBAL | RTLD_LAZY);
+  return file;
 #undef APK_ASSETS_PATH
 }
+
+static void*
+dlopenAPKLibrary(const char* apkName, const char* libraryName)
+{
+  return __wrap_dlopen(getAPKLibraryName(apkName, libraryName).get(), RTLD_GLOBAL | RTLD_LAZY);
+}
+
 static mozglueresult
-loadGeckoLibs(const char *apkName)
+loadGoannaLibs(const char *apkName)
 {
   TimeStamp t0 = TimeStamp::Now();
   struct rusage usage1_thread, usage1;
   getrusage(RUSAGE_THREAD, &usage1_thread);
   getrusage(RUSAGE_SELF, &usage1);
 
-  xul_handle = dlopenAPKLibrary(apkName, "libxul.so");
-  if (!xul_handle) {
-    __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Couldn't get a handle to libxul!");
+  gBootstrap = GetBootstrap(getAPKLibraryName(apkName, "libxul.so").get());
+  if (!gBootstrap) {
+    __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Couldn't get a handle to libxul!");
     return FAILURE;
   }
-
-  void (*XRE_StartupTimelineRecord)(int, TimeStamp);
-  xul_dlsym("XRE_StartupTimelineRecord", &XRE_StartupTimelineRecord);
 
   TimeStamp t1 = TimeStamp::Now();
   struct rusage usage2_thread, usage2;
@@ -253,7 +253,7 @@ loadGeckoLibs(const char *apkName)
   ((u2.ru_ ## field.tv_sec - u1.ru_ ## field.tv_sec) * 1000 + \
    (u2.ru_ ## field.tv_usec - u1.ru_ ## field.tv_usec) / 1000)
 
-  __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Loaded libs in %fms total, %ldms(%ldms) user, %ldms(%ldms) system, %ld(%ld) faults",
+  __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Loaded libs in %fms total, %ldms(%ldms) user, %ldms(%ldms) system, %ld(%ld) faults",
                       (t1 - t0).ToMilliseconds(),
                       RUSAGE_TIMEDIFF(usage1_thread, usage2_thread, utime),
                       RUSAGE_TIMEDIFF(usage1, usage2, utime),
@@ -262,8 +262,8 @@ loadGeckoLibs(const char *apkName)
                       usage2_thread.ru_majflt - usage1_thread.ru_majflt,
                       usage2.ru_majflt - usage1.ru_majflt);
 
-  XRE_StartupTimelineRecord(LINKER_INITIALIZED, t0);
-  XRE_StartupTimelineRecord(LIBRARIES_LOADED, t1);
+  gBootstrap->XRE_StartupTimelineRecord(LINKER_INITIALIZED, t0);
+  gBootstrap->XRE_StartupTimelineRecord(LIBRARIES_LOADED, t1);
   return SUCCESS;
 }
 
@@ -282,7 +282,7 @@ loadSQLiteLibs(const char *apkName)
 
   sqlite_handle = dlopenAPKLibrary(apkName, "libmozsqlite3.so");
   if (!sqlite_handle) {
-    __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Couldn't get a handle to libmozsqlite3!");
+    __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Couldn't get a handle to libmozsqlite3!");
     return FAILURE;
   }
 #endif
@@ -306,18 +306,18 @@ loadNSSLibs(const char *apkName)
 #endif
 
   if (!nss_handle) {
-    __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Couldn't get a handle to libnss3!");
+    __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Couldn't get a handle to libnss3!");
     return FAILURE;
   }
 
 #ifndef MOZ_FOLD_LIBS
   if (!nspr_handle) {
-    __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Couldn't get a handle to libnspr4!");
+    __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Couldn't get a handle to libnspr4!");
     return FAILURE;
   }
 
   if (!plc_handle) {
-    __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Couldn't get a handle to libplc4!");
+    __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Couldn't get a handle to libplc4!");
     return FAILURE;
   }
 #endif
@@ -325,9 +325,9 @@ loadNSSLibs(const char *apkName)
   return setup_nss_functions(nss_handle, nspr_handle, plc_handle);
 }
 
-extern "C" NS_EXPORT void MOZ_JNICALL
-Java_org_mozilla_gecko_mozglue_GeckoLoader_extractGeckoLibsNative(
-    JNIEnv *jenv, jclass jGeckoAppShellClass, jstring jApkName)
+extern "C" APKOPEN_EXPORT void MOZ_JNICALL
+Java_org_mozilla_goanna_mozglue_GoannaLoader_extractGoannaLibsNative(
+    JNIEnv *jenv, jclass jGoannaAppShellClass, jstring jApkName)
 {
   MOZ_ALWAYS_TRUE(!jenv->GetJavaVM(&sJavaVM));
 
@@ -339,19 +339,19 @@ Java_org_mozilla_gecko_mozglue_GeckoLoader_extractGeckoLibsNative(
   // Extract and cache native lib to allow for efficient startup from cache.
   void* handle = dlopenAPKLibrary(apkName, "libxul.so");
   if (handle) {
-    __android_log_print(ANDROID_LOG_INFO, "GeckoLibLoad",
+    __android_log_print(ANDROID_LOG_INFO, "GoannaLibLoad",
                         "Extracted and cached libxul.so.");
     // We have extracted and cached the lib, we can close it now.
     __wrap_dlclose(handle);
   } else {
-    JNI_Throw(jenv, "java/lang/Exception", "Error extracting gecko libraries");
+    JNI_Throw(jenv, "java/lang/Exception", "Error extracting goanna libraries");
   }
 
   jenv->ReleaseStringUTFChars(jApkName, apkName);
 }
 
-extern "C" NS_EXPORT void MOZ_JNICALL
-Java_org_mozilla_gecko_mozglue_GeckoLoader_loadGeckoLibsNative(JNIEnv *jenv, jclass jGeckoAppShellClass, jstring jApkName)
+extern "C" APKOPEN_EXPORT void MOZ_JNICALL
+Java_org_mozilla_goanna_mozglue_GoannaLoader_loadGoannaLibsNative(JNIEnv *jenv, jclass jGoannaAppShellClass, jstring jApkName)
 {
   jenv->GetJavaVM(&sJavaVM);
 
@@ -362,15 +362,15 @@ Java_org_mozilla_gecko_mozglue_GeckoLoader_loadGeckoLibsNative(JNIEnv *jenv, jcl
   if (str == nullptr)
     return;
 
-  int res = loadGeckoLibs(str);
+  int res = loadGoannaLibs(str);
   if (res != SUCCESS) {
-    JNI_Throw(jenv, "java/lang/Exception", "Error loading gecko libraries");
+    JNI_Throw(jenv, "java/lang/Exception", "Error loading goanna libraries");
   }
   jenv->ReleaseStringUTFChars(jApkName, str);
 }
 
-extern "C" NS_EXPORT void MOZ_JNICALL
-Java_org_mozilla_gecko_mozglue_GeckoLoader_loadSQLiteLibsNative(JNIEnv *jenv, jclass jGeckoAppShellClass, jstring jApkName) {
+extern "C" APKOPEN_EXPORT void MOZ_JNICALL
+Java_org_mozilla_goanna_mozglue_GoannaLoader_loadSQLiteLibsNative(JNIEnv *jenv, jclass jGoannaAppShellClass, jstring jApkName) {
   const char* str;
   // XXX: java doesn't give us true UTF8, we should figure out something
   // better to do here
@@ -378,17 +378,17 @@ Java_org_mozilla_gecko_mozglue_GeckoLoader_loadSQLiteLibsNative(JNIEnv *jenv, jc
   if (str == nullptr)
     return;
 
-  __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Load sqlite start\n");
+  __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Load sqlite start\n");
   mozglueresult rv = loadSQLiteLibs(str);
   if (rv != SUCCESS) {
       JNI_Throw(jenv, "java/lang/Exception", "Error loading sqlite libraries");
   }
-  __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Load sqlite done\n");
+  __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Load sqlite done\n");
   jenv->ReleaseStringUTFChars(jApkName, str);
 }
 
-extern "C" NS_EXPORT void MOZ_JNICALL
-Java_org_mozilla_gecko_mozglue_GeckoLoader_loadNSSLibsNative(JNIEnv *jenv, jclass jGeckoAppShellClass, jstring jApkName) {
+extern "C" APKOPEN_EXPORT void MOZ_JNICALL
+Java_org_mozilla_goanna_mozglue_GoannaLoader_loadNSSLibsNative(JNIEnv *jenv, jclass jGoannaAppShellClass, jstring jApkName) {
   const char* str;
   // XXX: java doesn't give us true UTF8, we should figure out something
   // better to do here
@@ -396,40 +396,82 @@ Java_org_mozilla_gecko_mozglue_GeckoLoader_loadNSSLibsNative(JNIEnv *jenv, jclas
   if (str == nullptr)
     return;
 
-  __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Load nss start\n");
+  __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Load nss start\n");
   mozglueresult rv = loadNSSLibs(str);
   if (rv != SUCCESS) {
     JNI_Throw(jenv, "java/lang/Exception", "Error loading nss libraries");
   }
-  __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Load nss done\n");
+  __android_log_print(ANDROID_LOG_ERROR, "GoannaLibLoad", "Load nss done\n");
   jenv->ReleaseStringUTFChars(jApkName, str);
 }
 
-typedef void (*GeckoStart_t)(JNIEnv*, char*, const nsXREAppData*);
-
-extern "C" NS_EXPORT void MOZ_JNICALL
-Java_org_mozilla_gecko_mozglue_GeckoLoader_nativeRun(JNIEnv *jenv, jclass jc, jstring jargs)
+static char**
+CreateArgvFromObjectArray(JNIEnv *jenv, jobjectArray jargs, int* length)
 {
-  GeckoStart_t GeckoStart;
-  xul_dlsym("GeckoStart", &GeckoStart);
-  if (GeckoStart == nullptr)
-    return;
-  // XXX: java doesn't give us true UTF8, we should figure out something
-  // better to do here
-  int len = jenv->GetStringUTFLength(jargs);
-  // GeckoStart needs to write in the args buffer, so we need a copy.
-  char *args = (char *) malloc(len + 1);
-  jenv->GetStringUTFRegion(jargs, 0, len, args);
-  args[len] = '\0';
-  ElfLoader::Singleton.ExpectShutdown(false);
-  GeckoStart(jenv, args, &sAppData);
-  ElfLoader::Singleton.ExpectShutdown(true);
-  free(args);
+  size_t stringCount = jenv->GetArrayLength(jargs);
+
+  if (length) {
+    *length = stringCount;
+  }
+
+  if (!stringCount) {
+    return nullptr;
+  }
+
+  char** argv = new char*[stringCount + 1];
+
+  argv[stringCount] = nullptr;
+
+  for (size_t ix = 0; ix < stringCount; ix++) {
+    jstring string = (jstring) (jenv->GetObjectArrayElement(jargs, ix));
+    const char* rawString = jenv->GetStringUTFChars(string, nullptr);
+    const int strLength = jenv->GetStringUTFLength(string);
+    argv[ix] = strndup(rawString, strLength);
+    jenv->ReleaseStringUTFChars(string, rawString);
+    jenv->DeleteLocalRef(string);
+  }
+
+  return argv;
 }
 
-typedef int GeckoProcessType;
+static void
+FreeArgv(char** argv, int argc)
+{
+  for (int ix=0; ix < argc; ix++) {
+    // String was allocated with strndup, so need to use free to deallocate.
+    free(argv[ix]);
+  }
+  delete[](argv);
+}
 
-extern "C" NS_EXPORT mozglueresult
+extern "C" APKOPEN_EXPORT void MOZ_JNICALL
+Java_org_mozilla_goanna_mozglue_GoannaLoader_nativeRun(JNIEnv *jenv, jclass jc, jobjectArray jargs, int crashFd, int ipcFd)
+{
+  int argc = 0;
+  char** argv = CreateArgvFromObjectArray(jenv, jargs, &argc);
+
+  if (ipcFd < 0) {
+    if (gBootstrap == nullptr) {
+      FreeArgv(argv, argc);
+      return;
+    }
+
+    ElfLoader::Singleton.ExpectShutdown(false);
+    gBootstrap->GoannaStart(jenv, argv, argc, sAppData);
+    ElfLoader::Singleton.ExpectShutdown(true);
+  } else {
+    gBootstrap->XRE_SetAndroidChildFds(crashFd, ipcFd);
+    gBootstrap->XRE_SetProcessType(argv[argc - 1]);
+
+    XREChildData childData;
+    gBootstrap->XRE_InitChildProcess(argc - 1, argv, &childData);
+  }
+
+  gBootstrap.reset();
+  FreeArgv(argv, argc);
+}
+
+extern "C" APKOPEN_EXPORT mozglueresult
 ChildProcessInit(int argc, char* argv[])
 {
   int i;
@@ -447,19 +489,22 @@ ChildProcessInit(int argc, char* argv[])
   if (loadSQLiteLibs(argv[i]) != SUCCESS) {
     return FAILURE;
   }
-  if (loadGeckoLibs(argv[i]) != SUCCESS) {
+  if (loadGoannaLibs(argv[i]) != SUCCESS) {
     return FAILURE;
   }
 
-  void (*fXRE_SetProcessType)(char*);
-  xul_dlsym("XRE_SetProcessType", &fXRE_SetProcessType);
-
-  mozglueresult (*fXRE_InitChildProcess)(int, char**, void*);
-  xul_dlsym("XRE_InitChildProcess", &fXRE_InitChildProcess);
-
-  fXRE_SetProcessType(argv[--argc]);
+  gBootstrap->XRE_SetProcessType(argv[--argc]);
 
   XREChildData childData;
-  return fXRE_InitChildProcess(argc, argv, &childData);
+  return NS_FAILED(gBootstrap->XRE_InitChildProcess(argc, argv, &childData));
 }
 
+extern "C" APKOPEN_EXPORT jboolean MOZ_JNICALL
+Java_org_mozilla_goanna_mozglue_GoannaLoader_neonCompatible(JNIEnv *jenv, jclass jc)
+{
+#ifdef __ARM_EABI__
+  return mozilla::supports_neon();
+#else
+  return true;
+#endif // __ARM_EABI__
+}

@@ -85,7 +85,7 @@ AndroidAlerts::ShowPersistentNotification(const nsAString& aPersistentData,
         sListenerMap->Put(name, aAlertListener);
     }
 
-    java::GeckoAppShell::ShowNotification(
+    java::GoannaAppShell::ShowNotification(
             name, cookie, title, text, host, imageUrl,
             !aPersistentData.IsEmpty() ? jni::StringParam(aPersistentData)
                                        : jni::StringParam(nullptr));
@@ -98,7 +98,7 @@ AndroidAlerts::CloseAlert(const nsAString& aAlertName,
 {
     // We delete the entry in sListenerMap later, when CloseNotification calls
     // NotifyListener.
-    java::GeckoAppShell::CloseNotification(aAlertName);
+    java::GoannaAppShell::CloseNotification(aAlertName);
     return NS_OK;
 }
 

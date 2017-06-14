@@ -939,7 +939,7 @@ nsTreeBodyFrame::CheckOverflow(const ScrollParts& aParts)
   // Don't use AutoRestore since we want to not touch mCheckingOverflow if we fail
   // the weakFrame.IsAlive() check below
   mCheckingOverflow = true;
-  presShell->FlushPendingNotifications(Flush_Layout);
+  presShell->FlushPendingNotifications(FlushType::Layout);
   if (!weakFrame.IsAlive()) {
     return;
   }
@@ -2205,7 +2205,7 @@ nsTreeBodyFrame::GetImage(int32_t aRowIndex, nsTreeColumn* aCol, bool aUseContex
       return NS_ERROR_FAILURE;
 
     // We don't want discarding/decode-on-draw for xul images
-    imageRequest->StartDecoding();
+    imageRequest->StartDecoding(imgIContainer::FLAG_ASYNC_NOTIFY);
     imageRequest->LockImage();
 
     // In a case it was already cached.
@@ -3319,7 +3319,7 @@ nsTreeBodyFrame::PaintCell(int32_t              aRowIndex,
         CalcComplexColor(borderStyle->mBorderLeftColor);
       ColorPattern colorPatt(ToDeviceColor(color));
 
-      uint8_t style = borderStyle->GetBorderStyle(NS_SIDE_LEFT);
+      uint8_t style = borderStyle->GetBorderStyle(eSideLeft);
       StrokeOptions strokeOptions;
       nsLayoutUtils::InitDashPattern(strokeOptions, style);
 
@@ -3498,7 +3498,7 @@ nsTreeBodyFrame::PaintTwisty(int32_t              aRowIndex,
       if (isRTL)
         twistyRect.x = rightEdge - twistyRect.width;
       // yeah, I know it says we're drawing a background, but a twisty is really a fg
-      // object since it doesn't have anything that gecko would want to draw over it. Besides,
+      // object since it doesn't have anything that goanna would want to draw over it. Besides,
       // we have to prevent imagelib from drawing it.
       nsRect dirty;
       dirty.IntersectRect(twistyRect, aDirtyRect);
@@ -4149,7 +4149,8 @@ nsTreeBodyFrame::PaintBackgroundLayer(nsStyleContext*      aStyleContext,
                                                 aDirtyRect, aRect, this,
                                                 nsCSSRendering::PAINTBG_SYNC_DECODE_IMAGES);
   DrawResult result =
-    nsCSSRendering::PaintBackgroundWithSC(params, aStyleContext, *myBorder);
+    nsCSSRendering::PaintStyleImageLayerWithSC(params, aStyleContext,
+                                               *myBorder);
 
   result &=
     nsCSSRendering::PaintBorderWithStyleBorder(aPresContext, aRenderingContext,

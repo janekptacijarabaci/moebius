@@ -178,7 +178,7 @@
 #include "nsIFile.h"
 #include "nsDumpUtils.h"
 #include "xpcpublic.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include <stdint.h>
 #include <stdio.h>
 
@@ -265,13 +265,13 @@ struct nsCycleCollectorParams
     bool processLogging = true;
     if (logProcessEnv && !!strcmp(logProcessEnv, "all")) {
       switch (XRE_GetProcessType()) {
-        case GeckoProcessType_Default:
+        case GoannaProcessType_Default:
           processLogging = !strcmp(logProcessEnv, "main");
           break;
-        case GeckoProcessType_Plugin:
+        case GoannaProcessType_Plugin:
           processLogging = !strcmp(logProcessEnv, "plugins");
           break;
-        case GeckoProcessType_Content:
+        case GoannaProcessType_Content:
           processLogging = !strcmp(logProcessEnv, "content");
           break;
         default:
@@ -2279,7 +2279,7 @@ CCGraphBuilder::BuildGraph(SliceBudget& aBudget)
     SetFirstChild();
 
     if (pi->mParticipant) {
-      nsresult rv = pi->mParticipant->Traverse(pi->mPointer, *this);
+      nsresult rv = pi->mParticipant->TraverseNativeAndJS(pi->mPointer, *this);
       MOZ_RELEASE_ASSERT(!NS_FAILED(rv), "Cycle collector Traverse method failed");
     }
 
@@ -2553,7 +2553,7 @@ static bool
 MayHaveChild(void* aObj, nsCycleCollectionParticipant* aCp)
 {
   ChildFinder cf;
-  aCp->Traverse(aObj, cf);
+  aCp->TraverseNativeAndJS(aObj, cf);
   return cf.MayHaveChild();
 }
 
@@ -2610,7 +2610,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(JSPurpleBuffer)
   CycleCollectionNoteChild(cb, tmp, "self");
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 #define NS_TRACE_SEGMENTED_ARRAY(_field, _type)                               \
@@ -2690,7 +2689,7 @@ public:
                      void* aClosure) const override
   {
     const JS::Value& val = aValue->unbarrieredGet();
-    if (val.isMarkable() && ValueIsGrayCCThing(val)) {
+    if (val.isGCThing() && ValueIsGrayCCThing(val)) {
       MOZ_ASSERT(!js::gc::IsInsideNursery(val.toGCThing()));
       mCollector->GetJSPurpleBuffer()->mValues.InfallibleAppend(val);
     }

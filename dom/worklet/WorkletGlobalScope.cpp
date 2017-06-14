@@ -22,8 +22,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WorkletGlobalScope)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WorkletGlobalScope)
-
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWindow)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mConsole)
   tmp->TraverseHostObjectURIs(cb);
@@ -56,18 +54,6 @@ WorkletGlobalScope::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto
   return nullptr;
 }
 
-bool
-WorkletGlobalScope::WrapGlobalObject(JSContext* aCx,
-                                     nsIPrincipal* aPrincipal,
-                                     JS::MutableHandle<JSObject*> aReflector)
-{
-  JS::CompartmentOptions options;
-  return WorkletGlobalScopeBinding::Wrap(aCx, this, this,
-                                         options,
-                                         nsJSPrincipals::get(aPrincipal),
-                                         true, aReflector);
-}
-
 Console*
 WorkletGlobalScope::GetConsole(ErrorResult& aRv)
 {
@@ -95,7 +81,7 @@ WorkletGlobalScope::Dump(const Optional<nsAString>& aString) const
   NS_ConvertUTF16toUTF8 str(aString.Value());
 
 #ifdef ANDROID
-  __android_log_print(ANDROID_LOG_INFO, "Gecko", "%s", str.get());
+  __android_log_print(ANDROID_LOG_INFO, "Goanna", "%s", str.get());
 #endif
 
   fputs(str.get(), stdout);

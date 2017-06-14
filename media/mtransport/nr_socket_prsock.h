@@ -40,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-// Implementation of nICEr/nr_socket that is tied to the Gecko
+// Implementation of nICEr/nr_socket that is tied to the Goanna
 // SocketTransportService.
 
 #ifndef nr_socket_prsock__
@@ -370,7 +370,8 @@ private:
   void connect_i(const nsACString &remote_addr,
                  uint16_t remote_port,
                  const nsACString &local_addr,
-                 uint16_t local_port);
+                 uint16_t local_port,
+                 const nsACString &tls_host);
   void write_i(nsAutoPtr<InfallibleTArray<uint8_t>> buf,
                uint32_t tracking_number);
   void close_i();

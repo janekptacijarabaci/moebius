@@ -5,9 +5,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import gdb
-from gdbpp import GeckoPrettyPrinter
+from gdbpp import GoannaPrettyPrinter
 
-@GeckoPrettyPrinter('nsString', '^ns.*String$')
+@GoannaPrettyPrinter('nsString', '^ns.*String$')
 class string_printer(object):
     def __init__(self, value):
         self.value = value

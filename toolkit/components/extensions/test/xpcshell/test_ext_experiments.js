@@ -6,7 +6,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
                                   "resource://gre/modules/AddonManager.jsm");
 
 function promiseAddonStartup() {
-  const {Management} = Cu.import("resource://gre/modules/Extension.jsm");
+  const {Management} = Cu.import("resource://gre/modules/Extension.jsm", {});
 
   return new Promise(resolve => {
     let listener = (evt, extension) => {
@@ -84,7 +84,7 @@ add_task(function* test_experiments_api() {
 
   let addonFile = Extension.generateXPI({
     manifest: {
-      applications: {gecko: {id: "meh@web.extension"}},
+      applications: {goanna: {id: "meh@web.extension"}},
       permissions: ["experiments.meh"],
     },
 
@@ -104,7 +104,7 @@ add_task(function* test_experiments_api() {
 
   let boringAddonFile = Extension.generateXPI({
     manifest: {
-      applications: {gecko: {id: "boring@web.extension"}},
+      applications: {goanna: {id: "boring@web.extension"}},
     },
     background() {
       if (browser.meh) {
@@ -172,4 +172,3 @@ add_task(function* test_experiments_api() {
   addon.uninstall();
   boringAddon.uninstall();
 });
-

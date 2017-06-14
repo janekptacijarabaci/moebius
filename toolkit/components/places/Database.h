@@ -18,7 +18,7 @@
 
 // This is the schema version. Update it at any schema change and add a
 // corresponding migrateVxx method below.
-#define DATABASE_SCHEMA_VERSION 35
+#define DATABASE_SCHEMA_VERSION 36
 
 // Fired after Places inited.
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
@@ -225,12 +225,6 @@ protected:
   nsresult BackupAndReplaceDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage);
 
   /**
-   * This should be used as a last resort in case the database is corrupt and
-   * there's no way to fix it in-place.
-   */
-  nsresult ForceCrashAndReplaceDatabase(const nsCString& aReason);
-
-  /**
    * Initializes the database.  This performs any necessary migrations for the
    * database.  All migration is done inside a transaction that is rolled back
    * if any error occurs.
@@ -277,6 +271,7 @@ protected:
   nsresult MigrateV33Up();
   nsresult MigrateV34Up();
   nsresult MigrateV35Up();
+  nsresult MigrateV36Up();
 
   nsresult UpdateBookmarkRootTitles();
 

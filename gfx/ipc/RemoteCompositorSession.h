@@ -24,20 +24,22 @@ public:
   ~RemoteCompositorSession() override;
 
   CompositorBridgeParent* GetInProcessBridge() const override;
-  void SetContentController(GeckoContentController* aController) override;
-  GeckoContentController* GetContentController();
+  void SetContentController(GoannaContentController* aController) override;
+  GoannaContentController* GetContentController();
   nsIWidget* GetWidget();
   RefPtr<IAPZCTreeManager> GetAPZCTreeManager() const override;
-  bool Reset(const nsTArray<LayersBackend>& aBackendHints, TextureFactoryIdentifier* aOutIdentifier) override;
+  bool Reset(const nsTArray<LayersBackend>& aBackendHints,
+             uint64_t aSeqNo,
+             TextureFactoryIdentifier* aOutIdentifier) override;
   void Shutdown() override;
 
-  void NotifyDeviceReset();
+  void NotifyDeviceReset(uint64_t aSeqNo);
   void NotifySessionLost();
 
 private:
   nsBaseWidget* mWidget;
   RefPtr<APZCTreeManagerChild> mAPZ;
-  RefPtr<GeckoContentController> mContentController;
+  RefPtr<GoannaContentController> mContentController;
 };
 
 } // namespace layers

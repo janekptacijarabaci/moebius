@@ -117,7 +117,7 @@ ContentEventHandler::InitBasic()
 
   // If text frame which has overflowing selection underline is dirty,
   // we need to flush the pending reflow here.
-  mPresShell->FlushPendingNotifications(Flush_Layout);
+  mPresShell->FlushPendingNotifications(FlushType::Layout);
 
   // Flushing notifications can cause mPresShell to be destroyed (bug 577963).
   NS_ENSURE_TRUE(!mPresShell->IsDestroying(), NS_ERROR_FAILURE);
@@ -613,7 +613,7 @@ ContentEventHandler::ShouldBreakLineBefore(nsIContent* aContent,
   }
 
   // If the element is <br>, we need to check if the <br> is caused by web
-  // content.  Otherwise, i.e., it's caused by internal reason of Gecko,
+  // content.  Otherwise, i.e., it's caused by internal reason of Goanna,
   // it shouldn't be exposed as a line break to flatten text.
   if (aContent->IsHTMLElement(nsGkAtoms::br)) {
     return IsContentBR(aContent);

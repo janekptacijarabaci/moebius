@@ -24,7 +24,7 @@ this.assert = {};
 /**
  * Asserts that Marionette has a session.
  *
- * @param {GeckoDriver} driver
+ * @param {GoannaDriver} driver
  *     Marionette driver instance.
  * @param {string=} msg
  *     Custom error message.
@@ -116,6 +116,33 @@ assert.mobile = function (msg = "") {
   msg = msg || "Only supported in Fennec or B2G";
   assert.that(() => isFennec() || isB2G(), msg, UnsupportedOperationError)();
 };
+
+/**
+ * Asserts that |win| is open.
+ *
+ * @param {ChromeWindow} win
+ *     Chrome window to test.
+ * @param {string=} msg
+ *     Custom error message.
+ *
+ * @return {ChromeWindow}
+ *     |win| is returned unaltered.
+ *
+ * @throws {NoSuchWindowError}
+ *     If |win| has been closed.
+ */
+assert.window = function (win, msg = "") {
+  msg = msg || "Unable to locate window";
+  return assert.that(w => {
+    try {
+      return w && w.document.defaultView;
+
+    // If the window is no longer available a TypeError is thrown.
+    } catch (e if e.name === "TypeError") {
+      return null;
+    }
+  }, msg, NoSuchWindowError)(win);
+}
 
 /**
  * Asserts that |obj| is defined.

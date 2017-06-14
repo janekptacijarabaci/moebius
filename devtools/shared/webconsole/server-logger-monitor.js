@@ -33,7 +33,7 @@ const acceptableHeaders = ["x-chromelogger-data"];
  * forwards it into the right child process.
  *
  * Read more about the architecture:
- * https://github.com/mozilla/gecko-dev/blob/fx-team/devtools/server/docs/actor-e10s-handling.md
+ * https://github.com/mozilla/goanna-dev/blob/fx-team/devtools/server/docs/actor-e10s-handling.md
  */
 var ServerLoggerMonitor = {
   // Initialization
@@ -122,7 +122,7 @@ var ServerLoggerMonitor = {
     if (!size) {
       trace.log("ServerLoggerMonitor.onDetachChild; Remove HTTP Observer");
       Services.obs.removeObserver(this.onExamineResponse,
-        "http-on-examine-response", false);
+        "http-on-examine-response");
     }
   },
 

@@ -15,7 +15,7 @@
 #include "base/thread.h"
 #include "chrome/common/child_process_host.h"
 
-#include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "mozilla/ipc/GoannaChildProcessHost.h"
 #include "mozilla/ipc/TaskFactory.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
@@ -38,7 +38,7 @@ protected:
     bool mLaunchSucceeded;
 };
 
-class PluginProcessParent : public mozilla::ipc::GeckoChildProcessHost
+class PluginProcessParent : public mozilla::ipc::GoannaChildProcessHost
 {
 public:
     explicit PluginProcessParent(const std::string& aPluginFilePath);
@@ -65,7 +65,7 @@ public:
 
     const std::string& GetPluginFilePath() { return mPluginFilePath; }
 
-    using mozilla::ipc::GeckoChildProcessHost::GetChannel;
+    using mozilla::ipc::GoannaChildProcessHost::GetChannel;
 
     void SetCallRunnableImmediately(bool aCallImmediately);
     virtual bool WaitUntilConnected(int32_t aTimeoutMs = 0) override;
@@ -75,6 +75,8 @@ public:
 
     bool IsConnected();
 
+    static bool IsPluginProcessId(base::ProcessId procId);
+
 private:
     void RunLaunchCompleteTask();
 
@@ -83,6 +85,12 @@ private:
     UniquePtr<LaunchCompleteTask> mLaunchCompleteTask;
     MessageLoop* mMainMsgLoop;
     bool mRunCompleteTaskImmediately;
+#ifdef XP_WIN
+    typedef nsTHashtable<nsUint32HashKey> PidSet;
+    // Set of PIDs for all plugin child processes or NULL if empty.
+    static PidSet* sPidSet;
+    uint32_t mChildPid;
+#endif
 
     DISALLOW_EVIL_CONSTRUCTORS(PluginProcessParent);
 };

@@ -304,6 +304,7 @@ class WebGLContext
     friend class ScopedFBRebinder;
     friend class WebGL2Context;
     friend class WebGLContextUserData;
+    friend class WebGLExtensionCompressedTextureASTC;
     friend class WebGLExtensionCompressedTextureATC;
     friend class WebGLExtensionCompressedTextureES3;
     friend class WebGLExtensionCompressedTextureETC1;
@@ -329,6 +330,10 @@ class WebGLContext
 
     static const uint32_t kMinMaxColorAttachments;
     static const uint32_t kMinMaxDrawBuffers;
+
+    const uint32_t mMaxPerfWarnings;
+    mutable uint64_t mNumPerfWarnings;
+    const uint32_t mMaxAcceptableFBStatusInvals;
 
 public:
     WebGLContext();
@@ -1936,6 +1941,10 @@ protected:
 
     bool ShouldGenerateWarnings() const;
 
+    bool ShouldGeneratePerfWarnings() const {
+        return mNumPerfWarnings < mMaxPerfWarnings;
+    }
+
     uint64_t mLastUseIndex;
 
     bool mNeedsFakeNoAlpha;
@@ -2027,6 +2036,8 @@ public:
     // console logging helpers
     void GenerateWarning(const char* fmt, ...);
     void GenerateWarning(const char* fmt, va_list ap);
+
+    void GeneratePerfWarning(const char* fmt, ...) const;
 
 public:
     UniquePtr<webgl::FormatUsageAuthority> mFormatUsage;

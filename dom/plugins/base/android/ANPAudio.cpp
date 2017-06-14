@@ -16,7 +16,7 @@
 #include "nsThreadUtils.h"
 #include "mozilla/Mutex.h"
 
-#define LOG(args...)  __android_log_print(ANDROID_LOG_INFO, "GeckoPluginsAudio" , ## args)
+#define LOG(args...)  __android_log_print(ANDROID_LOG_INFO, "GoannaPluginsAudio" , ## args)
 #define ASSIGN(obj, name)   (obj)->name = anp_audio_##name
 
 /* android.media.AudioTrack */
@@ -122,8 +122,6 @@ public:
 NS_IMETHODIMP
 AudioRunnable::Run()
 {
-  PR_SetCurrentThreadName("Android Audio");
-
   JNIEnv* const jenv = mozilla::jni::GetEnvForThread();
 
   mozilla::AutoLocalJNIFrame autoFrame(jenv, 2);
@@ -321,7 +319,7 @@ anp_audio_start(ANPAudioTrack* s)
   RefPtr<AudioRunnable> runnable = new AudioRunnable(s);
 
   nsCOMPtr<nsIThread> thread;
-  NS_NewThread(getter_AddRefs(thread), runnable);
+  NS_NewNamedThread("Android Audio", getter_AddRefs(thread), runnable);
 }
 
 void

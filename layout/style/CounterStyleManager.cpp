@@ -2029,13 +2029,16 @@ CounterStyleManager::BuildCounterStyle(const nsSubstring& aName)
 
   // It is intentional that the predefined names are case-insensitive
   // but the user-defined names case-sensitive.
-  // XXXheycam ServoStyleSets do not support custom counter styles yet.
+  // XXXheycam ServoStyleSets do not support custom counter styles yet.  Bug
+  // 1328319.
   StyleSetHandle styleSet = mPresContext->StyleSet();
-  NS_ASSERTION(styleSet->IsGecko(),
+  // When this assertion is removed, please remove the hack to avoid it in
+  // nsStyleList::nsStyleList.
+  NS_ASSERTION(styleSet->IsGoanna(),
                "stylo: ServoStyleSets do not support custom counter "
                "styles yet");
-  nsCSSCounterStyleRule* rule = styleSet->IsGecko() ?
-    styleSet->AsGecko()->CounterStyleRuleForName(aName) : nullptr;
+  nsCSSCounterStyleRule* rule = styleSet->IsGoanna() ?
+    styleSet->AsGoanna()->CounterStyleRuleForName(aName) : nullptr;
   if (rule) {
     data = new (mPresContext) CustomCounterStyle(aName, this, rule);
   } else {
@@ -2075,13 +2078,16 @@ CounterStyleManager::NotifyRuleChanged()
     RefPtr<CounterStyle>& style = iter.Data();
     bool toBeUpdated = false;
     bool toBeRemoved = false;
-    // XXXheycam ServoStyleSets do not support custom counter styles yet.
+    // XXXheycam ServoStyleSets do not support custom counter styles yet.  Bug
+    // 1328319.
     StyleSetHandle styleSet = mPresContext->StyleSet();
-    NS_ASSERTION(styleSet->IsGecko(),
+    // When this assertion is removed, please remove the hack to avoid it in
+    // nsStyleList::nsStyleList.
+    NS_ASSERTION(styleSet->IsGoanna(),
                  "stylo: ServoStyleSets do not support custom counter "
                  "styles yet");
-    nsCSSCounterStyleRule* newRule = styleSet->IsGecko() ?
-        styleSet->AsGecko()->CounterStyleRuleForName(iter.Key()) : nullptr;
+    nsCSSCounterStyleRule* newRule = styleSet->IsGoanna() ?
+        styleSet->AsGoanna()->CounterStyleRuleForName(iter.Key()) : nullptr;
     if (!newRule) {
       if (style->IsCustomStyle()) {
         toBeRemoved = true;

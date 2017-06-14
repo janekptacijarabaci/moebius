@@ -14,7 +14,7 @@ namespace mozilla {
  */
 enum class StyleBackendType : uint8_t
 {
-  Gecko = 1,
+  Goanna = 1,
   Servo
 };
 

@@ -274,10 +274,12 @@ CreateRoot(nsCOMPtr<mozIStorageConnection>& aDBConn,
   nsCOMPtr<mozIStorageStatement> stmt;
   nsresult rv = aDBConn->CreateStatement(NS_LITERAL_CSTRING(
     "INSERT INTO moz_bookmarks "
-      "(type, position, title, dateAdded, lastModified, guid, parent) "
+      "(type, position, title, dateAdded, lastModified, guid, parent, "
+       "syncChangeCounter, syncStatus) "
     "VALUES (:item_type, :item_position, :item_title,"
-            ":date_added, :last_modified, :guid,"
-            "IFNULL((SELECT id FROM moz_bookmarks WHERE parent = 0), 0))"
+            ":date_added, :last_modified, :guid, "
+            "IFNULL((SELECT id FROM moz_bookmarks WHERE parent = 0), 0), "
+            "1, :sync_status)"
   ), getter_AddRefs(stmt));
   if (NS_FAILED(rv)) return rv;
 
@@ -294,6 +296,9 @@ CreateRoot(nsCOMPtr<mozIStorageConnection>& aDBConn,
   rv = stmt->BindInt64ByName(NS_LITERAL_CSTRING("last_modified"), timestamp);
   if (NS_FAILED(rv)) return rv;
   rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("guid"), aGuid);
+  if (NS_FAILED(rv)) return rv;
+  rv = stmt->BindInt32ByName(NS_LITERAL_CSTRING("sync_status"),
+                             nsINavBookmarksService::SYNC_STATUS_NEW);
   if (NS_FAILED(rv)) return rv;
   rv = stmt->Execute();
   if (NS_FAILED(rv)) return rv;
@@ -593,47 +598,25 @@ Database::BackupAndReplaceDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage)
                                        profDir, getter_AddRefs(backup));
   }
 
-  // If anything fails from this point on, we have a stale connection or
-  // database file, and there's not much more we can do.
-  // The only thing we can try to do is to replace the database on the next
-  // start, and enforce a crash, so it gets reported to us.
-
   // Close database connection if open.
   if (mMainConn) {
+    // If there's any not finalized statement or this fails for any reason
+    // we won't be able to remove the database.
     rv = mMainConn->Close();
-    NS_ENSURE_SUCCESS(rv, ForceCrashAndReplaceDatabase(
-      NS_LITERAL_CSTRING("Unable to close the corrupt database.")));
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   // Remove the broken database.
   rv = databaseFile->Remove(false);
-  if (NS_FAILED(rv) && rv != NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
-    return ForceCrashAndReplaceDatabase(
-      NS_LITERAL_CSTRING("Unable to remove the corrupt database file."));
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
 
   // Create a new database file.
   // Use an unshared connection, it will consume more memory but avoid shared
   // cache contentions across threads.
   rv = aStorage->OpenUnsharedDatabase(databaseFile, getter_AddRefs(mMainConn));
-  NS_ENSURE_SUCCESS(rv, ForceCrashAndReplaceDatabase(
-    NS_LITERAL_CSTRING("Unable to open a new database connection.")));
+  NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
-}
-
-nsresult
-Database::ForceCrashAndReplaceDatabase(const nsCString& aReason)
-{
-  Preferences::SetBool(PREF_FORCE_DATABASE_REPLACEMENT, true);
-  // Ensure that prefs get saved, or we could crash before storing them.
-  nsIPrefService* prefService = Preferences::GetService();
-  if (prefService && NS_SUCCEEDED(prefService->SavePrefFile(nullptr))) {
-    // We could force an application restart here, but we'd like to get these
-    // cases reported to us, so let's force a crash instead.
-    MOZ_CRASH_UNSAFE_OOL(aReason.get());
-  }
-  return NS_ERROR_FAILURE;
 }
 
 nsresult
@@ -899,6 +882,13 @@ Database::InitSchema(bool* aDatabaseMigrated)
 
       // Firefox 52 uses schema version 35.
 
+      if (currentSchemaVersion < 36) {
+        rv = MigrateV36Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      // Firefox 53 uses schema version 36.
+
       // Schema Upgrades must add migration code here.
 
       rv = UpdateBookmarkRootTitles();
@@ -948,6 +938,8 @@ Database::InitSchema(bool* aDatabaseMigrated)
 
     // moz_bookmarks.
     rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_BOOKMARKS);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_BOOKMARKS_DELETED);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_BOOKMARKS_PLACETYPE);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1055,6 +1047,27 @@ Database::CreateBookmarkRoots()
 
   int64_t mobileRootId = CreateMobileRoot();
   if (mobileRootId <= 0) return NS_ERROR_FAILURE;
+  {
+    nsCOMPtr<mozIStorageStatement> mobileRootSyncStatusStmt;
+    rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+      "UPDATE moz_bookmarks SET syncStatus = :sync_status WHERE id = :id"
+    ), getter_AddRefs(mobileRootSyncStatusStmt));
+    if (NS_FAILED(rv)) return rv;
+    mozStorageStatementScoper mobileRootSyncStatusScoper(
+      mobileRootSyncStatusStmt);
+
+    rv = mobileRootSyncStatusStmt->BindInt32ByName(
+      NS_LITERAL_CSTRING("sync_status"),
+      nsINavBookmarksService::SYNC_STATUS_NEW
+    );
+    if (NS_FAILED(rv)) return rv;
+    rv = mobileRootSyncStatusStmt->BindInt64ByName(NS_LITERAL_CSTRING("id"),
+                                                   mobileRootId);
+    if (NS_FAILED(rv)) return rv;
+
+    rv = mobileRootSyncStatusStmt->Execute();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
 #if DEBUG
   nsCOMPtr<mozIStorageStatement> stmt;
@@ -1883,23 +1896,7 @@ Database::MigrateV35Up() {
   MOZ_ASSERT(NS_IsMainThread());
 
   int64_t mobileRootId = CreateMobileRoot();
-  if (mobileRootId <= 0)  {
-    // Either the schema is broken or there isn't any root. The latter can
-    // happen if a consumer, for example Thunderbird, never used bookmarks.
-    // If there are no roots, this migration should not run.
-    nsCOMPtr<mozIStorageStatement> checkRootsStmt;
-    nsresult rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
-      "SELECT id FROM moz_bookmarks WHERE parent = 0"
-    ), getter_AddRefs(checkRootsStmt));
-    NS_ENSURE_SUCCESS(rv, rv);
-    mozStorageStatementScoper scoper(checkRootsStmt);
-    bool hasResult = false;
-    rv = checkRootsStmt->ExecuteStep(&hasResult);
-    if (NS_SUCCEEDED(rv) && !hasResult) {
-      return NS_OK;
-    }
-    return NS_ERROR_FAILURE;
-  }
+  if (mobileRootId <= 0) return NS_ERROR_FAILURE;
 
   // At this point, we should have no more than two folders with the mobile
   // bookmarks anno: the new root, and the old folder if one exists. If, for
@@ -1944,6 +1941,52 @@ Database::MigrateV35Up() {
     // Delete the old folder.
     rv = DeleteBookmarkItem(folderIds[i]);
     if (NS_FAILED(rv)) return rv;
+  }
+
+  return NS_OK;
+}
+
+nsresult
+Database::MigrateV36Up() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  // Add sync status and change counter tracking columns for bookmarks.
+  nsCOMPtr<mozIStorageStatement> syncStatusStmt;
+  nsresult rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+    "SELECT syncStatus FROM moz_bookmarks"
+  ), getter_AddRefs(syncStatusStmt));
+  if (NS_FAILED(rv)) {
+    // We default to SYNC_STATUS_UNKNOWN = 0 for existing bookmarks, matching
+    // the bookmark restore behavior. If Sync is set up, we'll update the status
+    // to SYNC_STATUS_NORMAL = 2 before the first post-migration sync.
+    rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+      "ALTER TABLE moz_bookmarks "
+      "ADD COLUMN syncStatus INTEGER DEFAULT 0 NOT NULL"
+    ));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  nsCOMPtr<mozIStorageStatement> syncChangeCounterStmt;
+  rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+    "SELECT syncChangeCounter FROM moz_bookmarks"
+  ), getter_AddRefs(syncChangeCounterStmt));
+  if (NS_FAILED(rv)) {
+    // The change counter starts at 1 for all local bookmarks. It's incremented
+    // for each modification that should trigger a sync, and decremented after
+    // the modified bookmark is uploaded to the server.
+    rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+      "ALTER TABLE moz_bookmarks "
+      "ADD COLUMN syncChangeCounter INTEGER DEFAULT 1 NOT NULL"));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  nsCOMPtr<mozIStorageStatement> tombstoneTableStmt;
+  rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+    "SELECT 1 FROM moz_bookmarks_deleted"
+  ), getter_AddRefs(tombstoneTableStmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_BOOKMARKS_DELETED);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   return NS_OK;

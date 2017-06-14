@@ -248,7 +248,7 @@ def run_firefox_for_android(build_obj, params):
         #   -d <url param> \
         #   --es args "<params>"
         #
-        app = "%s/org.mozilla.gecko.BrowserApp" % build_obj.substs['ANDROID_PACKAGE_NAME']
+        app = "%s/org.mozilla.goanna.BrowserApp" % build_obj.substs['ANDROID_PACKAGE_NAME']
         cmd = ['am', 'start', '-a', 'android.activity.MAIN', '-n', app]
         if params:
             for p in params:
@@ -286,7 +286,6 @@ def grant_runtime_permissions(build_obj):
             dm.shellCheckOutput(['pm', 'grant', app, 'android.permission.READ_EXTERNAL_STORAGE'])
             dm.shellCheckOutput(['pm', 'grant', app, 'android.permission.ACCESS_FINE_LOCATION'])
             dm.shellCheckOutput(['pm', 'grant', app, 'android.permission.CAMERA'])
-            dm.shellCheckOutput(['pm', 'grant', app, 'android.permission.WRITE_CONTACTS'])
     except DMError:
         _log_warning("Unable to grant runtime permissions to %s" % app)
 

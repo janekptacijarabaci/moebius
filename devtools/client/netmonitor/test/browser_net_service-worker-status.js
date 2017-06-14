@@ -1,6 +1,6 @@
-/* vim: set ft=javascript ts=2 et sw=2 tw=80: */
 /* Any copyright is dedicated to the Public Domain.
    http://creativecommons.org/publicdomain/zero/1.0/ */
+
 "use strict";
 
 /**
@@ -13,16 +13,6 @@ const URL = EXAMPLE_URL.replace("http:", "https:");
 const TEST_URL = URL + "service-workers/status-codes.html";
 
 add_task(function* () {
-  yield new Promise(done => {
-    let options = { "set": [
-      // Accept workers from mochitest's http.
-      ["dom.serviceWorkers.enabled", true],
-      ["dom.serviceWorkers.openWindow.enabled", true],
-      ["dom.serviceWorkers.testing.enabled", true],
-    ]};
-    SpecialPowers.pushPrefEnv(options, done);
-  });
-
   let { tab, monitor } = yield initNetMonitor(TEST_URL, null, true);
   info("Starting test... ");
 
@@ -61,9 +51,10 @@ add_task(function* () {
     let item = RequestsMenu.getItemAtIndex(index);
 
     info(`Verifying request #${index}`);
-    yield verifyRequestItemTarget(item, request.method, request.uri, request.details);
+    yield verifyRequestItemTarget(RequestsMenu, item,
+      request.method, request.uri, request.details);
 
-    let { stacktrace } = item.attachment.cause;
+    let { stacktrace } = item.cause;
     let stackLen = stacktrace ? stacktrace.length : 0;
 
     ok(stacktrace, `Request #${index} has a stacktrace`);

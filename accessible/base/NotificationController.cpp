@@ -80,7 +80,7 @@ void
 NotificationController::Shutdown()
 {
   if (mObservingState != eNotObservingRefresh &&
-      mPresShell->RemoveRefreshObserver(this, Flush_Display)) {
+      mPresShell->RemoveRefreshObserver(this, FlushType::Display)) {
     mObservingState = eNotObservingRefresh;
   }
 
@@ -444,7 +444,7 @@ NotificationController::ScheduleProcessing()
   // If notification flush isn't planed yet start notification flush
   // asynchronously (after style and layout).
   if (mObservingState == eNotObservingRefresh) {
-    if (mPresShell->AddRefreshObserver(this, Flush_Display))
+    if (mPresShell->AddRefreshObserver(this, FlushType::Display))
       mObservingState = eRefreshObserving;
   }
 }
@@ -468,7 +468,7 @@ NotificationController::ProcessMutationEvents()
   // there is no reason to fire a hide event for a child of a show event
   // target.  That can happen if something is inserted into the tree and
   // removed before the next refresh driver tick, but it should not be
-  // observable outside gecko so it should be safe to coalesce away any such
+  // observable outside goanna so it should be safe to coalesce away any such
   // events.  This means that it should be fine to fire all of the hide events
   // first, and then deal with any shown subtrees.
   for (AccTreeMutationEvent* event = mFirstMutationEvent;
@@ -855,26 +855,25 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
 
       Accessible* parent = childDoc->Parent();
       DocAccessibleChild* parentIPCDoc = mDocument->IPCDoc();
+      MOZ_DIAGNOSTIC_ASSERT(parentIPCDoc);
       uint64_t id = reinterpret_cast<uintptr_t>(parent->UniqueID());
-      MOZ_ASSERT(id);
+      MOZ_DIAGNOSTIC_ASSERT(id);
       DocAccessibleChild* ipcDoc = childDoc->IPCDoc();
       if (ipcDoc) {
         parentIPCDoc->SendBindChildDoc(ipcDoc, id);
         continue;
       }
 
-      ipcDoc = new DocAccessibleChild(childDoc);
+      ipcDoc = new DocAccessibleChild(childDoc, parentIPCDoc->Manager());
       childDoc->SetIPCDoc(ipcDoc);
 
 #if defined(XP_WIN)
-      MOZ_ASSERT(parentIPCDoc);
       parentIPCDoc->ConstructChildDocInParentProcess(ipcDoc, id,
                                                      AccessibleWrap::GetChildIDFor(childDoc));
 #else
       nsCOMPtr<nsITabChild> tabChild =
         do_GetInterface(mDocument->DocumentNode()->GetDocShell());
       if (tabChild) {
-        MOZ_ASSERT(parentIPCDoc);
         static_cast<TabChild*>(tabChild.get())->
           SendPDocAccessibleConstructor(ipcDoc, parentIPCDoc, id, 0, 0);
       }
@@ -892,7 +891,7 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
       mEvents.IsEmpty() && mTextHash.Count() == 0 &&
       mHangingChildDocuments.IsEmpty() &&
       mDocument->HasLoadState(DocAccessible::eCompletelyLoaded) &&
-      mPresShell->RemoveRefreshObserver(this, Flush_Display)) {
+      mPresShell->RemoveRefreshObserver(this, FlushType::Display)) {
     mObservingState = eNotObservingRefresh;
   }
 }

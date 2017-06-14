@@ -76,7 +76,7 @@ nsWebHandlerApp.prototype = {
     var uriSpecToSend = this.uriTemplate.replace("%s", escapedUriSpecToHandle);
     var ioService = Cc["@mozilla.org/network/io-service;1"].
                     getService(Ci.nsIIOService);
-    var uriToSend = ioService.newURI(uriSpecToSend, null, null);
+    var uriToSend = ioService.newURI(uriSpecToSend);
     
     // if we have a window context, use the URI loader to load there
     if (aWindowContext) {
@@ -124,7 +124,7 @@ nsWebHandlerApp.prototype = {
                         .browserDOMWindow;
 
     // if we got an exception, there are several possible reasons why:
-    // a) this gecko embedding doesn't provide an nsIBrowserDOMWindow
+    // a) this goanna embedding doesn't provide an nsIBrowserDOMWindow
     //    implementation (i.e. doesn't support browser-style functionality),
     //    so we need to kick the URL out to the OS default browser.  This is
     //    the subject of bug 394479.

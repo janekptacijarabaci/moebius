@@ -7,10 +7,11 @@ XPCOMUtils.defineLazyGetter(this, "Management", () => {
   return Management;
 });
 
+Cu.import("resource://gre/modules/AddonManager.jsm");
+
 const {
   createAppInfo,
   createTempWebExtensionFile,
-  promiseAddonByID,
   promiseAddonEvent,
   promiseCompleteAllInstalls,
   promiseFindAddonUpdates,
@@ -98,7 +99,7 @@ add_task(function* test_should_fire_on_addon_update() {
     manifest: {
       "version": "1.0",
       "applications": {
-        "gecko": {
+        "goanna": {
           "id": EXTENSION_ID,
           "update_url": `http://localhost:${port}/test_update.json`,
         },
@@ -126,7 +127,7 @@ add_task(function* test_should_fire_on_addon_update() {
     manifest: {
       version: "2.0",
       applications: {
-        gecko: {
+        goanna: {
           id: EXTENSION_ID,
         },
       },
@@ -146,7 +147,7 @@ add_task(function* test_should_fire_on_addon_update() {
     onInstalledReason: "install",
   });
 
-  let addon = yield promiseAddonByID(EXTENSION_ID);
+  let addon = yield AddonManager.getAddonByID(EXTENSION_ID);
   equal(addon.version, "1.0", "The installed addon has the correct version");
 
   let update = yield promiseFindAddonUpdates(addon);
@@ -187,7 +188,7 @@ add_task(function* test_should_fire_on_browser_update() {
     manifest: {
       "version": "1.0",
       "applications": {
-        "gecko": {
+        "goanna": {
           "id": EXTENSION_ID,
         },
       },
@@ -263,7 +264,7 @@ add_task(function* test_should_not_fire_on_reload() {
     manifest: {
       "version": "1.0",
       "applications": {
-        "gecko": {
+        "goanna": {
           "id": EXTENSION_ID,
         },
       },
@@ -303,7 +304,7 @@ add_task(function* test_should_not_fire_on_restart() {
     manifest: {
       "version": "1.0",
       "applications": {
-        "gecko": {
+        "goanna": {
           "id": EXTENSION_ID,
         },
       },
@@ -319,7 +320,7 @@ add_task(function* test_should_not_fire_on_restart() {
     onInstalledReason: "install",
   });
 
-  let addon = yield promiseAddonByID(EXTENSION_ID);
+  let addon = yield AddonManager.getAddonByID(EXTENSION_ID);
   addon.userDisabled = true;
 
   let startupPromise = awaitEvent("ready");

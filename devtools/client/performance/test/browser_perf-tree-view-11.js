@@ -40,7 +40,7 @@ function* spawnTest() {
       case "C":
         ok(!$(".opt-icon", row), "frames without opt data do not have an icon");
         break;
-      case "Gecko":
+      case "Goanna":
         ok(!$(".opt-icon", row), "meta category frames with opt data do not have an icon");
         break;
       case "(root)":

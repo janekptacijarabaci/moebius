@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const { Cc, Ci, Cu } = require("chrome");
+const { Cc, Ci } = require("chrome");
 const { Task } = require("devtools/shared/task");
 
 loader.lazyRequireGetter(this, "Services");
@@ -51,7 +51,7 @@ function* getSystemInfo() {
     brandName;
   let appid = appInfo.ID;
   let apptype = APP_MAP[appid];
-  let geckoVersion = appInfo.platformVersion;
+  let goannaVersion = appInfo.platformVersion;
   let hardware = "unknown";
   let version = "unknown";
 
@@ -64,10 +64,10 @@ function* getSystemInfo() {
       hardware = yield exports.getSetting("deviceinfo.hardware");
       version = yield exports.getSetting("deviceinfo.os");
     } catch (e) {
+      // Ignore.
     }
-  }
-  // Not B2G
-  else {
+  } else {
+    // Not B2G
     os = appInfo.OS;
     version = appInfo.version;
   }
@@ -80,7 +80,8 @@ function* getSystemInfo() {
   }
 
   if (win) {
-    let utils = win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
+    let utils = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                   .getInterface(Ci.nsIDOMWindowUtils);
     dpi = utils.displayDPI;
     useragent = win.navigator.userAgent;
     width = win.screen.width;
@@ -110,7 +111,7 @@ function* getSystemInfo() {
 
     // The application's version, for example "0.8.0+" or "3.7a1pre".
     // Typically, the version of Firefox, for example.
-    // It is different than the version of Gecko or the XULRunner platform.
+    // It is different than the version of Goanna or the XULRunner platform.
     // On B2G, this is the Gaia version.
     version,
 
@@ -120,18 +121,19 @@ function* getSystemInfo() {
     // The application's changeset.
     changeset: exports.getAppIniString("App", "SourceStamp"),
 
-    // The build ID/date of Gecko and the XULRunner platform.
+    // The build ID/date of Goanna and the XULRunner platform.
     platformbuildid: appInfo.platformBuildID,
-    geckobuildid: appInfo.platformBuildID,
+    goannabuildid: appInfo.platformBuildID,
 
-    // The version of Gecko or XULRunner platform, for example "1.8.1.19" or
+    // The version of Goanna or XULRunner platform, for example "1.8.1.19" or
     // "1.9.3pre". In "Firefox 3.7 alpha 1" the application version is "3.7a1pre"
     // while the platform version is "1.9.3pre"
-    platformversion: geckoVersion,
-    geckoversion: geckoVersion,
+    platformversion: goannaVersion,
+    goannaversion: goannaVersion,
 
     // Locale used in this build
-    locale: Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIXULChromeRegistry).getSelectedLocale("global"),
+    locale: Cc["@mozilla.org/chrome/chrome-registry;1"]
+              .getService(Ci.nsIXULChromeRegistry).getSelectedLocale("global"),
 
     /**
      * Information regarding the operating system.
@@ -186,12 +188,13 @@ function getProfileLocation() {
   // In child processes, we cannot access the profile location.
   try {
     let profd = Services.dirsvc.get("ProfD", Ci.nsILocalFile);
-    let profservice = Cc["@mozilla.org/toolkit/profile-service;1"].getService(Ci.nsIToolkitProfileService);
-    var profiles = profservice.profiles;
+    let profservice = Cc["@mozilla.org/toolkit/profile-service;1"]
+                        .getService(Ci.nsIToolkitProfileService);
+    let profiles = profservice.profiles;
     while (profiles.hasMoreElements()) {
       let profile = profiles.getNext().QueryInterface(Ci.nsIToolkitProfile);
       if (profile.rootDir.path == profd.path) {
-        return profile = profile.name;
+        return profile.name;
       }
     }
 
@@ -214,7 +217,8 @@ function getAppIniString(section, key) {
     return undefined;
   }
 
-  let iniParser = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory).createINIParser(inifile);
+  let iniParser = Cc["@mozilla.org/xpcom/ini-parser-factory;1"]
+                    .getService(Ci.nsIINIParserFactory).createINIParser(inifile);
   try {
     return iniParser.getString(section, key);
   } catch (e) {
@@ -316,13 +320,14 @@ function getSetting(name) {
     // settingsService fails in b2g child processes
     // TODO bug 1205797, make this work in child processes.
     try {
-      settingsService = Cc["@mozilla.org/settingsService;1"].getService(Ci.nsISettingsService);
+      settingsService = Cc["@mozilla.org/settingsService;1"]
+                          .getService(Ci.nsISettingsService);
     } catch (e) {
       return promise.reject(e);
     }
 
-    let req = settingsService.createLock().get(name, {
-      handle: (name, value) => deferred.resolve(value),
+    settingsService.createLock().get(name, {
+      handle: (_, value) => deferred.resolve(value),
       handleError: (error) => deferred.reject(error),
     });
   } else {

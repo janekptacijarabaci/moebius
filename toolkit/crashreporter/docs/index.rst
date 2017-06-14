@@ -41,7 +41,7 @@ Minidump Analyzer
 How Main-Process Crash Handling Works
 =====================================
 
-The crash handler is hooked up very early in the Gecko process lifetime.
+The crash handler is hooked up very early in the Goanna process lifetime.
 It all starts in ``XREMain::XRE_mainInit()`` from ``nsAppRunner.cpp``.
 Assuming crash reporting is enabled, this startup function registers an
 exception handler for the process and tells the crash reporter subsystem
@@ -129,6 +129,15 @@ is responsible for calling
 appropriate crash annotations specific to the crash. All child-process
 crashes are annotated with a ``ProcessType`` annotation, such as "content" or
 "plugin".
+
+Once the minidump file has been generated the
+``mozilla::dom::CrashReporterHost`` is notified of the crash. It will first
+try to extract the stack traces from the minidump file using the
+*minidump analyzer*. Then the stack traces will be stored in the extra file
+together with the rest of the crash annotations and finally the crash will be
+recorded by calling ```CrashService.addCrash()```. This last step adds the
+crash to the ```CrashManager``` database and automatically sends a crash ping
+with information about the crash.
 
 Submission of child process crashes is handled by application code. This
 code prompts the user to submit crashes in context-appropriate UI and then

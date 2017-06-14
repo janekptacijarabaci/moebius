@@ -5,7 +5,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 function getMainThreadHangStats() {
   let threads = Services.telemetry.threadHangStats;
-  return threads.find((thread) => (thread.name === "Gecko"));
+  return threads.find((thread) => (thread.name === "Goanna"));
 }
 
 function run_test() {
@@ -19,13 +19,13 @@ function run_test() {
     return;
   }
 
-  if (Services.appinfo.OS === 'Linux' || Services.appinfo.OS === 'Android') {
+  if (Services.appinfo.OS === "Linux" || Services.appinfo.OS === "Android") {
     // We use the rt_tgsigqueueinfo syscall on Linux which requires a
     // certain kernel version. It's not an error if the system running
     // the test is older than that.
-    let kernel = Services.sysinfo.get('kernel_version') ||
-                 Services.sysinfo.get('version');
-    if (Services.vc.compare(kernel, '2.6.31') < 0) {
+    let kernel = Services.sysinfo.get("kernel_version") ||
+                 Services.sysinfo.get("version");
+    if (Services.vc.compare(kernel, "2.6.31") < 0) {
       ok("Hang reporting not supported for old kernel.");
       return;
     }

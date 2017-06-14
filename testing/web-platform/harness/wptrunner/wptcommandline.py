@@ -102,6 +102,9 @@ scheme host and port.""")
 
     debugging_group.add_argument('--pause-on-unexpected', action="store_true",
                                  help="Halt the test runner when an unexpected result is encountered")
+    debugging_group.add_argument('--no-restart-on-unexpected', dest="restart_on_unexpected",
+                                 default=True, action="store_false",
+                                 help="Don't restart on an unexpected result")
 
     debugging_group.add_argument("--symbols-path", action="store", type=url_or_path,
                                  help="Path or url to symbols file used to analyse crash minidumps.")
@@ -165,24 +168,20 @@ scheme host and port.""")
     ssl_group.add_argument("--host-cert-path", action="store", type=abs_path,
                         help="Path to host certificate when using pregenerated ssl certificates")
 
-    gecko_group = parser.add_argument_group("Gecko-specific")
-    gecko_group.add_argument("--prefs-root", dest="prefs_root", action="store", type=abs_path,
+    goanna_group = parser.add_argument_group("Goanna-specific")
+    goanna_group.add_argument("--prefs-root", dest="prefs_root", action="store", type=abs_path,
                              help="Path to the folder containing browser prefs")
-    gecko_group.add_argument("--disable-e10s", dest="gecko_e10s", action="store_false", default=True,
+    goanna_group.add_argument("--disable-e10s", dest="goanna_e10s", action="store_false", default=True,
                              help="Run tests without electrolysis preferences")
-    gecko_group.add_argument("--stackfix-dir", dest="stackfix_dir", action="store",
+    goanna_group.add_argument("--stackfix-dir", dest="stackfix_dir", action="store",
                              help="Path to directory containing assertion stack fixing scripts")
-
-    b2g_group = parser.add_argument_group("B2G-specific")
-    b2g_group.add_argument("--b2g-no-backup", action="store_true", default=False,
-                           help="Don't backup device before testrun with --product=b2g")
 
     servo_group = parser.add_argument_group("Servo-specific")
     servo_group.add_argument("--user-stylesheet",
                              default=[], action="append", dest="user_stylesheets",
                              help="Inject a user CSS stylesheet into every test.")
     servo_group.add_argument("--servo-backend",
-                             default="cpu", choices=["cpu", "webrender"],
+                             default="webrender", choices=["cpu", "webrender"],
                              help="Rendering backend to use with Servo.")
 
 

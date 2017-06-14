@@ -117,17 +117,17 @@ installers-%: clobber-% langpack-% repackage-win32-installer-% repackage-zip-%
 # When we unpack b2g on MacOS X the platform.ini and application.ini are in slightly
 # different locations that on all other platforms
 ifeq (Darwin, $(OS_ARCH))
-GECKO_PLATFORM_INI_PATH='$(STAGEDIST)/platform.ini'
+GOANNA_PLATFORM_INI_PATH='$(STAGEDIST)/platform.ini'
 B2G_APPLICATION_INI_PATH='$(STAGEDIST)/application.ini'
 else
-GECKO_PLATFORM_INI_PATH='$(STAGEDIST)/platform.ini'
+GOANNA_PLATFORM_INI_PATH='$(STAGEDIST)/platform.ini'
 B2G_APPLICATION_INI_PATH='$(STAGEDIST)/application.ini'
 endif
 
 
 ident:
-	@printf 'gecko_revision '
-	@$(PYTHON) $(topsrcdir)/config/printconfigsetting.py $(GECKO_PLATFORM_INI_PATH) Build SourceStamp
+	@printf 'goanna_revision '
+	@$(PYTHON) $(topsrcdir)/config/printconfigsetting.py $(GOANNA_PLATFORM_INI_PATH) Build SourceStamp
 	@printf 'b2g_revision '
 	@$(PYTHON) $(topsrcdir)/config/printconfigsetting.py $(B2G_APPLICATION_INI_PATH) App SourceStamp
 	@printf 'buildid '

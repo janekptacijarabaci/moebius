@@ -39,7 +39,7 @@
 #include "nsLayoutUtils.h"
 #include "nsFrameManager.h"
 #include "nsIObserverService.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include <algorithm>
 
 #include "nsIObjectFrame.h"
@@ -152,6 +152,8 @@ protected:
 nsPluginFrame::nsPluginFrame(nsStyleContext* aContext)
   : nsFrame(aContext)
   , mInstanceOwner(nullptr)
+  , mInnerView(nullptr)
+  , mBackgroundSink(nullptr)
   , mReflowCallbackPosted(false)
 {
   MOZ_LOG(sPluginFrameLog, LogLevel::Debug,
@@ -339,8 +341,8 @@ nsPluginFrame::PrepForDrawing(nsIWidget *aWidget)
     // Sometimes, a frame doesn't have a background color or is transparent. In this
     // case, walk up the frame tree until we do find a frame with a background color
     for (nsIFrame* frame = this; frame; frame = frame->GetParent()) {
-      nscolor bgcolor =
-        frame->GetVisitedDependentColor(eCSSProperty_background_color);
+      nscolor bgcolor = frame->
+        GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor);
       if (NS_GET_A(bgcolor) > 0) {  // make sure we got an actual color
         mWidget->SetBackgroundColor(bgcolor);
         break;
@@ -1022,7 +1024,7 @@ nsDisplayPlugin::ComputeVisibility(nsDisplayListBuilder* aBuilder,
 {
   if (aBuilder->IsForPluginGeometry()) {
     nsPluginFrame* f = static_cast<nsPluginFrame*>(mFrame);
-    if (!aBuilder->IsInTransform() || f->IsPaintedByGecko()) {
+    if (!aBuilder->IsInTransform() || f->IsPaintedByGoanna()) {
       // Since transforms induce reference frames, we don't need to worry
       // about this method fluffing out due to non-rectilinear transforms.
       nsRect rAncestor = nsLayoutUtils::TransformFrameRectToAncestor(f,
@@ -1661,7 +1663,7 @@ nsPluginFrame::HandleEvent(nsPresContext* aPresContext,
   if (mInstanceOwner->SendNativeEvents() &&
       anEvent->IsNativeEventDelivererForPlugin()) {
     *anEventStatus = mInstanceOwner->ProcessEvent(*anEvent);
-    // Due to plugin code reentering Gecko, this frame may be dead at this
+    // Due to plugin code reentering Goanna, this frame may be dead at this
     // point.
     return rv;
   }
@@ -1677,7 +1679,7 @@ nsPluginFrame::HandleEvent(nsPresContext* aPresContext,
        anEvent->mMessage == eWheel) &&
       mInstanceOwner->GetEventModel() == NPEventModelCocoa) {
     *anEventStatus = mInstanceOwner->ProcessEvent(*anEvent);
-    // Due to plugin code reentering Gecko, this frame may be dead at this
+    // Due to plugin code reentering Goanna, this frame may be dead at this
     // point.
     return rv;
   }
@@ -1875,7 +1877,7 @@ NS_NewObjectFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
 }
 
 bool
-nsPluginFrame::IsPaintedByGecko() const
+nsPluginFrame::IsPaintedByGoanna() const
 {
 #ifdef XP_MACOSX
   return true;

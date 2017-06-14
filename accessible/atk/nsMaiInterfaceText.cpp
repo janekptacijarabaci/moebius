@@ -31,13 +31,13 @@ ConvertTextAttributeToAtkAttribute(const nsACString& aName,
   const char* atkName = nullptr;
   nsAutoString atkValue;
   if (aName.EqualsLiteral("color")) {
-    // The format of the atk attribute is r,g,b and the gecko one is
+    // The format of the atk attribute is r,g,b and the goanna one is
     // rgb(r, g, b).
     atkValue = Substring(aValue, 4, aValue.Length() - 5);
     atkValue.StripWhitespace();
     atkName = sAtkTextAttrNames[ATK_TEXT_ATTR_FG_COLOR];
   } else if (aName.EqualsLiteral("background-color")) {
-    // The format of the atk attribute is r,g,b and the gecko one is
+    // The format of the atk attribute is r,g,b and the goanna one is
     // rgb(r, g, b).
     atkValue = Substring(aValue, 4, aValue.Length() - 5);
     atkValue.StripWhitespace();
@@ -353,11 +353,11 @@ getCharacterExtentsCB(AtkText *aText, gint aOffset,
   }
 
   nsIntRect rect;
-  uint32_t geckoCoordType;
+  uint32_t goannaCoordType;
   if (aCoords == ATK_XY_SCREEN) {
-    geckoCoordType = nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE;
+    goannaCoordType = nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE;
   } else {
-    geckoCoordType = nsIAccessibleCoordinateType::COORDTYPE_WINDOW_RELATIVE;
+    goannaCoordType = nsIAccessibleCoordinateType::COORDTYPE_WINDOW_RELATIVE;
   }
 
   AccessibleWrap* accWrap = GetAccessibleWrap(ATK_OBJECT(aText));
@@ -367,9 +367,9 @@ getCharacterExtentsCB(AtkText *aText, gint aOffset,
       return;
     }
 
-    rect = text->CharBounds(aOffset, geckoCoordType);
+    rect = text->CharBounds(aOffset, goannaCoordType);
   } else if (ProxyAccessible* proxy = GetProxy(ATK_OBJECT(aText))) {
-    rect = proxy->CharBounds(aOffset, geckoCoordType);
+    rect = proxy->CharBounds(aOffset, goannaCoordType);
   } else {
     return;
   }
@@ -389,11 +389,11 @@ getRangeExtentsCB(AtkText *aText, gint aStartOffset, gint aEndOffset,
   }
 
   nsIntRect rect;
-  uint32_t geckoCoordType;
+  uint32_t goannaCoordType;
   if (aCoords == ATK_XY_SCREEN) {
-    geckoCoordType = nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE;
+    goannaCoordType = nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE;
   } else {
-    geckoCoordType = nsIAccessibleCoordinateType::COORDTYPE_WINDOW_RELATIVE;
+    goannaCoordType = nsIAccessibleCoordinateType::COORDTYPE_WINDOW_RELATIVE;
   }
 
   AccessibleWrap* accWrap = GetAccessibleWrap(ATK_OBJECT(aText));
@@ -403,9 +403,9 @@ getRangeExtentsCB(AtkText *aText, gint aStartOffset, gint aEndOffset,
       return;
     }
 
-    rect = text->TextBounds(aStartOffset, aEndOffset, geckoCoordType);
+    rect = text->TextBounds(aStartOffset, aEndOffset, goannaCoordType);
   } else if (ProxyAccessible* proxy = GetProxy(ATK_OBJECT(aText))) {
-    rect = proxy->TextBounds(aStartOffset, aEndOffset, geckoCoordType);
+    rect = proxy->TextBounds(aStartOffset, aEndOffset, goannaCoordType);
   } else {
     return;
   }

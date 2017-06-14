@@ -52,8 +52,7 @@ add_task(function*() {
   try {
     chromeReg.convertChromeURL(NetUtil.newURI("chrome://webex/content/webex.xul"));
     do_throw("Chrome manifest should not have been registered");
-  }
-  catch (e) {
+  } catch (e) {
     // Expected the chrome url to not be registered
   }
 
@@ -129,7 +128,7 @@ add_task(function*() {
     version: "1.0",
     manifest_version: 2,
     applications: {
-      gecko: {
+      goanna: {
         id: ID
       }
     }
@@ -194,7 +193,7 @@ add_task(function*() {
     name: "Web Extension Name",
     manifest_version: 2,
     applications: {
-      gecko: {
+      goanna: {
         id: ID
       }
     }
@@ -218,7 +217,7 @@ add_task(function*() {
     version: "1.0",
     manifest_version: 1,
     applications: {
-      gecko: {
+      goanna: {
         id: ID
       }
     }
@@ -251,7 +250,7 @@ add_task(function*() {
   do_check_true(first_addon.isActive);
   do_check_false(first_addon.isSystem);
 
-  let manifestjson_id= "last-webextension2@tests.mozilla.org";
+  let manifestjson_id = "last-webextension2@tests.mozilla.org";
   let last_addon = yield promiseAddonByID(manifestjson_id);
   do_check_eq(last_addon, null);
 
@@ -265,7 +264,7 @@ add_task(function* test_options_ui() {
   const extensionId = "webextension@tests.mozilla.org";
   yield promiseInstallWebExtension({
     manifest: {
-      applications: {gecko: {id: extensionId}},
+      applications: {goanna: {id: extensionId}},
       "options_ui": {
         "page": "options.html",
       },
@@ -284,7 +283,7 @@ add_task(function* test_options_ui() {
   const ID2 = "webextension2@tests.mozilla.org";
   yield promiseInstallWebExtension({
     manifest: {
-      applications: {gecko: {id: ID2}},
+      applications: {goanna: {id: ID2}},
       "options_ui": {
         "page": "options.html",
         "open_in_tab": true,
@@ -310,14 +309,14 @@ add_task(function* test_experiments_dependencies() {
 
   let addonFile = createTempWebExtensionFile({
     manifest: {
-      applications: {gecko: {id: "meh@experiment"}},
+      applications: {goanna: {id: "meh@experiment"}},
       "permissions": ["experiments.meh"],
     },
   });
 
   yield promiseInstallAllFiles([addonFile]);
 
-  let addon = yield new Promise(resolve => AddonManager.getAddonByID("meh@experiment", resolve));
+  let addon = yield AddonManager.getAddonByID("meh@experiment");
 
   deepEqual(addon.dependencies, ["meh@experiments.addons.mozilla.org"],
             "Addon should have the expected dependencies");
@@ -344,11 +343,11 @@ add_task(function* test_experiments_api() {
 
   yield promiseInstallAllFiles([addonFile]);
 
-  let addons = yield new Promise(resolve => AddonManager.getAddonsByTypes(["apiextension"], resolve));
+  let addons = yield AddonManager.getAddonsByTypes(["apiextension"]);
   let addon = addons.pop();
   equal(addon.id, extensionId, "Add-on should be installed as an API extension");
 
-  addons = yield new Promise(resolve => AddonManager.getAddonsByTypes(["extension"], resolve));
+  addons = yield AddonManager.getAddonsByTypes(["extension"]);
   equal(addons.pop().id, extensionId, "Add-on type should be aliased to extension");
 
   addon.uninstall();
@@ -388,7 +387,7 @@ add_task(function* developerEmpty() {
     let addon = yield promiseInstallWebExtension({
       manifest: {
         author: "Some author",
-        developer: developer,
+        developer,
         homepage_url: "https://example.net",
         manifest_version: 2,
         name: "Web Extension Name",
@@ -407,7 +406,7 @@ add_task(function* authorNotString() {
   for (let author of [{}, [], 42]) {
     let addon = yield promiseInstallWebExtension({
       manifest: {
-        author: author,
+        author,
         manifest_version: 2,
         name: "Web Extension Name",
         version: "1.0",

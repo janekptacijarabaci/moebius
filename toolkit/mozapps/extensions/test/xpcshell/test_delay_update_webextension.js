@@ -11,7 +11,6 @@ Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
 
 const profileDir = gProfD.clone();
 profileDir.append("extensions");
-const tempdir = gTmpD.clone();
 const stageDir = profileDir.clone();
 stageDir.append("staged");
 
@@ -53,7 +52,7 @@ add_task(function* delay_updates_ignore() {
     manifest: {
       "version": "1.0",
       "applications": {
-        "gecko": {
+        "goanna": {
           "id": IGNORE_ID,
           "update_url": `http://localhost:${gPort}/data/test_delay_updates_ignore.json`,
         },
@@ -133,7 +132,7 @@ add_task(function* delay_updates_complete() {
     manifest: {
       "version": "1.0",
       "applications": {
-        "gecko": {
+        "goanna": {
           "id": COMPLETE_ID,
           "update_url": `http://localhost:${gPort}/data/test_delay_updates_complete.json`,
         },
@@ -197,7 +196,7 @@ add_task(function* delay_updates_defer() {
     manifest: {
       "version": "1.0",
       "applications": {
-        "gecko": {
+        "goanna": {
           "id": DEFER_ID,
           "update_url": `http://localhost:${gPort}/data/test_delay_updates_defer.json`,
         },
@@ -294,7 +293,7 @@ add_task(function* runtime_reload() {
     manifest: {
       "version": "1.0",
       "applications": {
-        "gecko": {
+        "goanna": {
           "id": NOUPDATE_ID,
           "update_url": `http://localhost:${gPort}/data/test_no_update.json`,
         },

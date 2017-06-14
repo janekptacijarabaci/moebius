@@ -26,7 +26,6 @@
 #include "TimeUnits.h"
 #include "nsITimer.h"
 #include "nsCOMPtr.h"
-#include "VideoLimits.h"
 
 using mozilla::CheckedInt64;
 using mozilla::CheckedUint64;
@@ -42,12 +41,11 @@ using mozilla::CheckedUint32;
 // mozilla::Monitor non-reentrant.
 namespace mozilla {
 
-class MediaContentType;
+class MediaContainerType;
 
 // EME Key System String.
 extern const nsLiteralCString kEMEKeySystemClearkey;
 extern const nsLiteralCString kEMEKeySystemWidevine;
-extern const nsLiteralCString kEMEKeySystemPrimetime;
 
 /**
  * ReentrantMonitorConditionallyEnter
@@ -163,6 +161,13 @@ CheckedInt64 TimeUnitToFrames(const media::TimeUnit& aTime, uint32_t aRate);
 // Converts from seconds to microseconds. Returns failure if the resulting
 // integer is too big to fit in an int64_t.
 nsresult SecondsToUsecs(double aSeconds, int64_t& aOutUsecs);
+
+// The maximum height and width of the video. Used for
+// sanitizing the memory allocation of the RGB buffer.
+// The maximum resolution we anticipate encountering in the
+// wild is 2160p (UHD "4K") or 4320p - 7680x4320 pixels for VR.
+static const int32_t MAX_VIDEO_WIDTH = 8192;
+static const int32_t MAX_VIDEO_HEIGHT = 4608;
 
 // Scales the display rect aDisplay by aspect ratio aAspectRatio.
 // Note that aDisplay must be validated by IsValidVideoRegion()
@@ -282,7 +287,7 @@ RefPtr<GenericPromise> InvokeUntil(Work aWork, Condition aCondition) {
   }
 
   struct Helper {
-    static void Iteration(RefPtr<GenericPromise::Private> aPromise, Work aLocalWork, Condition aLocalCondition) {
+    static void Iteration(const RefPtr<GenericPromise::Private>& aPromise, Work aLocalWork, Condition aLocalCondition) {
       if (!aLocalWork()) {
         aPromise->Reject(NS_ERROR_FAILURE, __func__);
       } else if (aLocalCondition()) {
@@ -350,20 +355,104 @@ UniquePtr<TrackInfo>
 CreateTrackInfoWithMIMEType(const nsACString& aCodecMIMEType);
 
 // Try and create a TrackInfo with a given codec MIME type, and optional extra
-// parameters from a content type (its MIME type and codecs are ignored).
+// parameters from a container type (its MIME type and codecs are ignored).
 UniquePtr<TrackInfo>
-CreateTrackInfoWithMIMETypeAndContentTypeExtraParameters(
+CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
   const nsACString& aCodecMIMEType,
-  const MediaContentType& aContentType);
+  const MediaContainerType& aContainerType);
 
-template <typename String>
+namespace detail {
+
+// aString should start with aMajor + '/'.
+constexpr bool
+StartsWithMIMETypeMajor(const char* aString,
+                        const char* aMajor, size_t aMajorRemaining)
+{
+  return (aMajorRemaining == 0 && *aString == '/')
+         || (*aString == *aMajor
+             && StartsWithMIMETypeMajor(aString + 1,
+                                        aMajor + 1, aMajorRemaining - 1));
+}
+
+// aString should only contain [a-z0-9\-\.] and a final '\0'.
+constexpr bool
+EndsWithMIMESubtype(const char* aString, size_t aRemaining)
+{
+  return aRemaining == 0
+         || (((*aString >= 'a' && *aString <= 'z')
+              || (*aString >= '0' && *aString <= '9')
+              || *aString == '-'
+              || *aString == '.')
+             && EndsWithMIMESubtype(aString + 1, aRemaining - 1));
+}
+
+// Simple MIME-type literal string checker with a given (major) type.
+// Only accepts "{aMajor}/[a-z0-9\-\.]+".
+template <size_t MajorLengthPlus1>
+constexpr bool
+IsMIMETypeWithMajor(const char* aString, size_t aLength,
+                    const char (&aMajor)[MajorLengthPlus1])
+{
+  return aLength > MajorLengthPlus1 // Major + '/' + at least 1 char
+         && StartsWithMIMETypeMajor(aString, aMajor, MajorLengthPlus1 - 1)
+         && EndsWithMIMESubtype(aString + MajorLengthPlus1,
+                                aLength - MajorLengthPlus1);
+}
+
+} // namespace detail
+
+// Simple MIME-type string checker.
+// Only accepts lowercase "{application,audio,video}/[a-z0-9\-\.]+".
+// Add more if necessary.
+constexpr bool
+IsMediaMIMEType(const char* aString, size_t aLength)
+{
+  return detail::IsMIMETypeWithMajor(aString, aLength, "application")
+         || detail::IsMIMETypeWithMajor(aString, aLength, "audio")
+         || detail::IsMIMETypeWithMajor(aString, aLength, "video");
+}
+
+// Simple MIME-type string literal checker.
+// Only accepts lowercase "{application,audio,video}/[a-z0-9\-\.]+".
+// Add more if necessary.
+template <size_t LengthPlus1>
+constexpr bool
+IsMediaMIMEType(const char (&aString)[LengthPlus1])
+{
+  return IsMediaMIMEType(aString, LengthPlus1 - 1);
+}
+
+// Simple MIME-type string checker.
+// Only accepts lowercase "{application,audio,video}/[a-z0-9\-\.]+".
+// Add more if necessary.
+inline bool
+IsMediaMIMEType(const nsACString& aString)
+{
+  return IsMediaMIMEType(aString.Data(), aString.Length());
+}
+
+enum class StringListRangeEmptyItems
+{
+  // Skip all empty items (empty string will process nothing)
+  // E.g.: "a,,b" -> ["a", "b"], "" -> nothing
+  Skip,
+  // Process all, except if string is empty
+  // E.g.: "a,,b" -> ["a", "", "b"], "" -> nothing
+  ProcessEmptyItems,
+  // Process all, including 1 empty item in an empty string
+  // E.g.: "a,,b" -> ["a", "", "b"], "" -> [""]
+  ProcessAll
+};
+
+template <typename String,
+          StringListRangeEmptyItems empties = StringListRangeEmptyItems::Skip>
 class StringListRange
 {
   typedef typename String::char_type CharType;
   typedef const CharType* Pointer;
 
 public:
-  // Iterator into range, trims items and skips empty items.
+  // Iterator into range, trims items and optionally skips empty items.
   class Iterator
   {
   public:
@@ -376,6 +465,8 @@ public:
       SearchItemAt(mComma + 1);
       return *this;
     }
+    // DereferencedType should be 'const nsDependent[C]String' pointing into
+    // mList (which is 'const ns[C]String&').
     typedef decltype(Substring(Pointer(), Pointer())) DereferencedType;
     DereferencedType operator*()
     {
@@ -393,12 +484,21 @@ public:
       // First, skip leading whitespace.
       for (Pointer p = start; ; ++p) {
         if (p >= mRangeEnd) {
-          mStart = mEnd = mComma = mRangeEnd;
+          if (p > mRangeEnd
+                  + (empties != StringListRangeEmptyItems::Skip ? 1 : 0)) {
+            p = mRangeEnd
+                + (empties != StringListRangeEmptyItems::Skip ? 1 : 0);
+          }
+          mStart = mEnd = mComma = p;
           return;
         }
         auto c = *p;
         if (c == CharType(',')) {
-          // Comma -> Empty item -> Skip.
+          // Comma -> Empty item -> Skip or process?
+          if (empties != StringListRangeEmptyItems::Skip) {
+            mStart = mEnd = mComma = p;
+            return;
+          }
         } else if (c != CharType(' ')) {
           mStart = p;
           break;
@@ -438,30 +538,37 @@ public:
   };
 
   explicit StringListRange(const String& aList) : mList(aList) {}
-  Iterator begin()
+  Iterator begin() const
   {
-    return Iterator(mList.Data(), mList.Length());
+    return Iterator(mList.Data()
+                    + ((empties == StringListRangeEmptyItems::ProcessEmptyItems
+                        && mList.Length() == 0) ? 1 : 0),
+                    mList.Length());
   }
-  Iterator end()
+  Iterator end() const
   {
-    return Iterator(mList.Data() + mList.Length(), 0);
+    return Iterator(mList.Data() + mList.Length()
+                    + (empties != StringListRangeEmptyItems::Skip ? 1 : 0),
+                    0);
   }
 private:
   const String& mList;
 };
 
-template <typename String>
-StringListRange<String>
+template <StringListRangeEmptyItems empties = StringListRangeEmptyItems::Skip,
+          typename String>
+StringListRange<String, empties>
 MakeStringListRange(const String& aList)
 {
-  return StringListRange<String>(aList);
+  return StringListRange<String, empties>(aList);
 }
 
-template <typename ListString, typename ItemString>
+template <StringListRangeEmptyItems empties = StringListRangeEmptyItems::Skip,
+          typename ListString, typename ItemString>
 static bool
 StringListContains(const ListString& aList, const ItemString& aItem)
 {
-  for (const auto& listItem : MakeStringListRange(aList)) {
+  for (const auto& listItem : MakeStringListRange<empties>(aList)) {
     if (listItem.Equals(aItem)) {
       return true;
     }

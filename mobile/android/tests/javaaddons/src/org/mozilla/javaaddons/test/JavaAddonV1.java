@@ -37,7 +37,7 @@ public class JavaAddonV1 implements EventListener, RequestCallback {
             callback.sendSuccess(output);
         }
 
-        // And send an independent Gecko event.
+        // And send an independent Goanna event.
         final JSONObject input = new JSONObject();
         try {
             input.put("inputStringKey", "raw");
@@ -45,7 +45,7 @@ public class JavaAddonV1 implements EventListener, RequestCallback {
         } catch (JSONException e) {
             // Should never happen; ignore.
         }
-        mDispatcher.sendRequestToGecko("JavaAddon:V1:Request", input, this);
+        mDispatcher.sendRequestToGoanna("JavaAddon:V1:Request", input, this);
     }
 
     @Override
@@ -54,6 +54,6 @@ public class JavaAddonV1 implements EventListener, RequestCallback {
         // Unregister event listener, so that the JavaScript side can send a test message and
         // check it is not handled.
         mDispatcher.unregisterEventListener(this);
-        mDispatcher.sendRequestToGecko("JavaAddon:V1:VerificationRequest", jsonObject, null);
+        mDispatcher.sendRequestToGoanna("JavaAddon:V1:VerificationRequest", jsonObject, null);
     }
 }

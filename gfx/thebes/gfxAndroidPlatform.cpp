@@ -29,6 +29,8 @@
 #include FT_FREETYPE_H
 #include FT_MODULE_H
 
+#include "GeneratedJNINatives.h"
+
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::gfx;
@@ -298,11 +300,11 @@ gfxAndroidPlatform::FontHintingEnabled()
     // might not want hinting.  Let's see.
 
 #ifdef MOZ_WIDGET_ANDROID
-    // On Android, we currently only use gecko to render web
+    // On Android, we currently only use goanna to render web
     // content that can always be be non-reflow-zoomed.  So turn off
     // hinting.
-    // 
-    // XXX when gecko-android-java is used as an "app runtime", we may
+    //
+    // XXX when goanna-android-java is used as an "app runtime", we may
     // want to re-enable hinting for non-browser processes there.
     return false;
 #endif //  MOZ_WIDGET_ANDROID
@@ -318,12 +320,11 @@ bool
 gfxAndroidPlatform::RequiresLinearZoom()
 {
 #ifdef MOZ_WIDGET_ANDROID
-    // On Android, we currently only use gecko to render web
+    // On Android, we currently only use goanna to render web
     // content that can always be be non-reflow-zoomed.
     //
-    // XXX when gecko-android-java is used as an "app runtime", we may
-    // want to treat it like B2G and use linear zoom only for the web
-    // browser process, not other apps.
+    // XXX when goanna-android-java is used as an "app runtime", we may
+    // want to use linear zoom only for the web browser process, not other apps.
     return true;
 #endif
 
@@ -331,8 +332,103 @@ gfxAndroidPlatform::RequiresLinearZoom()
     return gfxPlatform::RequiresLinearZoom();
 }
 
+class AndroidVsyncSource final : public VsyncSource {
+public:
+    class JavaVsyncSupport final : public java::VsyncSource::Natives<JavaVsyncSupport>
+    {
+    public:
+        using Base = java::VsyncSource::Natives<JavaVsyncSupport>;
+        using Base::DisposeNative;
+
+        static void NotifyVsync() {
+            GetDisplayInstance().NotifyVsync(TimeStamp::Now());
+        }
+    };
+
+    class Display final : public VsyncSource::Display {
+    public:
+        Display()
+            : mJavaVsync(java::VsyncSource::INSTANCE())
+            , mObservingVsync(false)
+        {
+            JavaVsyncSupport::Init(); // To register native methods.
+        }
+
+        ~Display() { DisableVsync(); }
+
+        bool IsVsyncEnabled() override
+        {
+            MOZ_ASSERT(NS_IsMainThread());
+            MOZ_ASSERT(mJavaVsync);
+
+            return mObservingVsync;
+        }
+
+        void EnableVsync() override
+        {
+            MOZ_ASSERT(NS_IsMainThread());
+            MOZ_ASSERT(mJavaVsync);
+
+            if (mObservingVsync) {
+                return;
+            }
+            bool ok = mJavaVsync->ObserveVsync(true);
+            if (ok && !mVsyncDuration) {
+                float fps = mJavaVsync->GetRefreshRate();
+                mVsyncDuration = TimeDuration::FromMilliseconds(1000.0 / fps);
+            }
+            mObservingVsync = ok;
+            MOZ_ASSERT(mObservingVsync);
+        }
+
+        void DisableVsync() override
+        {
+            MOZ_ASSERT(NS_IsMainThread());
+            MOZ_ASSERT(mJavaVsync);
+
+            if (!mObservingVsync) {
+              return;
+            }
+            mObservingVsync = mJavaVsync->ObserveVsync(false);
+            MOZ_ASSERT(!mObservingVsync);
+        }
+
+        TimeDuration GetVsyncRate() override { return mVsyncDuration; }
+
+        void Shutdown() override {
+            DisableVsync();
+            mJavaVsync = nullptr;
+        }
+
+    private:
+        java::VsyncSource::GlobalRef mJavaVsync;
+        bool mObservingVsync;
+        TimeDuration mVsyncDuration;
+    };
+
+    Display& GetGlobalDisplay() final { return GetDisplayInstance(); }
+
+private:
+   virtual ~AndroidVsyncSource() {}
+
+   static Display& GetDisplayInstance()
+   {
+       static Display globalDisplay;
+       return globalDisplay;
+   }
+};
+
 already_AddRefed<mozilla::gfx::VsyncSource>
 gfxAndroidPlatform::CreateHardwareVsyncSource()
 {
+    // Vsync was introduced since JB (API 16~18) but inaccurate. Enable only for
+    // KK (API 19) and later.
+    if (AndroidBridge::Bridge() &&
+            AndroidBridge::Bridge()->GetAPIVersion() >= 19) {
+        RefPtr<AndroidVsyncSource> vsyncSource = new AndroidVsyncSource();
+        return vsyncSource.forget();
+    }
+
+    NS_WARNING("Vsync not supported. Falling back to software vsync");
     return gfxPlatform::CreateHardwareVsyncSource();
 }

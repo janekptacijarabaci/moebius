@@ -44,7 +44,7 @@ SpecialPowers.pushPrefEnv({"set": [["media.webvtt.regions.enabled", true]]},
       var cueList = trackElement.track.cues;
       is(cueList.length, 6, "Cue list length should be 6.");
 
-      // Check that the typedef of TextTrackCue works in Gecko.
+      // Check that the typedef of TextTrackCue works in Goanna.
       isnot(window.TextTrackCue, undefined, "TextTrackCue should be defined.");
       isnot(window.VTTCue, undefined, "VTTCue should be defined.");
 
@@ -84,7 +84,7 @@ SpecialPowers.pushPrefEnv({"set": [["media.webvtt.regions.enabled", true]]},
       cue.pauseOnExit = true;
       is(cue.pauseOnExit, true, "Cue's pause on exit flag should be true.");
       video.addEventListener("pause", function pauseOnExit() {
-        video.removeEventListener("pause", pauseOnExit, false);
+        video.removeEventListener("pause", pauseOnExit);
         video.play();
       });
 

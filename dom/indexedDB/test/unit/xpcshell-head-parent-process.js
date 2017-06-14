@@ -50,7 +50,6 @@ if (!this.runTest) {
 
       enableTesting();
       enableExperimental();
-      enableWasm();
     }
 
     Cu.importGlobalProperties(["indexedDB", "Blob", "File", "FileReader"]);
@@ -63,7 +62,6 @@ if (!this.runTest) {
 function finishTest()
 {
   if (SpecialPowers.isMainProcess()) {
-    resetWasm();
     resetExperimental();
     resetTesting();
 
@@ -74,14 +72,13 @@ function finishTest()
   SpecialPowers.removeFiles();
 
   do_execute_soon(function(){
-    testGenerator.close();
     do_test_finished();
   })
 }
 
 function grabEventAndContinueHandler(event)
 {
-  testGenerator.send(event);
+  testGenerator.next(event);
 }
 
 function continueToNextStep()
@@ -213,16 +210,6 @@ function enableTesting()
 function resetTesting()
 {
   SpecialPowers.clearUserPref("dom.indexedDB.testing");
-}
-
-function enableWasm()
-{
-  SpecialPowers.setBoolPref("javascript.options.wasm", true);
-}
-
-function resetWasm()
-{
-  SpecialPowers.clearUserPref("javascript.options.wasm");
 }
 
 function gc()
@@ -421,7 +408,7 @@ function getWasmBinary(text)
 {
   let binary = getWasmBinarySync(text);
   executeSoon(function() {
-    testGenerator.send(binary);
+    testGenerator.next(binary);
   });
 }
 
@@ -529,7 +516,7 @@ function verifyWasmModule(module1, module2)
 
 function grabFileUsageAndContinueHandler(request)
 {
-  testGenerator.send(request.fileUsage);
+  testGenerator.next(request.fileUsage);
 }
 
 function getUsage(usageHandler)
@@ -569,7 +556,7 @@ function getPrincipal(url)
 {
   let uri = Cc["@mozilla.org/network/io-service;1"]
               .getService(Ci.nsIIOService)
-              .newURI(url, null, null);
+              .newURI(url);
   let ssm = Cc["@mozilla.org/scriptsecuritymanager;1"]
               .getService(Ci.nsIScriptSecurityManager);
   return ssm.createCodebasePrincipal(uri, {});

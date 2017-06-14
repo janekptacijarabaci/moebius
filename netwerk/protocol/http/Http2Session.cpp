@@ -1275,9 +1275,19 @@ Http2Session::RecvHeaders(Http2Session *self)
   self->mInputFrameDataStream->UpdateTransportReadEvents(self->mInputFrameDataSize);
   self->mLastDataReadEpoch = self->mLastReadEpoch;
 
+  if (!isContinuation) {
+    self->mAggregatedHeaderSize = self->mInputFrameDataSize - paddingControlBytes - priorityLen - paddingLength;
+  } else {
+    self->mAggregatedHeaderSize += self->mInputFrameDataSize - paddingControlBytes - priorityLen - paddingLength;
+  }
+
   if (!endHeadersFlag) { // more are coming - don't process yet
     self->ResetDownstreamState();
     return NS_OK;
+  }
+
+  if (isContinuation) {
+    Telemetry::Accumulate(Telemetry::SPDY_CONTINUED_HEADERS, self->mAggregatedHeaderSize);
   }
 
   rv = self->ResponseHeadersComplete();
@@ -1671,10 +1681,20 @@ Http2Session::RecvPushPromise(Http2Session *self)
   self->mDecompressBuffer.Append(&self->mInputFrameBuffer[kFrameHeaderBytes + paddingControlBytes + promiseLen],
                                  self->mInputFrameDataSize - paddingControlBytes - promiseLen - paddingLength);
 
+  if (self->mInputFrameType != FRAME_TYPE_CONTINUATION) {
+    self->mAggregatedHeaderSize = self->mInputFrameDataSize - paddingControlBytes - promiseLen - paddingLength;
+  } else {
+    self->mAggregatedHeaderSize += self->mInputFrameDataSize - paddingControlBytes - promiseLen - paddingLength;
+  }
+
   if (!(self->mInputFrameFlags & kFlag_END_PUSH_PROMISE)) {
     LOG3(("Http2Session::RecvPushPromise not finishing processing for multi-frame push\n"));
     self->ResetDownstreamState();
     return NS_OK;
+  }
+
+  if (self->mInputFrameType == FRAME_TYPE_CONTINUATION) {
+    Telemetry::Accumulate(Telemetry::SPDY_CONTINUED_HEADERS, self->mAggregatedHeaderSize);
   }
 
   // Create the buffering transaction and push stream
@@ -2511,7 +2531,7 @@ Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter *writer,
     return ProcessConnectedPush(pushConnectedStream, writer, count, countWritten);
   }
 
-  // feed gecko channels that previously stopped consuming data
+  // feed goanna channels that previously stopped consuming data
   // only take data from stored buffers
   Http2Stream *slowConsumer =
     static_cast<Http2Stream *>(mSlowConsumersReadyForRead.PopFront());

@@ -10,7 +10,7 @@ from .graph import Graph
 from .util.python_path import find_object
 
 TASKCLUSTER_QUEUE_URL = "https://queue.taskcluster.net/v1/task/"
-GECKO = os.path.realpath(os.path.join(__file__, '..', '..', '..'))
+GOANNA = os.path.realpath(os.path.join(__file__, '..', '..', '..'))
 
 
 class TaskGraph(object):
@@ -45,6 +45,11 @@ class TaskGraph(object):
                 task_json['task_id'] = task.task_id
             tasks[key] = task_json
         return tasks
+
+    def for_each_task(self, f, *args, **kwargs):
+        for task_label in self.graph.visit_postorder():
+            task = self.tasks[task_label]
+            f(task, self, *args, **kwargs)
 
     def __getitem__(self, label):
         "Get a task by label"

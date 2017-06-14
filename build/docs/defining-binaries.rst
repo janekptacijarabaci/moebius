@@ -297,9 +297,6 @@ needs to be prefixed with ``static:`` in ``USE_LIBS``
 Miscellaneous
 =============
 
-The ``SDK_LIBRARY`` boolean variable defines whether the library in the current
-directory is going to be installed in the SDK.
-
 The ``SONAME`` variable declares a "shared object name" for the library. It
 defaults to the ``Library`` name or the ``SHARED_LIBRARY_NAME`` if set. When
 linking to a library with a ``SONAME``, the resulting library or program will
@@ -326,26 +323,26 @@ On e.g. Linux, the above ``myprog`` will have DT_NEEDED markers for
 requirement for ``myprog`` is ``libfoo.so`` instead of ``libotherlib.so``.
 
 
-Gecko-related binaries
+Goanna-related binaries
 ======================
 
-Some programs or libraries are totally independent of Gecko, and can use the
-above mentioned templates. Others are Gecko-related in some way, and may
+Some programs or libraries are totally independent of Goanna, and can use the
+above mentioned templates. Others are Goanna-related in some way, and may
 need XPCOM linkage, mozglue. These things are tedious. A set of additional
 templates exists to ease defining such programs and libraries. They are
-essentially the same as the above mentioned templates, prefixed with "Gecko":
+essentially the same as the above mentioned templates, prefixed with "Goanna":
 
-  - ``GeckoProgram``
-  - ``GeckoSimplePrograms``
-  - ``GeckoCppUnitTests``
-  - ``GeckoSharedLibrary``
-  - ``GeckoFramework``
+  - ``GoannaProgram``
+  - ``GoannaSimplePrograms``
+  - ``GoannaCppUnitTests``
+  - ``GoannaSharedLibrary``
+  - ``GoannaFramework``
 
 There is also ``XPCOMBinaryComponent`` for XPCOM components, which is a
 special kind of library.
 
-All the Gecko-prefixed templates take the same arguments as their
-non-Gecko-prefixed counterparts, and can take a few more arguments
-for non-standard cases. See the definition of ``GeckoBinary`` in
-build/gecko_templates.mozbuild for more details, but most usecases
+All the Goanna-prefixed templates take the same arguments as their
+non-Goanna-prefixed counterparts, and can take a few more arguments
+for non-standard cases. See the definition of ``GoannaBinary`` in
+build/goanna_templates.mozbuild for more details, but most usecases
 should not require these additional arguments.

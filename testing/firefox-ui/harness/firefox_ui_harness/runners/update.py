@@ -12,8 +12,6 @@ from firefox_ui_harness.testcases import UpdateTestCase
 
 
 DEFAULT_PREFS = {
-    # Bug 1355026: Re-enable when support for the new simplified UI update is available
-    'app.update.doorhanger': False,
     'app.update.log': True,
     'startup.homepage_override_url': 'about:blank',
 }
@@ -27,11 +25,6 @@ class UpdateTestRunner(FirefoxUITestRunner):
         self.original_bin = self.bin
 
         self.prefs.update(DEFAULT_PREFS)
-
-        # In case of overriding the update URL, set the appropriate preference
-        override_url = kwargs.pop('update_override_url', None)
-        if override_url:
-            self.prefs.update({'app.update.url.override': override_url})
 
         self.run_direct_update = not kwargs.pop('update_fallback_only', False)
         self.run_fallback_update = not kwargs.pop('update_direct_only', False)

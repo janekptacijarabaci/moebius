@@ -34,7 +34,7 @@
 #include "ChildIterator.h"
 
 #include "nsFrameManager.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "nsIStatefulFrame.h"
 #include "nsContainerFrame.h"
 
@@ -831,5 +831,3 @@ nsFrameManagerBase::UndisplayedMap::Clear(void)
   mLastLookup = nullptr;
   PL_HashTableEnumerateEntries(mTable, RemoveUndisplayedEntry, 0);
 }
-
-uint32_t nsFrameManagerBase::sGlobalGenerationNumber;

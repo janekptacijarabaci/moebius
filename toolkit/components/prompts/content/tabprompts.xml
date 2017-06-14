@@ -109,12 +109,12 @@
                 // focusTarget (for BUTTON_DELAY_ENABLE) not yet supported
             };
 
-            this.ui.button0.addEventListener("command", this.onButtonClick.bind(this, 0), false);
-            this.ui.button1.addEventListener("command", this.onButtonClick.bind(this, 1), false);
-            this.ui.button2.addEventListener("command", this.onButtonClick.bind(this, 2), false);
-            this.ui.button3.addEventListener("command", this.onButtonClick.bind(this, 3), false);
+            this.ui.button0.addEventListener("command", this.onButtonClick.bind(this, 0));
+            this.ui.button1.addEventListener("command", this.onButtonClick.bind(this, 1));
+            this.ui.button2.addEventListener("command", this.onButtonClick.bind(this, 2));
+            this.ui.button3.addEventListener("command", this.onButtonClick.bind(this, 3));
             // Anonymous wrapper used here because |Dialog| doesn't exist until init() is called!
-            this.ui.checkbox.addEventListener("command", function() { self.Dialog.onCheckbox(); }, false);
+            this.ui.checkbox.addEventListener("command", function() { self.Dialog.onCheckbox(); });
             this.isLive = false;
         ]]>
         </constructor>
@@ -154,9 +154,9 @@
                 // the page navigates, else we never unwind the event loop and that's sad times.
                 // Remember to cleanup in shutdownPrompt()!
                 this.isLive = true;
-                window.addEventListener("resize", this, false);
-                window.addEventListener("unload", this, false);
-                linkedTab.addEventListener("TabClose", this, false);
+                window.addEventListener("resize", this);
+                window.addEventListener("unload", this);
+                linkedTab.addEventListener("TabClose", this);
                 // Note:
                 // nsPrompter.js or in e10s mode browser-parent.js call abortPrompt,
                 // when the domWindow, for which the prompt was created, generates
@@ -185,9 +185,9 @@
             <![CDATA[
                 // remove our event listeners
                 try {
-                    window.removeEventListener("resize", this, false);
-                    window.removeEventListener("unload", this, false);
-                    this.linkedTab.removeEventListener("TabClose", this, false);
+                    window.removeEventListener("resize", this);
+                    window.removeEventListener("unload", this);
+                    this.linkedTab.removeEventListener("TabClose", this);
                 } catch (e) { }
                 this.isLive = false;
                 // invoke callback
@@ -270,11 +270,11 @@
             <parameter name="buttonNum"/>
             <body>
             <![CDATA[
-                // We want to do all the work her asynchronously off a Gecko
+                // We want to do all the work her asynchronously off a Goanna
                 // runnable, because of situations like the one described in
                 // https://bugzilla.mozilla.org/show_bug.cgi?id=1167575#c35 : we
                 // get here off processing of an OS event and will also process
-                // one more Gecko runnable before we break out of the event loop
+                // one more Goanna runnable before we break out of the event loop
                 // spin whoever posted the prompt is doing.  If we do all our
                 // work sync, we will exit modal state _before_ processing that
                 // runnable, and if exiting moral state posts a runnable we will

@@ -9,6 +9,7 @@
 
 #include "mozilla/EventStates.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ServoTypes.h"
 #include "mozilla/SheetType.h"
 #include "mozilla/StyleBackendType.h"
 #include "mozilla/StyleSheet.h"
@@ -51,7 +52,7 @@ public:
   public:
     friend class ::mozilla::StyleSetHandle;
 
-    bool IsGecko() const { return !IsServo(); }
+    bool IsGoanna() const { return !IsServo(); }
     bool IsServo() const
     {
       MOZ_ASSERT(mValue, "StyleSetHandle null pointer dereference");
@@ -64,13 +65,13 @@ public:
 
     StyleBackendType BackendType() const
     {
-      return IsGecko() ? StyleBackendType::Gecko :
+      return IsGoanna() ? StyleBackendType::Goanna :
                          StyleBackendType::Servo;
     }
 
-    nsStyleSet* AsGecko()
+    nsStyleSet* AsGoanna()
     {
-      MOZ_ASSERT(IsGecko());
+      MOZ_ASSERT(IsGoanna());
       return reinterpret_cast<nsStyleSet*>(mValue);
     }
 
@@ -80,12 +81,12 @@ public:
       return reinterpret_cast<ServoStyleSet*>(mValue & ~SERVO_BIT);
     }
 
-    nsStyleSet* GetAsGecko() { return IsGecko() ? AsGecko() : nullptr; }
+    nsStyleSet* GetAsGoanna() { return IsGoanna() ? AsGoanna() : nullptr; }
     ServoStyleSet* GetAsServo() { return IsServo() ? AsServo() : nullptr; }
 
-    const nsStyleSet* AsGecko() const
+    const nsStyleSet* AsGoanna() const
     {
-      return const_cast<Ptr*>(this)->AsGecko();
+      return const_cast<Ptr*>(this)->AsGoanna();
     }
 
     const ServoStyleSet* AsServo() const
@@ -94,7 +95,7 @@ public:
       return const_cast<Ptr*>(this)->AsServo();
     }
 
-    const nsStyleSet* GetAsGecko() const { return IsGecko() ? AsGecko() : nullptr; }
+    const nsStyleSet* GetAsGoanna() const { return IsGoanna() ? AsGoanna() : nullptr; }
     const ServoStyleSet* GetAsServo() const { return IsServo() ? AsServo() : nullptr; }
 
     // These inline methods are defined in StyleSetHandleInlines.h.
@@ -114,10 +115,12 @@ public:
     inline nsresult EndUpdate();
     inline already_AddRefed<nsStyleContext>
     ResolveStyleFor(dom::Element* aElement,
-                    nsStyleContext* aParentContext);
+                    nsStyleContext* aParentContext,
+                    LazyComputeBehavior aMayCompute);
     inline already_AddRefed<nsStyleContext>
     ResolveStyleFor(dom::Element* aElement,
                     nsStyleContext* aParentContext,
+                    LazyComputeBehavior aMayCompute,
                     TreeMatchContext& aTreeMatchContext);
     inline already_AddRefed<nsStyleContext>
     ResolveStyleForText(nsIContent* aTextNode,

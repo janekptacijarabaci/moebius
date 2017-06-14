@@ -79,7 +79,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Location)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mInnerWindow)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(Location)
@@ -110,7 +109,7 @@ Location::CheckURL(nsIURI* aURI, nsIDocShellLoadInfo** aLoadInfo)
 
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
   nsCOMPtr<nsIURI> sourceURI;
-  net::ReferrerPolicy referrerPolicy = net::RP_Default;
+  net::ReferrerPolicy referrerPolicy = net::RP_Unset;
 
   if (JSContext *cx = nsContentUtils::GetCurrentJSContext()) {
     // No cx means that there's no JS running, or at least no JS that
@@ -577,19 +576,17 @@ Location::GetPathname(nsAString& aPathname)
   aPathname.Truncate();
 
   nsCOMPtr<nsIURI> uri;
-  nsresult result = NS_OK;
+  nsresult result = GetURI(getter_AddRefs(uri));
+  if (NS_FAILED(result) || !uri) {
+    return result;
+  }
 
-  result = GetURI(getter_AddRefs(uri));
+  nsAutoCString file;
 
-  nsCOMPtr<nsIURIWithQuery> url(do_QueryInterface(uri));
-  if (url) {
-    nsAutoCString file;
+  result = uri->GetFilePath(file);
 
-    result = url->GetFilePath(file);
-
-    if (NS_SUCCEEDED(result)) {
-      AppendUTF8toUTF16(file, aPathname);
-    }
+  if (NS_SUCCEEDED(result)) {
+    AppendUTF8toUTF16(file, aPathname);
   }
 
   return result;
@@ -604,8 +601,7 @@ Location::SetPathname(const nsAString& aPathname)
     return rv;
   }
 
-  nsCOMPtr<nsIURIWithQuery> url(do_QueryInterface(uri));
-  if (url && NS_SUCCEEDED(url->SetFilePath(NS_ConvertUTF16toUTF8(aPathname)))) {
+  if (NS_SUCCEEDED(uri->SetFilePath(NS_ConvertUTF16toUTF8(aPathname)))) {
     return SetURI(uri);
   }
 
@@ -791,7 +787,7 @@ Location::Reload(bool aForceget)
     // resize event. Sites do this since Netscape 4.x needed it, but
     // we don't, and it's a horrible experience for nothing. In stead
     // of reloading the page, just clear style data and reflow the
-    // page since some sites may use this trick to work around gecko
+    // page since some sites may use this trick to work around goanna
     // reflow bugs, and this should have the same effect.
 
     nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();

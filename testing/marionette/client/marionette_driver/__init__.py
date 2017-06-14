@@ -11,7 +11,7 @@ from marionette_driver import (
     decorators,
     errors,
     expected,
-    geckoinstance,
+    goannainstance,
     gestures,
     keys,
     localization,

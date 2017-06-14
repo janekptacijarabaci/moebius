@@ -152,7 +152,7 @@ extern nsresult nsStringInputStreamConstructor(nsISupports*, REFNSIID, void**);
 #include "mozilla/SystemMemoryReporter.h"
 #include "mozilla/UniquePtr.h"
 
-#include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "mozilla/ipc/GoannaChildProcessHost.h"
 
 #include "ogg/ogg.h"
 #if defined(MOZ_VPX) && !defined(MOZ_VPX_NO_MEM_REPORTING)
@@ -165,7 +165,7 @@ extern nsresult nsStringInputStreamConstructor(nsISupports*, REFNSIID, void**);
 #include "vpx_mem/vpx_mem.h"
 #endif
 
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 #include "jsapi.h"
 #include "js/Initialization.h"
@@ -219,7 +219,6 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsSupportsPRInt32)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsSupportsPRInt64)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsSupportsFloat)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsSupportsDouble)
-NS_GENERIC_FACTORY_CONSTRUCTOR(nsSupportsVoid)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsSupportsInterfacePointer)
 
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsConsoleService, Init)
@@ -536,12 +535,12 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
   MessageLoop* messageLoop = MessageLoop::current();
   if (!messageLoop) {
     sMessageLoop = new MessageLoopForUI(MessageLoop::TYPE_MOZILLA_PARENT);
-    sMessageLoop->set_thread_name("Gecko");
+    sMessageLoop->set_thread_name("Goanna");
     // Set experimental values for main thread hangs:
     // 128ms for transient hangs and 8192ms for permanent hangs
     sMessageLoop->set_hang_timeouts(128, 8192);
   } else if (messageLoop->type() == MessageLoop::TYPE_MOZILLA_CHILD) {
-    messageLoop->set_thread_name("Gecko_Child");
+    messageLoop->set_thread_name("Goanna_Child");
     messageLoop->set_hang_timeouts(128, 8192);
   }
 
@@ -865,7 +864,7 @@ SetICUMemoryFunctions()
   if (!sICUReporterInitialized) {
     if (!JS_SetICUMemoryFunctions(ICUReporter::Alloc, ICUReporter::Realloc,
                                   ICUReporter::Free)) {
-      NS_RUNTIMEABORT("JS_SetICUMemoryFunctions failed.");
+      MOZ_CRASH("JS_SetICUMemoryFunctions failed.");
     }
     sICUReporterInitialized = true;
   }
@@ -878,7 +877,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   HangMonitor::NotifyActivity();
 
   if (!NS_IsMainThread()) {
-    NS_RUNTIMEABORT("Shutdown on wrong thread");
+    MOZ_CRASH("Shutdown on wrong thread");
   }
 
   nsresult rv;
@@ -1051,7 +1050,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   // JS pseudo-stack's internal reference to the main thread JSContext,
   // duplicating the call in XPCJSContext::~XPCJSContext() in case that
   // never fired.
-  if (PseudoStack* stack = mozilla_get_pseudo_stack()) {
+  if (PseudoStack* stack = profiler_get_pseudo_stack()) {
     stack->sampleContext(nullptr);
   }
 #endif

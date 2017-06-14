@@ -7,7 +7,7 @@
 #ifndef mozilla_layers_ContentProcessController_h
 #define mozilla_layers_ContentProcessController_h
 
-#include "mozilla/layers/GeckoContentController.h"
+#include "mozilla/layers/GoannaContentController.h"
 
 class nsIObserver;
 
@@ -22,29 +22,23 @@ namespace layers {
 class APZChild;
 
 /**
- * ContentProcessController is a GeckoContentController for a TabChild, and is always
+ * ContentProcessController is a GoannaContentController for a TabChild, and is always
  * remoted using PAPZ/APZChild.
  *
  * ContentProcessController is created in ContentChild when a layer tree id has
  * been allocated for a PBrowser that lives in that content process, and is destroyed
  * when the Destroy message is received, or when the tab dies.
  *
- * If ContentProcessController needs to implement a new method on GeckoContentController
+ * If ContentProcessController needs to implement a new method on GoannaContentController
  * PAPZ, APZChild, and RemoteContentController must be updated to handle it.
  */
 class ContentProcessController final
-      : public GeckoContentController
+      : public GoannaContentController
 {
 public:
-  ~ContentProcessController();
+  explicit ContentProcessController(const RefPtr<dom::TabChild>& aBrowser);
 
-  static APZChild* Create(const dom::TabId& aTabId);
-
-  // ContentProcessController
-
-  void SetBrowser(dom::TabChild* aBrowser);
-
-  // GeckoContentController
+  // GoannaContentController
 
   void RequestContentRepaint(const FrameMetrics& frame) override;
 
@@ -75,12 +69,7 @@ public:
   void DispatchToRepaintThread(already_AddRefed<Runnable> aTask) override;
 
 private:
-  ContentProcessController();
-
-  void SetObserver(nsIObserver* aObserver);
-
   RefPtr<dom::TabChild> mBrowser;
-  RefPtr<nsIObserver> mObserver;
 };
 
 } // namespace layers

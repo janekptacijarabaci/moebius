@@ -10,7 +10,7 @@
 #include "nsScreenManagerAndroid.h"
 #include "nsServiceManagerUtils.h"
 #include "AndroidRect.h"
-#include "FennecJNINatives.h"
+#include "GeneratedJNINatives.h"
 #include "nsAppShell.h"
 #include "nsThreadUtils.h"
 
@@ -47,7 +47,7 @@ nsScreenAndroid::GetDensity() {
         return mDensity;
     }
     if (mDisplayType == DisplayType::DISPLAY_PRIMARY) {
-        mDensity = mozilla::jni::IsAvailable() ? GeckoAppShell::GetDensity()
+        mDensity = mozilla::jni::IsAvailable() ? GoannaAppShell::GetDensity()
                                                : 1.0; // xpcshell most likely
         return mDensity;
     }
@@ -79,7 +79,7 @@ nsScreenAndroid::GetRect(int32_t *outLeft, int32_t *outTop, int32_t *outWidth, i
       return NS_ERROR_FAILURE;
     }
 
-    java::sdk::Rect::LocalRef rect = java::GeckoAppShell::GetScreenSize();
+    java::sdk::Rect::LocalRef rect = java::GoannaAppShell::GetScreenSize();
     rect->Left(outLeft);
     rect->Top(outTop);
     rect->Width(outWidth);
@@ -106,7 +106,7 @@ nsScreenAndroid::GetPixelDepth(int32_t *aPixelDepth)
       return NS_ERROR_FAILURE;
     }
 
-    *aPixelDepth = java::GeckoAppShell::GetScreenDepth();
+    *aPixelDepth = java::GoannaAppShell::GetScreenDepth();
     return NS_OK;
 }
 
@@ -123,7 +123,7 @@ nsScreenAndroid::ApplyMinimumBrightness(uint32_t aBrightness)
 {
     if (mDisplayType == DisplayType::DISPLAY_PRIMARY &&
         mozilla::jni::IsAvailable()) {
-        java::GeckoAppShell::SetKeepScreenOn(aBrightness == BRIGHTNESS_FULL);
+        java::GoannaAppShell::SetKeepScreenOn(aBrightness == BRIGHTNESS_FULL);
     }
 }
 

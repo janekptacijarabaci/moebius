@@ -473,7 +473,7 @@ MouseScrollHandler::ProcessNativeMouseWheelMessage(nsWindowBase* aWidget,
   }
 
   // If the window under cursor is not in our process, it means:
-  // 1. The window may be a plugin window (GeckoPluginWindow or its descendant).
+  // 1. The window may be a plugin window (GoannaPluginWindow or its descendant).
   // 2. The window may be another application's window.
   HWND pluginWnd = WinUtils::FindOurProcessWindow(underCursorWnd);
   if (!pluginWnd) {
@@ -992,10 +992,7 @@ MouseScrollHandler::SystemSettings::InitScrollChars()
                                      &mScrollChars, 0)) {
     MOZ_LOG(gMouseScrollLog, LogLevel::Info,
       ("MouseScroll::SystemSettings::InitScrollChars(): ::SystemParametersInfo("
-       "SPI_GETWHEELSCROLLCHARS) failed, %s",
-       IsVistaOrLater() ?
-         "this is unexpected on Vista or later" :
-         "but on XP or earlier, this is not a problem"));
+       "SPI_GETWHEELSCROLLCHARS) failed, this is unexpected on Vista or later"));
     // XXX Should we use DefaultScrollChars()?
     mScrollChars = 1;
   }
@@ -1081,7 +1078,7 @@ bool
 MouseScrollHandler::SystemSettings::IsOverridingSystemScrollSpeedAllowed()
 {
   return mScrollLines == DefaultScrollLines() &&
-         (!IsVistaOrLater() || mScrollChars == DefaultScrollChars());
+         mScrollChars == DefaultScrollChars();
 }
 
 /******************************************************************************

@@ -18,9 +18,6 @@
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/Unused.h"
 #include "Units.h"
-#ifdef MOZ_WIDGET_ANDROID
-#include "AndroidBridge.h"
-#endif
 
 namespace mozilla {
 namespace layers {
@@ -71,7 +68,7 @@ RemoteContentController::HandleTap(TapType aTapType,
 {
   APZThreadUtils::AssertOnControllerThread();
 
-  if (XRE_GetProcessType() == GeckoProcessType_GPU) {
+  if (XRE_GetProcessType() == GoannaProcessType_GPU) {
     MOZ_ASSERT(MessageLoop::current() == mCompositorThread);
 
     // The raw pointer to APZCTreeManagerParent is ok here because we are on the
@@ -128,8 +125,8 @@ RemoteContentController::NotifyPinchGesture(PinchGestureInput::PinchGestureType 
   // delegate to that instead.
   if (XRE_IsParentProcess()) {
     MOZ_ASSERT(NS_IsMainThread());
-    RefPtr<GeckoContentController> rootController =
-        CompositorBridgeParent::GetGeckoContentControllerForRoot(aGuid.mLayersId);
+    RefPtr<GoannaContentController> rootController =
+        CompositorBridgeParent::GetGoannaContentControllerForRoot(aGuid.mLayersId);
     if (rootController) {
       rootController->NotifyPinchGesture(aType, aGuid, aSpanChange, aModifiers);
     }
@@ -139,12 +136,8 @@ RemoteContentController::NotifyPinchGesture(PinchGestureInput::PinchGestureType 
 void
 RemoteContentController::PostDelayedTask(already_AddRefed<Runnable> aTask, int aDelayMs)
 {
-#ifdef MOZ_WIDGET_ANDROID
-  AndroidBridge::Bridge()->PostTaskToUiThread(Move(aTask), aDelayMs);
-#else
   (MessageLoop::current() ? MessageLoop::current() : mCompositorThread)->
     PostDelayedTask(Move(aTask), aDelayMs);
-#endif
 }
 
 bool

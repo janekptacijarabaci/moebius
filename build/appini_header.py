@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 '''Parses a given application.ini file and outputs the corresponding
-   XULAppData structure as a C++ header file'''
+   StaticXREAppData structure as a C++ header file'''
 
 import ConfigParser
 import sys
@@ -24,7 +24,7 @@ def main(output, file):
     appdata['flags'] = ' | '.join(flags) if flags else '0'
     appdata['App:profile'] = '"%s"' % appdata['App:profile'] if 'App:profile' in appdata else 'NULL'
     expected = ('App:vendor', 'App:name', 'App:remotingname', 'App:version', 'App:buildid',
-                'App:id', 'Gecko:minversion', 'Gecko:maxversion')
+                'App:id', 'Goanna:minversion', 'Goanna:maxversion')
     missing = [var for var in expected if var not in appdata]
     if missing:
         print >>sys.stderr, \
@@ -34,10 +34,8 @@ def main(output, file):
     if not 'Crash Reporter:serverurl' in appdata:
         appdata['Crash Reporter:serverurl'] = ''
 
-    output.write('''#include "nsXREAppData.h"
-             static const nsXREAppData sAppData = {
-                 sizeof(nsXREAppData),
-                 NULL, // directory
+    output.write('''#include "mozilla/XREAppData.h"
+             static const mozilla::StaticXREAppData sAppData = {
                  "%(App:vendor)s",
                  "%(App:name)s",
                  "%(App:remotingname)s",
@@ -46,9 +44,8 @@ def main(output, file):
                  "%(App:id)s",
                  NULL, // copyright
                  %(flags)s,
-                 NULL, // xreDirectory
-                 "%(Gecko:minversion)s",
-                 "%(Gecko:maxversion)s",
+                 "%(Goanna:minversion)s",
+                 "%(Goanna:maxversion)s",
                  "%(Crash Reporter:serverurl)s",
                  %(App:profile)s
              };''' % appdata)

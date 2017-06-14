@@ -105,7 +105,6 @@ add_task(function* panel_shown_once_for_doubleclick_on_new_bookmark_star_and_aut
 add_task(function* panel_shown_once_for_slow_doubleclick_on_new_bookmark_star_and_autocloses() {
   todo(false, "bug 1250267, may need to add some tracking state to " +
               "browser-places.js for this.");
-  return;
 
   /*
   yield test_bookmarks_popup({

@@ -42,21 +42,20 @@ you want "Firefox for Desktop Artifact Mode".
 Similarly, if you want to work on the look-and-feel of Firefox for Android,
 you want "Firefox for Android Artifact Mode".
 
-To work on the Gecko technology platform, you would need to opt to full,
-non-artifact mode. Gecko is Mozilla's web rendering engine, similar to Edge,
-Blink, and WebKit. Gecko is implemented in C++ and JavaScript. If you
+To work on the Goanna technology platform, you would need to opt to full,
+non-artifact mode. Goanna is Mozilla's web rendering engine, similar to Edge,
+Blink, and WebKit. Goanna is implemented in C++ and JavaScript. If you
 want to work on web rendering, you want "Firefox for Desktop", or
 "Firefox for Android".
 
 If you don't know what you want, start with just Artifact Mode of the desired
-platform. Your builds will be much shorter than if you build Gecko as well.
+platform. Your builds will be much shorter than if you build Goanna as well.
 But don't worry! You can always switch configurations later.
 
 You can learn more about Artifact mode builds at
 https://developer.mozilla.org/en-US/docs/Artifact_builds.
 
-Your choice:
-'''
+Your choice: '''
 
 APPLICATIONS_LIST=[
     ('Firefox for Desktop Artifact Mode', 'browser_artifact_mode'),
@@ -90,8 +89,7 @@ Would you like to create this directory?
   1. Yes
   2. No
 
-Your choice:
-'''
+Your choice: '''
 
 FINISHED = '''
 Your system should be ready to build %s!
@@ -105,11 +103,11 @@ Source code can be obtained by running
 Or, if you prefer Git, you should install git-cinnabar, and follow the
 instruction here to clone from the Mercurial repository:
 
-    https://github.com/glandium/git-cinnabar/wiki/Mozilla:-A-git-workflow-for-Gecko-development
+    https://github.com/glandium/git-cinnabar/wiki/Mozilla:-A-git-workflow-for-Goanna-development
 
 Or, if you really prefer vanilla flavor Git:
 
-    git clone https://git.mozilla.org/integration/gecko-dev.git
+    git clone https://git.mozilla.org/integration/goanna-dev.git
 '''
 
 CONFIGURE_MERCURIAL = '''
@@ -122,7 +120,7 @@ optimally configured?
   1. Yes
   2. No
 
-Please enter your reply: '''.lstrip()
+Please enter your reply: '''
 
 CLONE_MERCURIAL = '''
 If you would like to clone the canonical Mercurial repository, please
@@ -229,6 +227,7 @@ class Bootstrapper(object):
 
         hg_installed, hg_modern = self.instance.ensure_mercurial_modern()
         self.instance.ensure_python_modern()
+        self.instance.ensure_rust_modern()
 
         # The state directory code is largely duplicated from mach_bootstrap.py.
         # We can't easily import mach_bootstrap.py because the bootstrapper may
@@ -391,7 +390,7 @@ def clone_firefox(hg, dest):
         print('error pulling; try running `hg pull https://hg.mozilla.org/mozilla-unified` manually')
         return False
 
-    print('updating to "central" - the development head of Gecko and Firefox')
+    print('updating to "central" - the development head of Goanna and Firefox')
     res = subprocess.call([hg, 'update', '-r', 'central'], cwd=dest)
     if res:
         print('error updating; you will need to `hg update` manually')

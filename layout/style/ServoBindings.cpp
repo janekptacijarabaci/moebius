@@ -7,9 +7,10 @@
 #include "mozilla/ServoBindings.h"
 
 #include "ChildIterator.h"
-#include "StyleStructContext.h"
 #include "gfxFontFamilyList.h"
 #include "nsAttrValueInlines.h"
+#include "nsCSSProps.h"
+#include "nsCSSParser.h"
 #include "nsCSSRuleProcessor.h"
 #include "nsContentUtils.h"
 #include "nsDOMTokenList.h"
@@ -19,7 +20,9 @@
 #include "nsIFrame.h"
 #include "nsINode.h"
 #include "nsIPrincipal.h"
+#include "nsMediaFeatures.h"
 #include "nsNameSpaceManager.h"
+#include "nsNetUtil.h"
 #include "nsRuleNode.h"
 #include "nsString.h"
 #include "nsStyleStruct.h"
@@ -32,104 +35,106 @@
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/DeclarationBlockInlines.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/ElementInlines.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
 
-#define IMPL_STRONG_REF_TYPE_FOR(type_) \
-  already_AddRefed<type_>               \
-  type_##Strong::Consume() {            \
-    RefPtr<type_> result;               \
-    result.swap(mPtr);                  \
-    return result.forget();             \
+#define SERVO_ARC_TYPE(name_, type_) \
+  already_AddRefed<type_>            \
+  type_##Strong::Consume() {         \
+    RefPtr<type_> result;            \
+    result.swap(mPtr);               \
+    return result.forget();          \
   }
-
-IMPL_STRONG_REF_TYPE_FOR(ServoComputedValues)
-IMPL_STRONG_REF_TYPE_FOR(RawServoStyleSheet)
-IMPL_STRONG_REF_TYPE_FOR(RawServoDeclarationBlock)
-
-#undef IMPL_STRONG_REF_TYPE_FOR
+#include "mozilla/ServoArcTypeList.h"
+#undef SERVO_ARC_TYPE
 
 uint32_t
-Gecko_ChildrenCount(RawGeckoNodeBorrowed aNode)
+Goanna_ChildrenCount(RawGoannaNodeBorrowed aNode)
 {
   return aNode->GetChildCount();
 }
 
 bool
-Gecko_NodeIsElement(RawGeckoNodeBorrowed aNode)
+Goanna_NodeIsElement(RawGoannaNodeBorrowed aNode)
 {
   return aNode->IsElement();
 }
 
-RawGeckoNodeBorrowedOrNull
-Gecko_GetParentNode(RawGeckoNodeBorrowed aNode)
+bool
+Goanna_IsInDocument(RawGoannaNodeBorrowed aNode)
 {
-  return aNode->GetFlattenedTreeParentNode();
+  return aNode->IsInComposedDoc();
 }
 
-RawGeckoNodeBorrowedOrNull
-Gecko_GetFirstChild(RawGeckoNodeBorrowed aNode)
+RawGoannaNodeBorrowedOrNull
+Goanna_GetParentNode(RawGoannaNodeBorrowed aNode)
+{
+  return aNode->GetFlattenedTreeParentNodeForStyle();
+}
+
+RawGoannaNodeBorrowedOrNull
+Goanna_GetFirstChild(RawGoannaNodeBorrowed aNode)
 {
   return aNode->GetFirstChild();
 }
 
-RawGeckoNodeBorrowedOrNull
-Gecko_GetLastChild(RawGeckoNodeBorrowed aNode)
+RawGoannaNodeBorrowedOrNull
+Goanna_GetLastChild(RawGoannaNodeBorrowed aNode)
 {
   return aNode->GetLastChild();
 }
 
-RawGeckoNodeBorrowedOrNull
-Gecko_GetPrevSibling(RawGeckoNodeBorrowed aNode)
+RawGoannaNodeBorrowedOrNull
+Goanna_GetPrevSibling(RawGoannaNodeBorrowed aNode)
 {
   return aNode->GetPreviousSibling();
 }
 
-RawGeckoNodeBorrowedOrNull
-Gecko_GetNextSibling(RawGeckoNodeBorrowed aNode)
+RawGoannaNodeBorrowedOrNull
+Goanna_GetNextSibling(RawGoannaNodeBorrowed aNode)
 {
   return aNode->GetNextSibling();
 }
 
-RawGeckoElementBorrowedOrNull
-Gecko_GetParentElement(RawGeckoElementBorrowed aElement)
+RawGoannaElementBorrowedOrNull
+Goanna_GetParentElement(RawGoannaElementBorrowed aElement)
 {
-  nsINode* parentNode = aElement->GetFlattenedTreeParentNode();
-  return parentNode->IsElement() ? parentNode->AsElement() : nullptr;
+  return aElement->GetFlattenedTreeParentElementForStyle();
 }
 
-RawGeckoElementBorrowedOrNull
-Gecko_GetFirstChildElement(RawGeckoElementBorrowed aElement)
+RawGoannaElementBorrowedOrNull
+Goanna_GetFirstChildElement(RawGoannaElementBorrowed aElement)
 {
   return aElement->GetFirstElementChild();
 }
 
-RawGeckoElementBorrowedOrNull Gecko_GetLastChildElement(RawGeckoElementBorrowed aElement)
+RawGoannaElementBorrowedOrNull Goanna_GetLastChildElement(RawGoannaElementBorrowed aElement)
 {
   return aElement->GetLastElementChild();
 }
 
-RawGeckoElementBorrowedOrNull
-Gecko_GetPrevSiblingElement(RawGeckoElementBorrowed aElement)
+RawGoannaElementBorrowedOrNull
+Goanna_GetPrevSiblingElement(RawGoannaElementBorrowed aElement)
 {
   return aElement->GetPreviousElementSibling();
 }
 
-RawGeckoElementBorrowedOrNull
-Gecko_GetNextSiblingElement(RawGeckoElementBorrowed aElement)
+RawGoannaElementBorrowedOrNull
+Goanna_GetNextSiblingElement(RawGoannaElementBorrowed aElement)
 {
   return aElement->GetNextElementSibling();
 }
 
-RawGeckoElementBorrowedOrNull
-Gecko_GetDocumentElement(RawGeckoDocumentBorrowed aDoc)
+RawGoannaElementBorrowedOrNull
+Goanna_GetDocumentElement(RawGoannaDocumentBorrowed aDoc)
 {
   return aDoc->GetDocumentElement();
 }
 
 StyleChildrenIteratorOwnedOrNull
-Gecko_MaybeCreateStyleChildrenIterator(RawGeckoNodeBorrowed aNode)
+Goanna_MaybeCreateStyleChildrenIterator(RawGoannaNodeBorrowed aNode)
 {
   if (!aNode->IsElement()) {
     return nullptr;
@@ -141,76 +146,83 @@ Gecko_MaybeCreateStyleChildrenIterator(RawGeckoNodeBorrowed aNode)
 }
 
 void
-Gecko_DropStyleChildrenIterator(StyleChildrenIteratorOwned aIterator)
+Goanna_DropStyleChildrenIterator(StyleChildrenIteratorOwned aIterator)
 {
   MOZ_ASSERT(aIterator);
   delete aIterator;
 }
 
-RawGeckoNodeBorrowed
-Gecko_GetNextStyleChild(StyleChildrenIteratorBorrowedMut aIterator)
+RawGoannaNodeBorrowed
+Goanna_GetNextStyleChild(StyleChildrenIteratorBorrowedMut aIterator)
 {
   MOZ_ASSERT(aIterator);
   return aIterator->GetNextChild();
 }
 
 EventStates::ServoType
-Gecko_ElementState(RawGeckoElementBorrowed aElement)
+Goanna_ElementState(RawGoannaElementBorrowed aElement)
 {
   return aElement->StyleState().ServoValue();
 }
 
 bool
-Gecko_IsHTMLElementInHTMLDocument(RawGeckoElementBorrowed aElement)
+Goanna_IsHTMLElementInHTMLDocument(RawGoannaElementBorrowed aElement)
 {
   return aElement->IsHTMLElement() && aElement->OwnerDoc()->IsHTMLDocument();
 }
 
 bool
-Gecko_IsLink(RawGeckoElementBorrowed aElement)
+Goanna_IsLink(RawGoannaElementBorrowed aElement)
 {
   return nsCSSRuleProcessor::IsLink(aElement);
 }
 
 bool
-Gecko_IsTextNode(RawGeckoNodeBorrowed aNode)
+Goanna_IsTextNode(RawGoannaNodeBorrowed aNode)
 {
   return aNode->NodeInfo()->NodeType() == nsIDOMNode::TEXT_NODE;
 }
 
 bool
-Gecko_IsVisitedLink(RawGeckoElementBorrowed aElement)
+Goanna_IsVisitedLink(RawGoannaElementBorrowed aElement)
 {
   return aElement->StyleState().HasState(NS_EVENT_STATE_VISITED);
 }
 
 bool
-Gecko_IsUnvisitedLink(RawGeckoElementBorrowed aElement)
+Goanna_IsUnvisitedLink(RawGoannaElementBorrowed aElement)
 {
   return aElement->StyleState().HasState(NS_EVENT_STATE_UNVISITED);
 }
 
 bool
-Gecko_IsRootElement(RawGeckoElementBorrowed aElement)
+Goanna_IsRootElement(RawGoannaElementBorrowed aElement)
 {
   return aElement->OwnerDoc()->GetRootElement() == aElement;
 }
 
+bool
+Goanna_MatchesElement(CSSPseudoClassType aType,
+                     RawGoannaElementBorrowed aElement)
+{
+  return nsCSSPseudoClasses::MatchesElement(aType, aElement).value();
+}
+
 nsIAtom*
-Gecko_LocalName(RawGeckoElementBorrowed aElement)
+Goanna_LocalName(RawGoannaElementBorrowed aElement)
 {
   return aElement->NodeInfo()->NameAtom();
 }
 
 nsIAtom*
-Gecko_Namespace(RawGeckoElementBorrowed aElement)
+Goanna_Namespace(RawGoannaElementBorrowed aElement)
 {
   int32_t id = aElement->NodeInfo()->NamespaceID();
   return nsContentUtils::NameSpaceManager()->NameSpaceURIAtomForServo(id);
 }
 
 nsIAtom*
-Gecko_GetElementId(RawGeckoElementBorrowed aElement)
+Goanna_GetElementId(RawGoannaElementBorrowed aElement)
 {
   const nsAttrValue* attr = aElement->GetParsedAttr(nsGkAtoms::id);
   return attr ? attr->GetAtomValue() : nullptr;
@@ -218,25 +230,25 @@ Gecko_GetElementId(RawGeckoElementBorrowed aElement)
 
 // Dirtiness tracking.
 uint32_t
-Gecko_GetNodeFlags(RawGeckoNodeBorrowed aNode)
+Goanna_GetNodeFlags(RawGoannaNodeBorrowed aNode)
 {
   return aNode->GetFlags();
 }
 
 void
-Gecko_SetNodeFlags(RawGeckoNodeBorrowed aNode, uint32_t aFlags)
+Goanna_SetNodeFlags(RawGoannaNodeBorrowed aNode, uint32_t aFlags)
 {
   const_cast<nsINode*>(aNode)->SetFlags(aFlags);
 }
 
 void
-Gecko_UnsetNodeFlags(RawGeckoNodeBorrowed aNode, uint32_t aFlags)
+Goanna_UnsetNodeFlags(RawGoannaNodeBorrowed aNode, uint32_t aFlags)
 {
   const_cast<nsINode*>(aNode)->UnsetFlags(aFlags);
 }
 
 nsStyleContext*
-Gecko_GetStyleContext(RawGeckoNodeBorrowed aNode, nsIAtom* aPseudoTagOrNull)
+Goanna_GetStyleContext(RawGoannaNodeBorrowed aNode, nsIAtom* aPseudoTagOrNull)
 {
   MOZ_ASSERT(aNode->IsContent());
   nsIFrame* relevantFrame =
@@ -250,7 +262,7 @@ Gecko_GetStyleContext(RawGeckoNodeBorrowed aNode, nsIAtom* aPseudoTagOrNull)
 }
 
 nsChangeHint
-Gecko_CalcStyleDifference(nsStyleContext* aOldStyleContext,
+Goanna_CalcStyleDifference(nsStyleContext* aOldStyleContext,
                           ServoComputedValuesBorrowed aComputedValues)
 {
   MOZ_ASSERT(aOldStyleContext);
@@ -273,63 +285,39 @@ Gecko_CalcStyleDifference(nsStyleContext* aOldStyleContext,
   return result;
 }
 
-void
-Gecko_StoreStyleDifference(RawGeckoNodeBorrowed aNode, nsChangeHint aChangeHintToStore)
+ServoElementSnapshotOwned
+Goanna_CreateElementSnapshot(RawGoannaElementBorrowed aElement)
 {
-#ifdef MOZ_STYLO
-  MOZ_ASSERT(aNode->IsElement());
-  MOZ_ASSERT(aNode->IsDirtyForServo(),
-             "Change hint stored in a not-dirty node");
+  MOZ_ASSERT(NS_IsMainThread());
+  return new ServoElementSnapshot(aElement);
+}
 
-  const Element* aElement = aNode->AsElement();
-  nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
-  if (!primaryFrame) {
-    // If there's no primary frame, that means that either this content is
-    // undisplayed (so we only need to check at the restyling phase for the
-    // display value on the element), or is a display: contents element.
-    //
-    // In this second case, we should store it in the frame constructor display
-    // contents map. Note that while this operation looks hairy, this would be
-    // thread-safe because the content should be there already (we'd only need
-    // to read the map and modify our entry).
-    //
-    // That being said, we still don't support display: contents anyway, so it's
-    // probably not worth it to do all the roundtrip just yet until we have a
-    // more concrete plan.
-    return;
+void
+Goanna_DropElementSnapshot(ServoElementSnapshotOwned aSnapshot)
+{
+  // Proxy deletes have a lot of overhead, so Servo tries hard to only drop
+  // snapshots on the main thread. However, there are certain cases where
+  // it's unavoidable (i.e. synchronously dropping the style data for the
+  // descendants of a new display:none root).
+  if (MOZ_UNLIKELY(!NS_IsMainThread())) {
+    nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction([=]() { delete aSnapshot; });
+    NS_DispatchToMainThread(task.forget());
+  } else {
+    delete aSnapshot;
   }
-
-  if ((aChangeHintToStore & nsChangeHint_ReconstructFrame) &&
-      aNode->IsInNativeAnonymousSubtree())
-  {
-    NS_WARNING("stylo: Removing forbidden frame reconstruction hint on native "
-               "anonymous content. Fix this in bug 1297857!");
-    aChangeHintToStore &= ~nsChangeHint_ReconstructFrame;
-  }
-
-  primaryFrame->StyleContext()->StoreChangeHint(aChangeHintToStore);
-#else
-  MOZ_CRASH("stylo: Shouldn't call Gecko_StoreStyleDifference in "
-            "non-stylo build");
-#endif
 }
 
 RawServoDeclarationBlockStrongBorrowedOrNull
-Gecko_GetServoDeclarationBlock(RawGeckoElementBorrowed aElement)
+Goanna_GetServoDeclarationBlock(RawGoannaElementBorrowed aElement)
 {
-  const nsAttrValue* attr = aElement->GetParsedAttr(nsGkAtoms::style);
-  if (!attr || attr->Type() != nsAttrValue::eCSSDeclaration) {
-    return nullptr;
-  }
-  DeclarationBlock* decl = attr->GetCSSDeclarationValue();
+  DeclarationBlock* decl = aElement->GetInlineStyleDeclaration();
   if (!decl) {
     return nullptr;
   }
-  if (decl->IsGecko()) {
-    // XXX This can happen at least when script sets style attribute
-    //     since we haven't implemented Element.style for stylo. But
-    //     we may want to turn it into an assertion after that's done.
-    NS_WARNING("stylo: requesting a Gecko declaration block?");
+  if (decl->IsGoanna()) {
+    // XXX This can happen when nodes are adopted from a Goanna-style-backend
+    //     document into a Servo-style-backend document.  See bug 1330051.
+    NS_WARNING("stylo: requesting a Goanna declaration block?");
     return nullptr;
   }
   return reinterpret_cast<const RawServoDeclarationBlockStrong*>
@@ -337,13 +325,13 @@ Gecko_GetServoDeclarationBlock(RawGeckoElementBorrowed aElement)
 }
 
 void
-Gecko_FillAllBackgroundLists(nsStyleImageLayers* aLayers, uint32_t aMaxLen)
+Goanna_FillAllBackgroundLists(nsStyleImageLayers* aLayers, uint32_t aMaxLen)
 {
   nsRuleNode::FillAllBackgroundLists(*aLayers, aMaxLen);
 }
 
 void
-Gecko_FillAllMaskLists(nsStyleImageLayers* aLayers, uint32_t aMaxLen)
+Goanna_FillAllMaskLists(nsStyleImageLayers* aLayers, uint32_t aMaxLen)
 {
   nsRuleNode::FillAllMaskLists(*aLayers, aMaxLen);
 }
@@ -488,7 +476,7 @@ ClassOrClassList(Implementor* aElement, nsIAtom** aClass, nsIAtom*** aClassList)
     return 0;
   }
 
-  // For class values with only whitespace, Gecko just stores a string. For the
+  // For class values with only whitespace, Goanna just stores a string. For the
   // purposes of the style system, there is no class in this case.
   if (attr->Type() == nsAttrValue::eString) {
     MOZ_ASSERT(nsContentUtils::TrimWhitespace<nsContentUtils::IsHTMLWhitespace>(
@@ -578,31 +566,31 @@ ClassOrClassList(Implementor* aElement, nsIAtom** aClass, nsIAtom*** aClassList)
     return ClassOrClassList(aElement, aClass, aClassList);                     \
   }
 
-SERVO_IMPL_ELEMENT_ATTR_MATCHING_FUNCTIONS(Gecko_, RawGeckoElementBorrowed)
-SERVO_IMPL_ELEMENT_ATTR_MATCHING_FUNCTIONS(Gecko_Snapshot, ServoElementSnapshot*)
+SERVO_IMPL_ELEMENT_ATTR_MATCHING_FUNCTIONS(Goanna_, RawGoannaElementBorrowed)
+SERVO_IMPL_ELEMENT_ATTR_MATCHING_FUNCTIONS(Goanna_Snapshot, const ServoElementSnapshot*)
 
 #undef SERVO_IMPL_ELEMENT_ATTR_MATCHING_FUNCTIONS
 
 nsIAtom*
-Gecko_Atomize(const char* aString, uint32_t aLength)
+Goanna_Atomize(const char* aString, uint32_t aLength)
 {
   return NS_Atomize(nsDependentCSubstring(aString, aLength)).take();
 }
 
 void
-Gecko_AddRefAtom(nsIAtom* aAtom)
+Goanna_AddRefAtom(nsIAtom* aAtom)
 {
   NS_ADDREF(aAtom);
 }
 
 void
-Gecko_ReleaseAtom(nsIAtom* aAtom)
+Goanna_ReleaseAtom(nsIAtom* aAtom)
 {
   NS_RELEASE(aAtom);
 }
 
 const uint16_t*
-Gecko_GetAtomAsUTF16(nsIAtom* aAtom, uint32_t* aLength)
+Goanna_GetAtomAsUTF16(nsIAtom* aAtom, uint32_t* aLength)
 {
   static_assert(sizeof(char16_t) == sizeof(uint16_t), "Servo doesn't know what a char16_t is");
   MOZ_ASSERT(aAtom);
@@ -614,7 +602,7 @@ Gecko_GetAtomAsUTF16(nsIAtom* aAtom, uint32_t* aLength)
 }
 
 bool
-Gecko_AtomEqualsUTF8(nsIAtom* aAtom, const char* aString, uint32_t aLength)
+Goanna_AtomEqualsUTF8(nsIAtom* aAtom, const char* aString, uint32_t aLength)
 {
   // XXXbholley: We should be able to do this without converting, I just can't
   // find the right thing to call.
@@ -624,7 +612,7 @@ Gecko_AtomEqualsUTF8(nsIAtom* aAtom, const char* aString, uint32_t aLength)
 }
 
 bool
-Gecko_AtomEqualsUTF8IgnoreCase(nsIAtom* aAtom, const char* aString, uint32_t aLength)
+Goanna_AtomEqualsUTF8IgnoreCase(nsIAtom* aAtom, const char* aString, uint32_t aLength)
 {
   // XXXbholley: We should be able to do this without converting, I just can't
   // find the right thing to call.
@@ -634,25 +622,12 @@ Gecko_AtomEqualsUTF8IgnoreCase(nsIAtom* aAtom, const char* aString, uint32_t aLe
 }
 
 void
-Gecko_Utf8SliceToString(nsString* aString,
-                        const uint8_t* aBuffer,
-                        size_t aBufferLen)
-{
-  MOZ_ASSERT(aString);
-  MOZ_ASSERT(aBuffer);
-
-  aString->Truncate();
-  AppendUTF8toUTF16(Substring(reinterpret_cast<const char*>(aBuffer),
-                              aBufferLen), *aString);
-}
-
-void
-Gecko_FontFamilyList_Clear(FontFamilyList* aList) {
+Goanna_FontFamilyList_Clear(FontFamilyList* aList) {
   aList->Clear();
 }
 
 void
-Gecko_FontFamilyList_AppendNamed(FontFamilyList* aList, nsIAtom* aName)
+Goanna_FontFamilyList_AppendNamed(FontFamilyList* aList, nsIAtom* aName)
 {
   // Servo doesn't record whether the name was quoted or unquoted, so just
   // assume unquoted for now.
@@ -662,19 +637,19 @@ Gecko_FontFamilyList_AppendNamed(FontFamilyList* aList, nsIAtom* aName)
 }
 
 void
-Gecko_FontFamilyList_AppendGeneric(FontFamilyList* aList, FontFamilyType aType)
+Goanna_FontFamilyList_AppendGeneric(FontFamilyList* aList, FontFamilyType aType)
 {
   aList->Append(FontFamilyName(aType));
 }
 
 void
-Gecko_CopyFontFamilyFrom(nsFont* dst, const nsFont* src)
+Goanna_CopyFontFamilyFrom(nsFont* dst, const nsFont* src)
 {
   dst->fontlist = src->fontlist;
 }
 
 void
-Gecko_SetListStyleType(nsStyleList* style_struct, uint32_t type)
+Goanna_SetListStyleType(nsStyleList* style_struct, uint32_t type)
 {
   // Builtin counter styles are static and use no-op refcounting, and thus are
   // safe to use off-main-thread.
@@ -682,7 +657,7 @@ Gecko_SetListStyleType(nsStyleList* style_struct, uint32_t type)
 }
 
 void
-Gecko_CopyListStyleTypeFrom(nsStyleList* dst, const nsStyleList* src)
+Goanna_CopyListStyleTypeFrom(nsStyleList* dst, const nsStyleList* src)
 {
   dst->SetCounterStyle(src->GetCounterStyle());
 }
@@ -691,14 +666,18 @@ NS_IMPL_HOLDER_FFI_REFCOUNTING(nsIPrincipal, Principal)
 NS_IMPL_HOLDER_FFI_REFCOUNTING(nsIURI, URI)
 
 void
-Gecko_SetMozBinding(nsStyleDisplay* aDisplay,
+Goanna_SetMozBinding(nsStyleDisplay* aDisplay,
                     const uint8_t* aURLString, uint32_t aURLStringLength,
                     ThreadSafeURIHolder* aBaseURI,
                     ThreadSafeURIHolder* aReferrer,
                     ThreadSafePrincipalHolder* aPrincipal)
 {
+  if (!aURLString) {
+    aDisplay->mBinding = nullptr;
+    return;
+  }
+
   MOZ_ASSERT(aDisplay);
-  MOZ_ASSERT(aURLString);
   MOZ_ASSERT(aBaseURI);
   MOZ_ASSERT(aReferrer);
   MOZ_ASSERT(aPrincipal);
@@ -715,21 +694,21 @@ Gecko_SetMozBinding(nsStyleDisplay* aDisplay,
 }
 
 void
-Gecko_CopyMozBindingFrom(nsStyleDisplay* aDest, const nsStyleDisplay* aSrc)
+Goanna_CopyMozBindingFrom(nsStyleDisplay* aDest, const nsStyleDisplay* aSrc)
 {
   aDest->mBinding = aSrc->mBinding;
 }
 
 
 void
-Gecko_SetNullImageValue(nsStyleImage* aImage)
+Goanna_SetNullImageValue(nsStyleImage* aImage)
 {
   MOZ_ASSERT(aImage);
   aImage->SetNull();
 }
 
 void
-Gecko_SetGradientImageValue(nsStyleImage* aImage, nsStyleGradient* aGradient)
+Goanna_SetGradientImageValue(nsStyleImage* aImage, nsStyleGradient* aGradient)
 {
   MOZ_ASSERT(aImage);
   aImage->SetGradientData(aGradient);
@@ -760,7 +739,7 @@ CreateStyleImageRequest(nsStyleImageRequest::Mode aModeFlags,
 }
 
 void
-Gecko_SetUrlImageValue(nsStyleImage* aImage,
+Goanna_SetUrlImageValue(nsStyleImage* aImage,
                        const uint8_t* aURLString, uint32_t aURLStringLength,
                        ThreadSafeURIHolder* aBaseURI,
                        ThreadSafeURIHolder* aReferrer,
@@ -774,7 +753,7 @@ Gecko_SetUrlImageValue(nsStyleImage* aImage,
 }
 
 void
-Gecko_CopyImageValueFrom(nsStyleImage* aImage, const nsStyleImage* aOther)
+Goanna_CopyImageValueFrom(nsStyleImage* aImage, const nsStyleImage* aOther)
 {
   MOZ_ASSERT(aImage);
   MOZ_ASSERT(aOther);
@@ -782,8 +761,35 @@ Gecko_CopyImageValueFrom(nsStyleImage* aImage, const nsStyleImage* aOther)
   *aImage = *aOther;
 }
 
+void
+Goanna_SetCursorArrayLength(nsStyleUserInterface* aStyleUI, size_t aLen)
+{
+  aStyleUI->mCursorImages.Clear();
+  aStyleUI->mCursorImages.SetLength(aLen);
+}
+
+void
+Goanna_SetCursorImage(nsCursorImage* aCursor,
+                     const uint8_t* aURLString, uint32_t aURLStringLength,
+                     ThreadSafeURIHolder* aBaseURI,
+                     ThreadSafeURIHolder* aReferrer,
+                     ThreadSafePrincipalHolder* aPrincipal)
+{
+  aCursor->mImage =
+    CreateStyleImageRequest(nsStyleImageRequest::Mode::Discard,
+                            aURLString, aURLStringLength,
+                            aBaseURI, aReferrer, aPrincipal);
+}
+
+void
+Goanna_CopyCursorArrayFrom(nsStyleUserInterface* aDest,
+                          const nsStyleUserInterface* aSrc)
+{
+  aDest->mCursorImages = aSrc->mCursorImages;
+}
+
 nsStyleGradient*
-Gecko_CreateGradient(uint8_t aShape,
+Goanna_CreateGradient(uint8_t aShape,
                      uint8_t aSize,
                      bool aRepeating,
                      bool aLegacySyntax,
@@ -815,13 +821,13 @@ Gecko_CreateGradient(uint8_t aShape,
 }
 
 void
-Gecko_SetListStyleImageNone(nsStyleList* aList)
+Goanna_SetListStyleImageNone(nsStyleList* aList)
 {
   aList->mListStyleImage = nullptr;
 }
 
 void
-Gecko_SetListStyleImage(nsStyleList* aList,
+Goanna_SetListStyleImage(nsStyleList* aList,
                         const uint8_t* aURLString, uint32_t aURLStringLength,
                         ThreadSafeURIHolder* aBaseURI,
                         ThreadSafeURIHolder* aReferrer,
@@ -834,13 +840,13 @@ Gecko_SetListStyleImage(nsStyleList* aList,
 }
 
 void
-Gecko_CopyListStyleImageFrom(nsStyleList* aList, const nsStyleList* aSource)
+Goanna_CopyListStyleImageFrom(nsStyleList* aList, const nsStyleList* aSource)
 {
   aList->mListStyleImage = aSource->mListStyleImage;
 }
 
 void
-Gecko_EnsureTArrayCapacity(void* aArray, size_t aCapacity, size_t aElemSize)
+Goanna_EnsureTArrayCapacity(void* aArray, size_t aCapacity, size_t aElemSize)
 {
   auto base =
     reinterpret_cast<nsTArray_base<nsTArrayInfallibleAllocator,
@@ -850,7 +856,7 @@ Gecko_EnsureTArrayCapacity(void* aArray, size_t aCapacity, size_t aElemSize)
 }
 
 void
-Gecko_ClearPODTArray(void* aArray, size_t aElementSize, size_t aElementAlign)
+Goanna_ClearPODTArray(void* aArray, size_t aElementSize, size_t aElementAlign)
 {
   auto base =
     reinterpret_cast<nsTArray_base<nsTArrayInfallibleAllocator,
@@ -861,13 +867,13 @@ Gecko_ClearPODTArray(void* aArray, size_t aElementSize, size_t aElementAlign)
 }
 
 void
-Gecko_ClearStyleContents(nsStyleContent* aContent)
+Goanna_ClearStyleContents(nsStyleContent* aContent)
 {
   aContent->AllocateContents(0);
 }
 
 void
-Gecko_CopyStyleContentsFrom(nsStyleContent* aContent, const nsStyleContent* aOther)
+Goanna_CopyStyleContentsFrom(nsStyleContent* aContent, const nsStyleContent* aOther)
 {
   uint32_t count = aOther->ContentCount();
 
@@ -879,7 +885,7 @@ Gecko_CopyStyleContentsFrom(nsStyleContent* aContent, const nsStyleContent* aOth
 }
 
 void
-Gecko_EnsureImageLayersLength(nsStyleImageLayers* aLayers, size_t aLen,
+Goanna_EnsureImageLayersLength(nsStyleImageLayers* aLayers, size_t aLen,
                               nsStyleImageLayers::LayerType aLayerType)
 {
   size_t oldLength = aLayers->mLayers.Length();
@@ -892,13 +898,22 @@ Gecko_EnsureImageLayersLength(nsStyleImageLayers* aLayers, size_t aLen,
 }
 
 void
-Gecko_ResetStyleCoord(nsStyleUnit* aUnit, nsStyleUnion* aValue)
+Goanna_EnsureStyleAnimationArrayLength(void* aArray, size_t aLen)
+{
+  auto base =
+    reinterpret_cast<nsStyleAutoArray<StyleAnimation>*>(aArray);
+
+  base->EnsureLengthAtLeast(aLen);
+}
+
+void
+Goanna_ResetStyleCoord(nsStyleUnit* aUnit, nsStyleUnion* aValue)
 {
   nsStyleCoord::Reset(*aUnit, *aValue);
 }
 
 void
-Gecko_SetStyleCoordCalcValue(nsStyleUnit* aUnit, nsStyleUnion* aValue, nsStyleCoord::CalcValue aCalc)
+Goanna_SetStyleCoordCalcValue(nsStyleUnit* aUnit, nsStyleUnion* aValue, nsStyleCoord::CalcValue aCalc)
 {
   // Calc units should be cleaned up first
   MOZ_ASSERT(*aUnit != nsStyleUnit::eStyleUnit_Calc);
@@ -912,7 +927,7 @@ Gecko_SetStyleCoordCalcValue(nsStyleUnit* aUnit, nsStyleUnion* aValue, nsStyleCo
 }
 
 void
-Gecko_CopyClipPathValueFrom(mozilla::StyleClipPath* aDst, const mozilla::StyleClipPath* aSrc)
+Goanna_CopyClipPathValueFrom(mozilla::StyleClipPath* aDst, const mozilla::StyleClipPath* aSrc)
 {
   MOZ_ASSERT(aDst);
   MOZ_ASSERT(aSrc);
@@ -921,27 +936,27 @@ Gecko_CopyClipPathValueFrom(mozilla::StyleClipPath* aDst, const mozilla::StyleCl
 }
 
 void
-Gecko_DestroyClipPath(mozilla::StyleClipPath* aClip)
+Goanna_DestroyClipPath(mozilla::StyleClipPath* aClip)
 {
   aClip->~StyleClipPath();
 }
 
 mozilla::StyleBasicShape*
-Gecko_NewBasicShape(mozilla::StyleBasicShapeType aType)
+Goanna_NewBasicShape(mozilla::StyleBasicShapeType aType)
 {
   RefPtr<StyleBasicShape> ptr = new mozilla::StyleBasicShape(aType);
   return ptr.forget().take();
 }
 
 void
-Gecko_ResetFilters(nsStyleEffects* effects, size_t new_len)
+Goanna_ResetFilters(nsStyleEffects* effects, size_t new_len)
 {
   effects->mFilters.Clear();
   effects->mFilters.SetLength(new_len);
 }
 
 void
-Gecko_CopyFiltersFrom(nsStyleEffects* aSrc, nsStyleEffects* aDest)
+Goanna_CopyFiltersFrom(nsStyleEffects* aSrc, nsStyleEffects* aDest)
 {
   aDest->mFilters = aSrc->mFilters;
 }
@@ -949,7 +964,7 @@ Gecko_CopyFiltersFrom(nsStyleEffects* aSrc, nsStyleEffects* aDest)
 NS_IMPL_THREADSAFE_FFI_REFCOUNTING(nsStyleCoord::Calc, Calc);
 
 nsCSSShadowArray*
-Gecko_NewCSSShadowArray(uint32_t aLen)
+Goanna_NewCSSShadowArray(uint32_t aLen)
 {
   RefPtr<nsCSSShadowArray> arr = new(aLen) nsCSSShadowArray(aLen);
   return arr.forget().take();
@@ -958,7 +973,7 @@ Gecko_NewCSSShadowArray(uint32_t aLen)
 NS_IMPL_THREADSAFE_FFI_REFCOUNTING(nsCSSShadowArray, CSSShadowArray);
 
 nsStyleQuoteValues*
-Gecko_NewStyleQuoteValues(uint32_t aLen)
+Goanna_NewStyleQuoteValues(uint32_t aLen)
 {
   RefPtr<nsStyleQuoteValues> values = new nsStyleQuoteValues;
   values->mQuotePairs.SetLength(aLen);
@@ -968,7 +983,7 @@ Gecko_NewStyleQuoteValues(uint32_t aLen)
 NS_IMPL_THREADSAFE_FFI_REFCOUNTING(nsStyleQuoteValues, QuoteValues);
 
 nsCSSValueSharedList*
-Gecko_NewCSSValueSharedList(uint32_t aLen)
+Goanna_NewCSSValueSharedList(uint32_t aLen)
 {
   RefPtr<nsCSSValueSharedList> list = new nsCSSValueSharedList;
   if (aLen == 0) {
@@ -986,52 +1001,111 @@ Gecko_NewCSSValueSharedList(uint32_t aLen)
 }
 
 void
-Gecko_CSSValue_SetAbsoluteLength(nsCSSValueBorrowedMut aCSSValue, nscoord aLen)
+Goanna_CSSValue_SetAbsoluteLength(nsCSSValueBorrowedMut aCSSValue, nscoord aLen)
 {
   aCSSValue->SetIntegerCoordValue(aLen);
 }
 
 void
-Gecko_CSSValue_SetNumber(nsCSSValueBorrowedMut aCSSValue, float aNumber)
+Goanna_CSSValue_SetNumber(nsCSSValueBorrowedMut aCSSValue, float aNumber)
 {
   aCSSValue->SetFloatValue(aNumber, eCSSUnit_Number);
 }
 
 void
-Gecko_CSSValue_SetKeyword(nsCSSValueBorrowedMut aCSSValue, nsCSSKeyword aKeyword)
+Goanna_CSSValue_SetKeyword(nsCSSValueBorrowedMut aCSSValue, nsCSSKeyword aKeyword)
 {
   aCSSValue->SetIntValue(aKeyword, eCSSUnit_Enumerated);
 }
 
 void
-Gecko_CSSValue_SetPercentage(nsCSSValueBorrowedMut aCSSValue, float aPercent)
+Goanna_CSSValue_SetPercentage(nsCSSValueBorrowedMut aCSSValue, float aPercent)
 {
   aCSSValue->SetFloatValue(aPercent, eCSSUnit_Number);
 }
 
 void
-Gecko_CSSValue_SetAngle(nsCSSValueBorrowedMut aCSSValue, float aRadians)
+Goanna_CSSValue_SetAngle(nsCSSValueBorrowedMut aCSSValue, float aRadians)
 {
   aCSSValue->SetFloatValue(aRadians, eCSSUnit_Radian);
 }
 
 void
-Gecko_CSSValue_SetCalc(nsCSSValueBorrowedMut aCSSValue, nsStyleCoord::CalcValue aCalc)
+Goanna_CSSValue_SetCalc(nsCSSValueBorrowedMut aCSSValue, nsStyleCoord::CalcValue aCalc)
 {
   aCSSValue->SetCalcValue(&aCalc);
 }
 
 void
-Gecko_CSSValue_SetFunction(nsCSSValueBorrowedMut aCSSValue, int32_t aLen)
+Goanna_CSSValue_SetFunction(nsCSSValueBorrowedMut aCSSValue, int32_t aLen)
 {
   nsCSSValue::Array* arr = nsCSSValue::Array::Create(aLen);
   aCSSValue->SetArrayValue(arr, eCSSUnit_Function);
 }
 
 nsCSSValueBorrowedMut
-Gecko_CSSValue_GetArrayItem(nsCSSValueBorrowedMut aCSSValue, int32_t aIndex)
+Goanna_CSSValue_GetArrayItem(nsCSSValueBorrowedMut aCSSValue, int32_t aIndex)
 {
   return &aCSSValue->GetArrayValue()->Item(aIndex);
+}
+
+
+bool
+Goanna_PropertyId_IsPrefEnabled(nsCSSPropertyID id)
+{
+  return nsCSSProps::IsEnabled(id);
+}
+
+void
+Goanna_CSSValue_Drop(nsCSSValueBorrowedMut aCSSValue)
+{
+  aCSSValue->~nsCSSValue();
+}
+
+void
+Goanna_LoadStyleSheet(css::Loader* aLoader,
+                     ServoStyleSheet* aParent,
+                     RawServoImportRuleBorrowed aImportRule,
+                     const uint8_t* aURLString,
+                     uint32_t aURLStringLength,
+                     const uint8_t* aMediaString,
+                     uint32_t aMediaStringLength)
+{
+  MOZ_ASSERT(aLoader, "Should've catched this before");
+  MOZ_ASSERT(aParent, "Only used for @import, so parent should exist!");
+  MOZ_ASSERT(aURLString, "Invalid URLs shouldn't be loaded!");
+  RefPtr<nsMediaList> media = new nsMediaList();
+  if (aMediaStringLength) {
+    MOZ_ASSERT(aMediaString);
+    // TODO(emilio, bug 1325878): This is not great, though this is going away
+    // soon anyway, when we can have a Servo-backed nsMediaList.
+    nsDependentCSubstring medium(reinterpret_cast<const char*>(aMediaString),
+                                 aMediaStringLength);
+    nsCSSParser mediumParser(aLoader);
+    mediumParser.ParseMediaList(
+        NS_ConvertUTF8toUTF16(medium), nullptr, 0, media);
+  }
+
+  nsDependentCSubstring urlSpec(reinterpret_cast<const char*>(aURLString),
+                                aURLStringLength);
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), urlSpec);
+
+  if (NS_FAILED(rv)) {
+    // Servo and Goanna have different ideas of what a valid URL is, so we might
+    // get in here with a URL string that NS_NewURI can't handle.  If so,
+    // silently do nothing.  Eventually we should be able to assert that the
+    // NS_NewURI succeeds, here.
+    return;
+  }
+
+  aLoader->LoadChildSheet(aParent, uri, media, nullptr, aImportRule, nullptr);
+}
+
+const nsMediaFeature*
+Goanna_GetMediaFeatures()
+{
+  return nsMediaFeatures::features;
 }
 
 NS_IMPL_THREADSAFE_FFI_REFCOUNTING(nsCSSValueSharedList, CSSValueSharedList);
@@ -1039,22 +1113,29 @@ NS_IMPL_THREADSAFE_FFI_REFCOUNTING(nsCSSValueSharedList, CSSValueSharedList);
 #define STYLE_STRUCT(name, checkdata_cb)                                      \
                                                                               \
 void                                                                          \
-Gecko_Construct_nsStyle##name(nsStyle##name* ptr)                             \
+Goanna_Construct_Default_nsStyle##name(nsStyle##name* ptr,                     \
+                                      const nsPresContext* pres_context)      \
 {                                                                             \
-  new (ptr) nsStyle##name(StyleStructContext::ServoContext());                \
+  new (ptr) nsStyle##name(pres_context);                                      \
 }                                                                             \
                                                                               \
 void                                                                          \
-Gecko_CopyConstruct_nsStyle##name(nsStyle##name* ptr,                         \
+Goanna_CopyConstruct_nsStyle##name(nsStyle##name* ptr,                         \
                                   const nsStyle##name* other)                 \
 {                                                                             \
   new (ptr) nsStyle##name(*other);                                            \
 }                                                                             \
                                                                               \
 void                                                                          \
-Gecko_Destroy_nsStyle##name(nsStyle##name* ptr)                               \
+Goanna_Destroy_nsStyle##name(nsStyle##name* ptr)                               \
 {                                                                             \
   ptr->~nsStyle##name();                                                      \
+}
+
+void
+Goanna_Construct_nsStyleVariables(nsStyleVariables* ptr)
+{
+  new (ptr) nsStyleVariables();
 }
 
 #include "nsStyleStructList.h"
@@ -1068,16 +1149,4 @@ Gecko_Destroy_nsStyle##name(nsStyle##name* ptr)                               \
   }
 #include "ServoBindingList.h"
 #undef SERVO_BINDING_FUNC
-#endif
-
-#ifdef MOZ_STYLO
-const nsStyleVariables*
-Servo_GetStyleVariables(ServoComputedValuesBorrowed aComputedValues)
-{
-  // Servo can't provide us with Variables structs yet, so instead of linking
-  // to a Servo_GetStyleVariables defined in Servo we define one here that
-  // always returns the same, empty struct.
-  static nsStyleVariables variables(StyleStructContext::ServoContext());
-  return &variables;
-}
 #endif

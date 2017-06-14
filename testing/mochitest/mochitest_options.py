@@ -5,6 +5,7 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from argparse import ArgumentParser, SUPPRESS
 from distutils.util import strtobool
+from itertools import chain
 from urlparse import urlparse
 import json
 import os
@@ -28,6 +29,62 @@ try:
 except ImportError:
     build_obj = None
     conditions = None
+
+
+# Maps test flavors to data needed to run them
+ALL_FLAVORS = {
+    'mochitest': {
+        'suite': 'plain',
+        'aliases': ('plain', 'mochitest'),
+        'enabled_apps': ('firefox', 'android'),
+        'extra_args': {
+            'flavor': 'plain',
+        },
+        'install_subdir': 'tests',
+    },
+    'chrome': {
+        'suite': 'chrome',
+        'aliases': ('chrome', 'mochitest-chrome'),
+        'enabled_apps': ('firefox', 'android'),
+        'extra_args': {
+            'flavor': 'chrome',
+        }
+    },
+    'browser-chrome': {
+        'suite': 'browser',
+        'aliases': ('browser', 'browser-chrome', 'mochitest-browser-chrome', 'bc'),
+        'enabled_apps': ('firefox',),
+        'extra_args': {
+            'flavor': 'browser',
+        }
+    },
+    'jetpack-package': {
+        'suite': 'jetpack-package',
+        'aliases': ('jetpack-package', 'mochitest-jetpack-package', 'jpp'),
+        'enabled_apps': ('firefox',),
+        'extra_args': {
+            'flavor': 'jetpack-package',
+        }
+    },
+    'jetpack-addon': {
+        'suite': 'jetpack-addon',
+        'aliases': ('jetpack-addon', 'mochitest-jetpack-addon', 'jpa'),
+        'enabled_apps': ('firefox',),
+        'extra_args': {
+            'flavor': 'jetpack-addon',
+        }
+    },
+    'a11y': {
+        'suite': 'a11y',
+        'aliases': ('a11y', 'mochitest-a11y', 'accessibility'),
+        'enabled_apps': ('firefox',),
+        'extra_args': {
+            'flavor': 'a11y',
+        }
+    },
+}
+SUPPORTED_FLAVORS = list(chain.from_iterable([f['aliases'] for f in ALL_FLAVORS.values()]))
+CANONICAL_FLAVORS = sorted([f['aliases'][0] for f in ALL_FLAVORS.values()])
 
 
 def get_default_valgrind_suppression_files():
@@ -85,8 +142,6 @@ class ArgumentContainer():
 
 class MochitestArguments(ArgumentContainer):
     """General mochitest arguments."""
-
-    FLAVORS = ('a11y', 'browser', 'chrome', 'jetpack-addon', 'jetpack-package', 'plain')
     LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "FATAL")
 
     args = [
@@ -98,10 +153,10 @@ class MochitestArguments(ArgumentContainer):
                   "(to run recursively). If omitted, the entire suite is run.",
           }],
         [["-f", "--flavor"],
-         {"default": "plain",
-          "choices": FLAVORS,
-          "help": "Mochitest flavor to run, one of {}. Defaults to 'plain'.".format(FLAVORS),
-          "suppress": build_obj is not None,
+         {"choices": SUPPORTED_FLAVORS,
+          "metavar": "{{{}}}".format(', '.join(CANONICAL_FLAVORS)),
+          "default": None,
+          "help": "Only run tests of this flavor.",
           }],
         [["--keep-open"],
          {"nargs": "?",
@@ -425,13 +480,6 @@ class MochitestArguments(ArgumentContainer):
           "help": "Dump a DMD log after each test in the directory specified "
                   "by --dump-output-directory.",
           }],
-        [["--slowscript"],
-         {"action": "store_true",
-          "default": False,
-          "help": "Do not set the JS_DISABLE_SLOW_SCRIPT_SIGNALS env variable; "
-                  "when not set, recoverable but misleading SIGSEGV instances "
-                  "may occur in Ion/Odin JIT code.",
-          }],
         [["--screenshot-on-fail"],
          {"action": "store_true",
           "default": False,
@@ -548,9 +596,9 @@ class MochitestArguments(ArgumentContainer):
     ]
 
     defaults = {
-        # Bug 1065098 - The geckomediaplugin process fails to produce a leak
+        # Bug 1065098 - The goannamediaplugin process fails to produce a leak
         # log for some reason.
-        'ignoreMissingLeaks': ["geckomediaplugin"],
+        'ignoreMissingLeaks': ["goannamediaplugin"],
         'extensionsToExclude': ['specialpowers'],
         # Set server information on the args object
         'webServer': '127.0.0.1',
@@ -587,6 +635,9 @@ class MochitestArguments(ArgumentContainer):
                 parser.error("Error: Path {} doesn't exist. Are you executing "
                              "$objdir/_tests/testing/mochitest/runtests.py?".format(
                                  options.app))
+
+        if options.flavor is None:
+            options.flavor = 'plain'
 
         if options.gmp_path is None and options.app and build_obj:
             # Need to fix the location of gmp_fake which might not be shipped in the binary
@@ -681,7 +732,7 @@ class MochitestArguments(ArgumentContainer):
                 "--debugger-args requires --debugger.")
 
         if options.valgrind or options.debugger:
-            # valgrind and some debuggers may cause Gecko to start slowly. Make sure
+            # valgrind and some debuggers may cause Goanna to start slowly. Make sure
             # marionette waits long enough to connect.
             options.marionette_port_timeout = 900
             options.marionette_socket_timeout = 540
@@ -779,7 +830,7 @@ class MochitestArguments(ArgumentContainer):
             "default": options.defaultLeakThreshold,
             "tab": 10000,  # See dependencies of bug 1051230.
             # GMP rarely gets a log, but when it does, it leaks a little.
-            "geckomediaplugin": 20000,
+            "goannamediaplugin": 20000,
         }
 
         # XXX We can't normalize test_paths in the non build_obj case here,

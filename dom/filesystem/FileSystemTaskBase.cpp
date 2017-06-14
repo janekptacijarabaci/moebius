@@ -206,14 +206,14 @@ FileSystemTaskChildBase::SetRequestResult(const FileSystemResponseValue& aValue)
   }
 }
 
-bool
+mozilla::ipc::IPCResult
 FileSystemTaskChildBase::Recv__delete__(const FileSystemResponseValue& aValue)
 {
   mFileSystem->AssertIsOnOwningThread();
 
   SetRequestResult(aValue);
   HandlerCallback();
-  return true;
+  return IPC_OK();
 }
 
 void

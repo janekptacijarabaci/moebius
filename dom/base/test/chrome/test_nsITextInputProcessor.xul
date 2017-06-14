@@ -10,6 +10,7 @@
 
 <body xmlns="http://www.w3.org/1999/xhtml">
 <p id="display">
+<input id="input" type="text"/><br/>
 </p>
 <div id="content" style="display: none">
   
@@ -24,6 +25,7 @@
 SimpleTest.waitForExplicitFinish();
 window.open("window_nsITextInputProcessor.xul", "_blank", 
             "chrome,width=600,height=600");
+document.getElementById("input").focus();
 
 ]]>
 </script>

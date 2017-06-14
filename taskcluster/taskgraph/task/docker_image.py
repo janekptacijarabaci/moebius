@@ -18,9 +18,16 @@ from taskgraph.util.docker import (
 from taskgraph.util.templates import Templates
 
 logger = logging.getLogger(__name__)
-GECKO = os.path.realpath(os.path.join(__file__, '..', '..', '..', '..'))
-ARTIFACT_URL = 'https://queue.taskcluster.net/v1/task/{}/artifacts/{}'
-INDEX_URL = 'https://index.taskcluster.net/v1/task/{}'
+GOANNA = os.path.realpath(os.path.join(__file__, '..', '..', '..', '..'))
+
+# if running in a task, prefer to use the taskcluster proxy (http://taskcluster/),
+# otherwise hit the services directly
+if os.environ.get('TASK_ID'):
+    ARTIFACT_URL = 'http://taskcluster/queue/v1/task/{}/artifacts/{}'
+    INDEX_URL = 'http://taskcluster/index/v1/task/{}'
+else:
+    ARTIFACT_URL = 'https://queue.taskcluster.net/v1/task/{}/artifacts/{}'
+    INDEX_URL = 'https://index.taskcluster.net/v1/task/{}'
 
 
 class DockerImageTask(base.Task):
@@ -59,8 +66,8 @@ class DockerImageTask(base.Task):
         tasks = []
         templates = Templates(path)
         for image_name, image_symbol in config['images'].iteritems():
-            context_path = os.path.join('testing', 'docker', image_name)
-            context_hash = generate_context_hash(GECKO, context_path, image_name)
+            context_path = os.path.join('taskcluster', 'docker', image_name)
+            context_hash = generate_context_hash(GOANNA, context_path, image_name)
 
             image_parameters = dict(parameters)
             image_parameters['image_name'] = image_name

@@ -134,7 +134,7 @@ TabMirror.prototype = {
         id: this.deviceId,
         data: JSON.stringify(msg)
       };
-      Messaging.sendRequest(obj);
+      EventDispatcher.instance.sendRequest(obj);
     }
   },
 
@@ -144,7 +144,7 @@ TabMirror.prototype = {
         type: "MediaPlayer:End",
         id: this.deviceId
       };
-      Services.androidBridge.handleGeckoMessage(obj);
+      Services.androidBridge.handleGoannaMessage(obj);
     }
   },
 };

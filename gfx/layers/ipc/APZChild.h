@@ -13,39 +13,39 @@ namespace mozilla {
 
 namespace layers {
 
-class GeckoContentController;
+class GoannaContentController;
 
 /**
- * APZChild implements PAPZChild and is used to remote a GeckoContentController
+ * APZChild implements PAPZChild and is used to remote a GoannaContentController
  * that lives in a different process than where APZ lives.
  */
 class APZChild final : public PAPZChild
 {
 public:
-  explicit APZChild(RefPtr<GeckoContentController> aController);
+  explicit APZChild(RefPtr<GoannaContentController> aController);
   ~APZChild();
 
-  bool RecvRequestContentRepaint(const FrameMetrics& frame) override;
+  mozilla::ipc::IPCResult RecvRequestContentRepaint(const FrameMetrics& frame) override;
 
-  bool RecvUpdateOverscrollVelocity(const float& aX, const float& aY, const bool& aIsRootContent) override;
+  mozilla::ipc::IPCResult RecvUpdateOverscrollVelocity(const float& aX, const float& aY, const bool& aIsRootContent) override;
 
-  bool RecvUpdateOverscrollOffset(const float& aX, const float& aY, const bool& aIsRootContent) override;
+  mozilla::ipc::IPCResult RecvUpdateOverscrollOffset(const float& aX, const float& aY, const bool& aIsRootContent) override;
 
-  bool RecvSetScrollingRootContent(const bool& aIsRootContent) override;
+  mozilla::ipc::IPCResult RecvSetScrollingRootContent(const bool& aIsRootContent) override;
 
-  bool RecvNotifyMozMouseScrollEvent(const ViewID& aScrollId,
-                                     const nsString& aEvent) override;
+  mozilla::ipc::IPCResult RecvNotifyMozMouseScrollEvent(const ViewID& aScrollId,
+                                                        const nsString& aEvent) override;
 
-  bool RecvNotifyAPZStateChange(const ScrollableLayerGuid& aGuid,
-                                const APZStateChange& aChange,
-                                const int& aArg) override;
+  mozilla::ipc::IPCResult RecvNotifyAPZStateChange(const ScrollableLayerGuid& aGuid,
+                                                   const APZStateChange& aChange,
+                                                   const int& aArg) override;
 
-  bool RecvNotifyFlushComplete() override;
+  mozilla::ipc::IPCResult RecvNotifyFlushComplete() override;
 
-  bool RecvDestroy() override;
+  mozilla::ipc::IPCResult RecvDestroy() override;
 
 private:
-  RefPtr<GeckoContentController> mController;
+  RefPtr<GoannaContentController> mController;
 };
 
 } // namespace layers

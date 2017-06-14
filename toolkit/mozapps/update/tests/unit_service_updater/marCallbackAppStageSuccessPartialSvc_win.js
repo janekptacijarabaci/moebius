@@ -20,7 +20,7 @@ function run_test() {
  * Called after the call to setupUpdaterTest finishes.
  */
 function setupUpdaterTestFinished() {
-  stageUpdate(true);
+  stageUpdate();
 }
 
 /**
@@ -29,9 +29,9 @@ function setupUpdaterTestFinished() {
 function stageUpdateFinished() {
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getStageDirFile, true);
-  checkUpdateLogContents(LOG_PARTIAL_SUCCESS, true);
+  checkUpdateLogContents(LOG_PARTIAL_SUCCESS_STAGE, true);
   // Switch the application to the staged application that was updated.
-  runUpdate(STATE_SUCCEEDED, true, 0, true);
+  runUpdate(STATE_SUCCEEDED, true, 0, false);
 }
 
 /**

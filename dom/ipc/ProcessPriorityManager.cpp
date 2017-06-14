@@ -55,11 +55,11 @@ using namespace mozilla::hal;
 #  include <android/log.h>
 #  define LOG(fmt, ...) \
      __android_log_print(ANDROID_LOG_INFO, \
-       "Gecko:ProcessPriorityManager", \
+       "Goanna:ProcessPriorityManager", \
        fmt, ## __VA_ARGS__)
 #  define LOGP(fmt, ...) \
     __android_log_print(ANDROID_LOG_INFO, \
-      "Gecko:ProcessPriorityManager", \
+      "Goanna:ProcessPriorityManager", \
       "[%schild-id=%" PRIu64 ", pid=%d] " fmt, \
       NameWithComma().get(), \
       static_cast<uint64_t>(ChildID()), Pid(), ## __VA_ARGS__)
@@ -301,7 +301,6 @@ public:
 
   int32_t Pid() const;
   uint64_t ChildID() const;
-  bool IsPreallocated() const;
 
   /**
    * Used in logging, this method returns the ContentParent's name followed by
@@ -618,15 +617,12 @@ ProcessPriorityManagerImpl::NotifyProcessPriorityChanged(
   ProcessPriority aOldPriority)
 {
   ProcessPriority newPriority = aParticularManager->CurrentPriority();
-  bool isPreallocated = aParticularManager->IsPreallocated();
 
   if (newPriority == PROCESS_PRIORITY_BACKGROUND &&
-      aOldPriority != PROCESS_PRIORITY_BACKGROUND &&
-      !isPreallocated) {
+      aOldPriority != PROCESS_PRIORITY_BACKGROUND) {
     mBackgroundLRUPool.Add(aParticularManager);
   } else if (newPriority != PROCESS_PRIORITY_BACKGROUND &&
-      aOldPriority == PROCESS_PRIORITY_BACKGROUND &&
-      !isPreallocated) {
+      aOldPriority == PROCESS_PRIORITY_BACKGROUND) {
     mBackgroundLRUPool.Remove(aParticularManager);
   }
 
@@ -809,12 +805,6 @@ ParticularProcessPriorityManager::Pid() const
   return mContentParent ? mContentParent->Pid() : -1;
 }
 
-bool
-ParticularProcessPriorityManager::IsPreallocated() const
-{
-  return mContentParent ? mContentParent->IsPreallocated() : false;
-}
-
 const nsAutoCString&
 ParticularProcessPriorityManager::NameWithComma()
 {
@@ -861,10 +851,10 @@ ParticularProcessPriorityManager::OnRemoteBrowserFrameShown(nsISupports* aSubjec
     return;
   }
 
-  // Ignore notifications that aren't from a BrowserOrApp
-  bool isMozBrowserOrApp;
-  fl->GetOwnerIsMozBrowserOrAppFrame(&isMozBrowserOrApp);
-  if (isMozBrowserOrApp) {
+  // Ignore notifications that aren't from a Browser
+  bool isMozBrowser;
+  fl->GetOwnerIsMozBrowserFrame(&isMozBrowser);
+  if (isMozBrowser) {
     ResetPriority();
   }
 
@@ -1068,9 +1058,7 @@ ParticularProcessPriorityManager::ComputePriority()
   }
 
   if (isVisible) {
-    return HasAppType("inputmethod") ?
-      PROCESS_PRIORITY_FOREGROUND_KEYBOARD :
-      PROCESS_PRIORITY_FOREGROUND;
+    return PROCESS_PRIORITY_FOREGROUND;
   }
 
   if ((mHoldsCPUWakeLock || mHoldsHighPriorityWakeLock) &&

@@ -3,7 +3,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const { Cc, Ci, Cu, Cr } = require("chrome");
 loader.lazyRequireGetter(this, "extend",
   "sdk/util/object", true);
 
@@ -16,7 +15,8 @@ function mapRecordingOptions(type, options) {
   if (type === "profiler") {
     return {
       entries: options.bufferSize,
-      interval: options.sampleFrequency ? (1000 / (options.sampleFrequency * 1000)) : void 0
+      interval: options.sampleFrequency ? (1000 / (options.sampleFrequency * 1000))
+                                        : void 0
     };
   }
 
@@ -283,7 +283,7 @@ function allocationsWithSchema(data) {
  * Deduplicates a profile by deduplicating stacks, frames, and strings.
  *
  * This is used to adapt version 2 profiles from the backend to version 3, for
- * use with older Geckos (like B2G).
+ * use with older Goannas (like B2G).
  *
  * Note that the schemas used by this must be kept in sync with schemas used
  * by the C++ UniqueStacks class in tools/profiler/ProfileEntry.cpp.
@@ -568,7 +568,8 @@ UniqueStacks.prototype.getOrAddFrameIndex = function (frame) {
   let implementationIndex = this.getOrAddStringIndex(frame.implementation);
 
   // Super dumb.
-  let hash = `${locationIndex} ${implementationIndex || ""} ${frame.line || ""} ${frame.category || ""}`;
+  let hash = `${locationIndex} ${implementationIndex || ""} ` +
+             `${frame.line || ""} ${frame.category || ""}`;
 
   let index = frameHash[hash];
   if (index !== undefined) {

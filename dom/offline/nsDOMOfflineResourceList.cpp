@@ -28,7 +28,7 @@
 
 #include "nsXULAppAPI.h"
 #define IS_CHILD_PROCESS() \
-    (GeckoProcessType_Default != XRE_GetProcessType())
+    (GoannaProcessType_Default != XRE_GetProcessType())
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -814,7 +814,7 @@ nsDOMOfflineResourceList::CacheKeys()
 
   nsAutoCString originSuffix;
   if (loadContext) {
-    mozilla::DocShellOriginAttributes oa;
+    mozilla::OriginAttributes oa;
     bool ok = loadContext->GetOriginAttributes(oa);
     NS_ENSURE_TRUE(ok, NS_ERROR_UNEXPECTED);
 

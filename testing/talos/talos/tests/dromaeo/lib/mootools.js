@@ -313,7 +313,7 @@ var Browser = $merge({
 			return (navigator.taintEnabled) ? false : ((Browser.Features.xpath) ? ((Browser.Features.query) ? 525 : 420) : 419);
 		},
 
-		gecko: function(){
+		goanna: function(){
 			return (document.getBoxObjectFor == undefined) ? false : ((document.getElementsByClassName) ? 19 : 18);
 		}
 
@@ -967,7 +967,7 @@ var Event = new Native({
 				if (!(function(){
 					while (related && related.nodeType == 3) related = related.parentNode;
 					return true;
-				}).create({attempt: Browser.Engine.gecko})()) related = false;
+				}).create({attempt: Browser.Engine.goanna})()) related = false;
 			}
 		}
 
@@ -2065,7 +2065,7 @@ Element.Events = new Hash({
 	},
 
 	mousewheel: {
-		base: (Browser.Engine.gecko) ? 'DOMMouseScroll' : 'mousewheel'
+		base: (Browser.Engine.goanna) ? 'DOMMouseScroll' : 'mousewheel'
 	}
 
 });
@@ -2292,7 +2292,7 @@ Element.implement({
 			position.x += element.offsetLeft;
 			position.y += element.offsetTop;
 
-			if (Browser.Engine.gecko){
+			if (Browser.Engine.goanna){
 				if (!borderBox(element)){
 					position.x += leftBorder(element);
 					position.y += topBorder(element);
@@ -2309,7 +2309,7 @@ Element.implement({
 
 			element = element.offsetParent;
 		}
-		if (Browser.Engine.gecko && !borderBox(this)){
+		if (Browser.Engine.goanna && !borderBox(this)){
 			position.x -= leftBorder(this);
 			position.y -= topBorder(this);
 		}

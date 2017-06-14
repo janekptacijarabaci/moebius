@@ -29,7 +29,7 @@ class nsIWidget;
 class nsNativeDragTarget final : public IDropTarget
 {
 public:
-  nsNativeDragTarget(nsIWidget * aWidget);
+  explicit nsNativeDragTarget(nsIWidget * aWidget);
   ~nsNativeDragTarget();
 
   // IUnknown members - see iunknown.h for documentation
@@ -68,10 +68,12 @@ public:
    */
   void DragCancel();
 
+  static void DragImageChanged() { gDragImageChanged = true; }
+
 protected:
 
-  void GetGeckoDragAction(DWORD grfKeyState, LPDWORD pdwEffect, 
-                          uint32_t * aGeckoAction);
+  void GetGoannaDragAction(DWORD grfKeyState, LPDWORD pdwEffect, 
+                          uint32_t * aGoannaAction);
   void ProcessDrag(mozilla::EventMessage aEventMessage, DWORD grfKeyState,
                    POINTL pt, DWORD* pdwEffect);
   void DispatchDragDropEvent(mozilla::EventMessage aEventMessage,
@@ -85,7 +87,7 @@ protected:
   DWORD            mEffectsPreferred;
   bool             mTookOwnRef;
 
-  // Gecko Stuff
+  // Goanna Stuff
   nsIWidget      * mWidget;
   nsIDragService * mDragService;
   // Drag target helper 
@@ -95,6 +97,8 @@ protected:
 private:
   // Drag target helper 
   IDropTargetHelper * mDropTargetHelper;
+
+  static bool gDragImageChanged;
 };
 
 #endif // _nsNativeDragTarget_h_

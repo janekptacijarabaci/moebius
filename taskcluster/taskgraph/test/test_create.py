@@ -22,11 +22,11 @@ class TestCreate(unittest.TestCase):
         if 'TASK_ID' in os.environ:
             del os.environ['TASK_ID']
         self.created_tasks = {}
-        self.old_create_task = create._create_task
-        create._create_task = self.fake_create_task
+        self.old_create_task = create.create_task
+        create.create_task = self.fake_create_task
 
     def tearDown(self):
-        create._create_task = self.old_create_task
+        create.create_task = self.old_create_task
         if self.old_task_id:
             os.environ['TASK_ID'] = self.old_task_id
         elif 'TASK_ID' in os.environ:
@@ -48,7 +48,7 @@ class TestCreate(unittest.TestCase):
 
         for tid, task in self.created_tasks.iteritems():
             self.assertEqual(task['payload'], 'hello world')
-            self.assertEqual(task['schedulerId'], 'gecko-level-4')
+            self.assertEqual(task['schedulerId'], 'goanna-level-4')
             # make sure the dependencies exist, at least
             for depid in task.get('dependencies', []):
                 if depid is 'decisiontask':

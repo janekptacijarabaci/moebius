@@ -60,7 +60,7 @@ namespace oom {
 enum ThreadType {
     THREAD_TYPE_NONE = 0,       // 0
     THREAD_TYPE_MAIN,           // 1
-    THREAD_TYPE_ASMJS,          // 2
+    THREAD_TYPE_WASM,           // 2
     THREAD_TYPE_ION,            // 3
     THREAD_TYPE_PARSE,          // 4
     THREAD_TYPE_COMPRESS,       // 5
@@ -270,7 +270,7 @@ static inline char* js_strdup(const char* s)
  * Low-level memory management in SpiderMonkey:
  *
  *  ** Do not use the standard malloc/free/realloc: SpiderMonkey allows these
- *     to be redefined (via JS_USE_CUSTOM_ALLOCATOR) and Gecko even #define's
+ *     to be redefined (via JS_USE_CUSTOM_ALLOCATOR) and Goanna even #define's
  *     these symbols.
  *
  *  ** Do not use the builtin C++ operator new and delete: these throw on

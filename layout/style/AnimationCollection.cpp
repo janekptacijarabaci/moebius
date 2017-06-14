@@ -143,7 +143,7 @@ AnimationCollection<AnimationType>::UpdateCheckGeneration(
     return;
   }
   mCheckGeneration =
-    aPresContext->RestyleManager()->AsGecko()->GetAnimationGeneration();
+    aPresContext->RestyleManager()->AsGoanna()->GetAnimationGeneration();
 }
 
 template<class AnimationType>

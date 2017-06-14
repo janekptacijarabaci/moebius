@@ -20,15 +20,6 @@ include $(topsrcdir)/config/rules.mk
 
 include $(topsrcdir)/toolkit/locales/l10n.mk
 
-clobber-zip:
-	$(RM) $(STAGEDIST)/chrome/$(AB_CD).jar \
-	  $(STAGEDIST)/chrome/$(AB_CD).manifest \
-	  $(STAGEDIST)/defaults/pref/mobile-l10n.js
-	$(RM) -r $(STAGEDIST)/dictionaries \
-	  $(STAGEDIST)/hyphenation \
-	  $(STAGEDIST)/defaults/profile \
-	  $(STAGEDIST)/chrome/$(AB_CD)
-
 # need to kill stage for repacks for now due to the library moves
 # in PACKAGE and UNPACKAGE
 # also clean up potential left-overs of multi-locale builds, notably
@@ -64,16 +55,16 @@ installers-%: clobber-stage repackage-zip-%
 # When we unpack fennec on MacOS X the platform.ini and application.ini are in slightly
 # different locations that on all other platforms
 ifeq (Darwin, $(OS_ARCH))
-GECKO_PLATFORM_INI_PATH='$(STAGEDIST)/platform.ini'
+GOANNA_PLATFORM_INI_PATH='$(STAGEDIST)/platform.ini'
 FENNEC_APPLICATION_INI_PATH='$(STAGEDIST)/application.ini'
 else
-GECKO_PLATFORM_INI_PATH='$(STAGEDIST)/platform.ini'
+GOANNA_PLATFORM_INI_PATH='$(STAGEDIST)/platform.ini'
 FENNEC_APPLICATION_INI_PATH='$(STAGEDIST)/application.ini'
 endif
 
 ident:
-	@printf 'gecko_revision '
-	@$(PYTHON) $(topsrcdir)/config/printconfigsetting.py $(GECKO_PLATFORM_INI_PATH) Build SourceStamp
+	@printf 'goanna_revision '
+	@$(PYTHON) $(topsrcdir)/config/printconfigsetting.py $(GOANNA_PLATFORM_INI_PATH) Build SourceStamp
 	@printf 'fennec_revision '
 	@$(PYTHON) $(topsrcdir)/config/printconfigsetting.py $(FENNEC_APPLICATION_INI_PATH) App SourceStamp
 	@printf 'buildid '

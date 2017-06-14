@@ -4,7 +4,6 @@
 
 import json
 import os
-import shutil
 import sys
 import tempfile
 import traceback
@@ -240,7 +239,6 @@ class RobocopTestRunner(MochitestDesktop):
         self.localProfile = self.options.profilePath
         self.log.debug("Profile created at %s" % self.localProfile)
         # some files are not needed for robocop; save time by not pushing
-        shutil.rmtree(os.path.join(self.localProfile, 'webapps'))
         os.remove(os.path.join(self.localProfile, 'userChrome.css'))
         try:
             self.dm.pushDir(self.localProfile, self.remoteProfileCopy)
@@ -398,8 +396,6 @@ class RobocopTestRunner(MochitestDesktop):
             xrePath=None,
             debugger=None)
         # remove desktop environment not used on device
-        if "MOZ_WIN_INHERIT_STD_HANDLES_PRE_VISTA" in browserEnv:
-            del browserEnv["MOZ_WIN_INHERIT_STD_HANDLES_PRE_VISTA"]
         if "XPCOM_MEM_BLOAT_LOG" in browserEnv:
             del browserEnv["XPCOM_MEM_BLOAT_LOG"]
         browserEnv["MOZ_LOG_FILE"] = os.path.join(
@@ -438,15 +434,15 @@ class RobocopTestRunner(MochitestDesktop):
                 "-e", "quit_and_finish", "1",
                 "-e", "deviceroot", self.deviceRoot,
                 "-e", "class",
-                "org.mozilla.gecko.tests.%s" % test['name'].split('/')[-1].split('.java')[0],
-                "org.mozilla.roboexample.test/org.mozilla.gecko.FennecInstrumentationTestRunner"]
+                "org.mozilla.goanna.tests.%s" % test['name'].split('/')[-1].split('.java')[0],
+                "org.mozilla.roboexample.test/org.mozilla.goanna.FennecInstrumentationTestRunner"]
         else:
             # This does not launch a test at all. It launches an activity
             # that starts Fennec and then waits indefinitely, since cat
             # never returns.
             browserArgs = ["start", "-n",
                            "org.mozilla.roboexample.test/org.mozilla."
-                           "gecko.LaunchFennecWithConfigurationActivity", "&&", "cat"]
+                           "goanna.LaunchFennecWithConfigurationActivity", "&&", "cat"]
             self.dm.default_timeout = sys.maxint  # Forever.
             self.log.info("")
             self.log.info("Serving mochi.test Robocop root at http://%s:%s/tests/robocop/" %

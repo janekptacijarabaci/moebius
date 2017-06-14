@@ -26,15 +26,15 @@
         ["{workdir}/out/target/product/hammerhead/*.img", "out/target/product/hammerhead/"],
         ["{workdir}/boot.img", "out/target/product/hammerhead/"],
         "{workdir}/flash.sh",
-        "{workdir}/gecko/b2g/installer/flash.bat",
+        "{workdir}/goanna/b2g/installer/flash.bat",
         "{workdir}/prebuilts/misc/windows/win_flash_tools/*",
         "{workdir}/load-config.sh",
         "{workdir}/.config",
         "{workdir}/sources.xml",
         "{workdir}/profile.sh",
-        ["{workdir}/gecko/tools/profiler/merge-profiles.py", "gecko/tools/profiler/"],
+        ["{workdir}/goanna/tools/profiler/merge-profiles.py", "goanna/tools/profiler/"],
         ["{workdir}/scripts/profile-symbolicate.py", "scripts/"],
-        ["{workdir}/gecko/tools/rb/fix_stack_using_bpsyms.py", "gecko/tools/rb/"]
+        ["{workdir}/goanna/tools/rb/fix_stack_using_bpsyms.py", "goanna/tools/rb/"]
     ],
     "env": {
         "VARIANT": "userdebug",
@@ -45,7 +45,7 @@
     "b2g_manifest": "nexus-5-l.xml",
     "b2g_manifest_intree": true,
     "additional_source_tarballs": [],
-    "gecko_l10n_root": "https://hg.mozilla.org/l10n-central",
+    "goanna_l10n_root": "https://hg.mozilla.org/l10n-central",
     "gaia": {
         "l10n": {
             "vcs": "hg",

@@ -11,9 +11,9 @@
 #include "nsPIDOMWindow.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 
-class GMPCrashHelper;
-
 namespace mozilla {
+
+class GMPCrashHelper;
 
 // Disconnecting the GMPCrashHelpers at the right time is hard. We need to
 // ensure that in the crashing case that we stay connected until the
@@ -46,7 +46,7 @@ namespace mozilla {
 // will stick around forever and leak.
 //
 // In the crashing case, the GMPCrashHelpers are deallocated when the crash
-// report is processed in GeckoMediaPluginService::RunPluginCrashCallbacks().
+// report is processed in GoannaMediaPluginService::RunPluginCrashCallbacks().
 //
 // It's a bit yuck that we have to have two paths for disconnecting the crash
 // helpers, but there aren't really any better options.
@@ -67,7 +67,7 @@ public:
   void MaybeDisconnect(bool aAbnormalShutdown)
   {
     if (!aAbnormalShutdown) {
-      RefPtr<gmp::GeckoMediaPluginService> service(gmp::GeckoMediaPluginService::GetGeckoMediaPluginService());
+      RefPtr<gmp::GoannaMediaPluginService> service(gmp::GoannaMediaPluginService::GetGoannaMediaPluginService());
       service->DisconnectCrashHelper(GetCrashHelper());
     }
   }

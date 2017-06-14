@@ -37,17 +37,17 @@ const JNINativeMethod ANRReporter::Natives<Impl>::methods[] = {
 };
 
 template<class Impl>
-class GeckoJavaSampler::Natives : public mozilla::jni::NativeImpl<GeckoJavaSampler, Impl>
+class GoannaJavaSampler::Natives : public mozilla::jni::NativeImpl<GoannaJavaSampler, Impl>
 {
 public:
     static const JNINativeMethod methods[1];
 };
 
 template<class Impl>
-const JNINativeMethod GeckoJavaSampler::Natives<Impl>::methods[] = {
+const JNINativeMethod GoannaJavaSampler::Natives<Impl>::methods[] = {
 
-    mozilla::jni::MakeNativeMethod<GeckoJavaSampler::GetProfilerTime_t>(
-            mozilla::jni::NativeStub<GeckoJavaSampler::GetProfilerTime_t, Impl>
+    mozilla::jni::MakeNativeMethod<GoannaJavaSampler::GetProfilerTime_t>(
+            mozilla::jni::NativeStub<GoannaJavaSampler::GetProfilerTime_t, Impl>
             ::template Wrap<&Impl::GetProfilerTime>)
 };
 
@@ -87,25 +87,6 @@ const JNINativeMethod PresentationMediaPlayerManager::Natives<Impl>::methods[] =
     mozilla::jni::MakeNativeMethod<PresentationMediaPlayerManager::RemovePresentationSurface_t>(
             mozilla::jni::NativeStub<PresentationMediaPlayerManager::RemovePresentationSurface_t, Impl>
             ::template Wrap<&Impl::RemovePresentationSurface>)
-};
-
-template<class Impl>
-class ScreenManagerHelper::Natives : public mozilla::jni::NativeImpl<ScreenManagerHelper, Impl>
-{
-public:
-    static const JNINativeMethod methods[2];
-};
-
-template<class Impl>
-const JNINativeMethod ScreenManagerHelper::Natives<Impl>::methods[] = {
-
-    mozilla::jni::MakeNativeMethod<ScreenManagerHelper::AddDisplay_t>(
-            mozilla::jni::NativeStub<ScreenManagerHelper::AddDisplay_t, Impl>
-            ::template Wrap<&Impl::AddDisplay>),
-
-    mozilla::jni::MakeNativeMethod<ScreenManagerHelper::RemoveDisplay_t>(
-            mozilla::jni::NativeStub<ScreenManagerHelper::RemoveDisplay_t, Impl>
-            ::template Wrap<&Impl::RemoveDisplay>)
 };
 
 template<class Impl>

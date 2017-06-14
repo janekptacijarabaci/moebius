@@ -8,7 +8,7 @@
 #ifndef mozilla_layers_RemoteContentController_h
 #define mozilla_layers_RemoteContentController_h
 
-#include "mozilla/layers/GeckoContentController.h"
+#include "mozilla/layers/GoannaContentController.h"
 #include "mozilla/layers/PAPZParent.h"
 
 namespace mozilla {
@@ -21,7 +21,7 @@ namespace layers {
 
 /**
  * RemoteContentController implements PAPZChild and is used to access a
- * GeckoContentController that lives in a different process.
+ * GoannaContentController that lives in a different process.
  *
  * RemoteContentController lives on the compositor thread. All methods can
  * be called off the compositor thread and will get dispatched to the right
@@ -29,11 +29,11 @@ namespace layers {
  * which must be called on the repaint thread, which in this case is the compositor
  * thread.
  */
-class RemoteContentController : public GeckoContentController
+class RemoteContentController : public GoannaContentController
                               , public PAPZParent
 {
-  using GeckoContentController::TapType;
-  using GeckoContentController::APZStateChange;
+  using GoannaContentController::TapType;
+  using GoannaContentController::APZStateChange;
 
 public:
   RemoteContentController();

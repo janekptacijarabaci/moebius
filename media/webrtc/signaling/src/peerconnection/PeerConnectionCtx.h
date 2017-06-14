@@ -14,11 +14,11 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/StaticPtr.h"
 #include "PeerConnectionImpl.h"
-#include "mozIGeckoMediaPluginService.h"
+#include "mozIGoannaMediaPluginService.h"
 #include "nsIRunnable.h"
 
 namespace mozilla {
-class PeerConnectionCtxShutdown;
+class PeerConnectionCtxObserver;
 
 namespace dom {
 class WebrtcGlobalInformation;
@@ -47,6 +47,8 @@ class PeerConnectionCtx {
   void onGMPReady();
 
   bool gmpHasH264();
+
+  static void UpdateNetworkState(bool online);
 
   // Make these classes friend so that they can access mPeerconnections.
   friend class PeerConnectionImpl;
@@ -89,19 +91,19 @@ public:
 private:
 #endif
 
-  // We cannot form offers/answers properly until the Gecko Media Plugin stuff
+  // We cannot form offers/answers properly until the Goanna Media Plugin stuff
   // has been initted, which is a complicated mess of thread dispatches,
   // including sync dispatches to main. So, we need to be able to queue up
   // offer creation (or SetRemote, when we're the answerer) until all of this is
   // ready to go, since blocking on this init is just begging for deadlock.
-  nsCOMPtr<mozIGeckoMediaPluginService> mGMPService;
+  nsCOMPtr<mozIGoannaMediaPluginService> mGMPService;
   bool mGMPReady;
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedJSEPOperations;
 
   static PeerConnectionCtx *gInstance;
 public:
   static nsIThread *gMainThread;
-  static mozilla::StaticRefPtr<mozilla::PeerConnectionCtxShutdown> gPeerConnectionCtxShutdown;
+  static mozilla::StaticRefPtr<mozilla::PeerConnectionCtxObserver> gPeerConnectionCtxObserver;
 };
 
 } // namespace mozilla

@@ -9,10 +9,11 @@
 namespace mozilla {
 namespace widget {
 
-CompositorWidgetParent::CompositorWidgetParent(const CompositorWidgetInitData& aInitData)
- : X11CompositorWidget(aInitData)
+CompositorWidgetParent::CompositorWidgetParent(const CompositorWidgetInitData& aInitData,
+                                               const layers::CompositorOptions& aOptions)
+ : X11CompositorWidget(aInitData, aOptions)
 {
-  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_GPU);
+  MOZ_ASSERT(XRE_GetProcessType() == GoannaProcessType_GPU);
 }
 
 CompositorWidgetParent::~CompositorWidgetParent()
@@ -33,15 +34,15 @@ CompositorWidgetParent::ObserveVsync(VsyncObserver* aObserver)
 RefPtr<VsyncObserver>
 CompositorWidgetParent::GetVsyncObserver() const
 {
-  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_GPU);
+  MOZ_ASSERT(XRE_GetProcessType() == GoannaProcessType_GPU);
   return mVsyncObserver;
 }
 
-bool
+mozilla::ipc::IPCResult
 CompositorWidgetParent::RecvNotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize)
 {
   NotifyClientSizeChanged(aClientSize);
-  return true;
+  return IPC_OK();
 }
 
 } // namespace widget

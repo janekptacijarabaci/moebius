@@ -65,7 +65,7 @@ class ManifestParser(object):
         :param finder: If provided, this finder object will be used for filesystem
                        interactions. Finder objects are part of the mozpack package,
                        documented at
-                       http://gecko.readthedocs.org/en/latest/python/mozpack.html#module-mozpack.files
+                       http://goanna.readthedocs.org/en/latest/python/mozpack.html#module-mozpack.files
         :param handle_defaults: If not set, do not propagate manifest defaults to individual
                                 test objects. Callers are expected to manage per-manifest
                                 defaults themselves via the manifest_defaults member
@@ -75,6 +75,7 @@ class ManifestParser(object):
         self._ancestor_defaults = {}
         self.tests = []
         self.manifest_defaults = {}
+        self.source_files = set()
         self.strict = strict
         self.rootdir = rootdir
         self.relativeRoot = None
@@ -125,6 +126,7 @@ class ManifestParser(object):
             if self.finder:
                 assert os.path.isabs(filename)
             filename = os.path.abspath(filename)
+            self.source_files.add(filename)
             if self.finder:
                 fp = self.finder.get(filename)
             else:

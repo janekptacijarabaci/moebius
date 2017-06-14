@@ -29,8 +29,12 @@
 #include "nsView.h"
 #include "Layers.h"
 
+// #define APZCCH_LOGGING 1
+#ifdef APZCCH_LOGGING
+#define APZCCH_LOG(...) printf_stderr("APZCCH: " __VA_ARGS__)
+#else
 #define APZCCH_LOG(...)
-// #define APZCCH_LOG(...) printf_stderr("APZCCH: " __VA_ARGS__)
+#endif
 
 namespace mozilla {
 namespace layers {
@@ -76,27 +80,27 @@ ScrollFrameTo(nsIScrollableFrame* aFrame, const FrameMetrics& aMetrics, bool& aS
     return targetScrollPosition;
   }
 
-  CSSPoint geckoScrollPosition = CSSPoint::FromAppUnits(aFrame->GetScrollPosition());
+  CSSPoint goannaScrollPosition = CSSPoint::FromAppUnits(aFrame->GetScrollPosition());
 
   // If the repaint request was triggered due to a previous main-thread scroll
   // offset update sent to the APZ, then we don't need to do another scroll here
   // and we can just return.
   if (!aMetrics.GetScrollOffsetUpdated()) {
-    return geckoScrollPosition;
+    return goannaScrollPosition;
   }
 
   // If the frame is overflow:hidden on a particular axis, we don't want to allow
   // user-driven scroll on that axis. Simply set the scroll position on that axis
   // to whatever it already is. Note that this will leave the APZ's async scroll
-  // position out of sync with the gecko scroll position, but APZ can deal with that
+  // position out of sync with the goanna scroll position, but APZ can deal with that
   // (by design). Note also that when we run into this case, even if both axes
   // have overflow:hidden, we want to set aSuccessOut to true, so that the displayport
-  // follows the async scroll position rather than the gecko scroll position.
+  // follows the async scroll position rather than the goanna scroll position.
   if (aFrame->GetScrollbarStyles().mVertical == NS_STYLE_OVERFLOW_HIDDEN) {
-    targetScrollPosition.y = geckoScrollPosition.y;
+    targetScrollPosition.y = goannaScrollPosition.y;
   }
   if (aFrame->GetScrollbarStyles().mHorizontal == NS_STYLE_OVERFLOW_HIDDEN) {
-    targetScrollPosition.x = geckoScrollPosition.x;
+    targetScrollPosition.x = goannaScrollPosition.x;
   }
 
   // If the scrollable frame is currently in the middle of an async or smooth
@@ -107,13 +111,13 @@ ScrollFrameTo(nsIScrollableFrame* aFrame, const FrameMetrics& aMetrics, bool& aS
   bool scrollInProgress = APZCCallbackHelper::IsScrollInProgress(aFrame);
   if (!scrollInProgress) {
     aFrame->ScrollToCSSPixelsApproximate(targetScrollPosition, nsGkAtoms::apz);
-    geckoScrollPosition = CSSPoint::FromAppUnits(aFrame->GetScrollPosition());
+    goannaScrollPosition = CSSPoint::FromAppUnits(aFrame->GetScrollPosition());
     aSuccessOut = true;
   }
   // Return the final scroll position after setting it so that anything that relies
   // on it can have an accurate value. Note that even if we set it above re-querying it
   // is a good idea because it may have gotten clamped or rounded.
-  return geckoScrollPosition;
+  return goannaScrollPosition;
 }
 
 /**
@@ -412,7 +416,7 @@ APZCCallbackHelper::ApplyCallbackTransform(const CSSPoint& aInput,
     // First, scale inversely by the root content document's pres shell
     // resolution to cancel the scale-to-resolution transform that the
     // compositor adds to the layer with the pres shell resolution. The points
-    // sent to Gecko by APZ don't have this transform unapplied (unlike other
+    // sent to Goanna by APZ don't have this transform unapplied (unlike other
     // compositor-side transforms) because APZ doesn't know about it.
     if (nsIPresShell* shell = GetRootDocumentPresShell(content)) {
         input = input / shell->GetResolution();
@@ -513,14 +517,15 @@ APZCCallbackHelper::DispatchMouseEvent(const nsCOMPtr<nsIPresShell>& aPresShell,
                                        int32_t aClickCount,
                                        int32_t aModifiers,
                                        bool aIgnoreRootScrollFrame,
-                                       unsigned short aInputSourceArg)
+                                       unsigned short aInputSourceArg,
+                                       uint32_t aPointerId)
 {
   NS_ENSURE_TRUE(aPresShell, true);
 
   bool defaultPrevented = false;
   nsContentUtils::SendMouseEvent(aPresShell, aType, aPoint.x, aPoint.y,
       aButton, nsIDOMWindowUtils::MOUSE_BUTTONS_NOT_SPECIFIED, aClickCount,
-      aModifiers, aIgnoreRootScrollFrame, 0, aInputSourceArg, false,
+      aModifiers, aIgnoreRootScrollFrame, 0, aInputSourceArg, aPointerId, false,
       &defaultPrevented, false, /* aIsWidgetEventSynthesized = */ false);
   return defaultPrevented;
 }
@@ -619,6 +624,7 @@ PrepareForSetTargetAPZCNotification(nsIWidget* aWidget,
     ? GetDisplayportElementFor(scrollAncestor)
     : GetRootDocumentElementFor(aWidget);
 
+#ifdef APZCCH_LOGGING
   nsAutoString dpElementDesc;
   if (dpElement) {
     dpElement->Describe(dpElementDesc);
@@ -626,6 +632,7 @@ PrepareForSetTargetAPZCNotification(nsIWidget* aWidget,
   APZCCH_LOG("For event at %s found scrollable element %p (%s)\n",
       Stringify(aRefPoint).c_str(), dpElement.get(),
       NS_LossyConvertUTF16toASCII(dpElementDesc).get());
+#endif
 
   bool guidIsValid = APZCCallbackHelper::GetOrCreateScrollIdentifiers(
     dpElement, &(guid.mPresShellId), &(guid.mScrollId));
@@ -745,7 +752,7 @@ SendSetTargetAPZCNotificationHelper(nsIWidget* aWidget,
   }
 }
 
-void
+bool
 APZCCallbackHelper::SendSetTargetAPZCNotification(nsIWidget* aWidget,
                                                   nsIDocument* aDocument,
                                                   const WidgetGUIEvent& aEvent,
@@ -753,7 +760,7 @@ APZCCallbackHelper::SendSetTargetAPZCNotification(nsIWidget* aWidget,
                                                   uint64_t aInputBlockId)
 {
   if (!aWidget || !aDocument) {
-    return;
+    return false;
   }
   if (aInputBlockId == sLastTargetAPZCNotificationInputBlock) {
     // We have already confirmed the target APZC for a previous event of this
@@ -762,7 +769,7 @@ APZCCallbackHelper::SendSetTargetAPZCNotification(nsIWidget* aWidget,
     // race the original confirmation (which needs to go through a layers
     // transaction).
     APZCCH_LOG("Not resending target APZC confirmation for input block %" PRIu64 "\n", aInputBlockId);
-    return;
+    return false;
   }
   sLastTargetAPZCNotificationInputBlock = aInputBlockId;
   if (nsIPresShell* shell = aDocument->GetShell()) {
@@ -794,8 +801,11 @@ APZCCallbackHelper::SendSetTargetAPZCNotification(nsIWidget* aWidget,
           Move(targets),
           waitForRefresh);
       }
+
+      return waitForRefresh;
     }
   }
+  return false;
 }
 
 void

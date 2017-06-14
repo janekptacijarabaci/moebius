@@ -22,7 +22,7 @@ class PanGestureInput;
 
 /**
  * SwipeTracker turns PanGestureInput events into swipe events
- * (WidgetSimpleGestureEvent) and dispatches them into Gecko.
+ * (WidgetSimpleGestureEvent) and dispatches them into Goanna.
  * The swiping behavior mirrors the behavior of the Cocoa API
  * -[NSEvent trackSwipeEventWithOptions:dampenAmountThresholdMin:max:usingHandler:].
  * The advantage of using this class over the Cocoa API is that this class
@@ -54,11 +54,12 @@ public:
   void Destroy();
 
   nsEventStatus ProcessEvent(const PanGestureInput& aEvent);
-  void CancelSwipe();
+  void CancelSwipe(const TimeStamp& aTimeStamp);
 
   static WidgetSimpleGestureEvent
     CreateSwipeGestureEvent(EventMessage aMsg, nsIWidget* aWidget,
-                            const LayoutDeviceIntPoint& aPosition);
+                            const LayoutDeviceIntPoint& aPosition,
+                            const TimeStamp& aTimeStamp);
 
 
   // nsARefreshObserver
@@ -72,9 +73,10 @@ protected:
   double ClampToAllowedRange(double aGestureAmount) const;
   bool ComputeSwipeSuccess() const;
   void StartAnimating(double aTargetValue);
-  void SwipeFinished();
+  void SwipeFinished(const TimeStamp& aTimeStamp);
   void UnregisterFromRefreshDriver();
-  bool SendSwipeEvent(EventMessage aMsg, uint32_t aDirection, double aDelta);
+  bool SendSwipeEvent(EventMessage aMsg, uint32_t aDirection, double aDelta,
+                      const TimeStamp& aTimeStamp);
 
   nsChildView& mWidget;
   RefPtr<nsRefreshDriver> mRefreshDriver;

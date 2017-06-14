@@ -17,8 +17,6 @@
 #include "pk11pub.h"
 #include "pkix/pkixtypes.h"
 #include "prerror.h"
-#include "prinit.h"
-#include "secerr.h"
 
 extern mozilla::LazyLogModule gPIPNSSLog;
 
@@ -1062,6 +1060,20 @@ static struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
     "aEpYcIBr8I8C+vbe6LCQkA==",
   },
   {
+    // CN=TÜRKTRUST Elektronik Sertifika Hizmet Sağlayıcısı H6,O=TÜRKTRUST Bilgi İletişim ve Bilişim Güvenliği Hizmetleri A...,L=Ankara,C=TR
+    "2.16.792.3.0.3.1.1.5",
+    "TurkTrust EV OID",
+    SEC_OID_UNKNOWN,
+    { 0x8D, 0xE7, 0x86, 0x55, 0xE1, 0xBE, 0x7F, 0x78, 0x47, 0x80, 0x0B,
+      0x93, 0xF6, 0x94, 0xD2, 0x1D, 0x36, 0x8C, 0xC0, 0x6E, 0x03, 0x3E,
+      0x7F, 0xAB, 0x04, 0xBB, 0x5E, 0xB9, 0x9D, 0xA6, 0xB7, 0x00 },
+    "MIGxMQswCQYDVQQGEwJUUjEPMA0GA1UEBwwGQW5rYXJhMU0wSwYDVQQKDERUw5xS"
+    "S1RSVVNUIEJpbGdpIMSwbGV0acWfaW0gdmUgQmlsacWfaW0gR8O8dmVubGnEn2kg"
+    "SGl6bWV0bGVyaSBBLsWeLjFCMEAGA1UEAww5VMOcUktUUlVTVCBFbGVrdHJvbmlr"
+    "IFNlcnRpZmlrYSBIaXptZXQgU2HEn2xhecSxY8Sxc8SxIEg2",
+    "faHyZeyK",
+  },
+  {
     // OU=Security Communication RootCA2,O="SECOM Trust Systems CO.,LTD.",C=JP
     "1.2.392.200091.100.721.1",
     "SECOM EV OID",
@@ -1200,7 +1212,7 @@ bool
 CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
                                const mozilla::pkix::CertPolicyId& policy)
 {
-  PR_ASSERT(cert);
+  MOZ_ASSERT(cert);
   if (!cert) {
     return false;
   }
@@ -1324,66 +1336,66 @@ LoadExtendedValidationInfo()
   return NS_OK;
 }
 
-// Find the first policy OID that is known to be an EV policy OID.
-SECStatus
-GetFirstEVPolicy(CERTCertificate* cert,
+// Helper function for GetFirstEVPolicy(): returns the first suitable policy
+// from the given list of policies.
+bool
+GetFirstEVPolicyFromPolicyList(const UniqueCERTCertificatePolicies& policies,
+                       /*out*/ mozilla::pkix::CertPolicyId& policy,
+                       /*out*/ SECOidTag& policyOidTag)
+{
+  for (size_t i = 0; policies->policyInfos[i]; i++) {
+    const CERTPolicyInfo* policyInfo = policies->policyInfos[i];
+    SECOidTag policyInfoOID = policyInfo->oid;
+    if (policyInfoOID == SEC_OID_UNKNOWN || !isEVPolicy(policyInfoOID)) {
+      continue;
+    }
+
+    const SECOidData* oidData = SECOID_FindOIDByTag(policyInfoOID);
+    MOZ_ASSERT(oidData);
+    MOZ_ASSERT(oidData->oid.data);
+    MOZ_ASSERT(oidData->oid.len > 0);
+    MOZ_ASSERT(oidData->oid.len <= mozilla::pkix::CertPolicyId::MAX_BYTES);
+    if (!oidData || !oidData->oid.data || oidData->oid.len == 0 ||
+        oidData->oid.len > mozilla::pkix::CertPolicyId::MAX_BYTES) {
+      continue;
+    }
+
+    policy.numBytes = AssertedCast<uint16_t>(oidData->oid.len);
+    PodCopy(policy.bytes, oidData->oid.data, policy.numBytes);
+    policyOidTag = policyInfoOID;
+    return true;
+  }
+
+  return false;
+}
+
+bool
+GetFirstEVPolicy(CERTCertificate& cert,
                  /*out*/ mozilla::pkix::CertPolicyId& policy,
                  /*out*/ SECOidTag& policyOidTag)
 {
-  if (!cert) {
-    PR_SetError(SEC_ERROR_INVALID_ARGS, 0);
-    return SECFailure;
+  if (!cert.extensions) {
+    return false;
   }
 
-  if (cert->extensions) {
-    for (int i=0; cert->extensions[i]; i++) {
-      const SECItem* oid = &cert->extensions[i]->id;
+  for (size_t i = 0; cert.extensions[i]; i++) {
+    const CERTCertExtension* extension = cert.extensions[i];
+    if (SECOID_FindOIDTag(&extension->id) != SEC_OID_X509_CERTIFICATE_POLICIES) {
+      continue;
+    }
 
-      SECOidTag oidTag = SECOID_FindOIDTag(oid);
-      if (oidTag != SEC_OID_X509_CERTIFICATE_POLICIES)
-        continue;
+    UniqueCERTCertificatePolicies policies(
+      CERT_DecodeCertificatePoliciesExtension(&extension->value));
+    if (!policies) {
+      continue;
+    }
 
-      SECItem* value = &cert->extensions[i]->value;
-
-      CERTCertificatePolicies* policies;
-      CERTPolicyInfo** policyInfos;
-
-      policies = CERT_DecodeCertificatePoliciesExtension(value);
-      if (!policies)
-        continue;
-
-      policyInfos = policies->policyInfos;
-
-      bool found = false;
-      while (*policyInfos) {
-        const CERTPolicyInfo* policyInfo = *policyInfos++;
-
-        SECOidTag oid_tag = policyInfo->oid;
-        if (oid_tag != SEC_OID_UNKNOWN && isEVPolicy(oid_tag)) {
-          const SECOidData* oidData = SECOID_FindOIDByTag(oid_tag);
-          PR_ASSERT(oidData);
-          PR_ASSERT(oidData->oid.data);
-          PR_ASSERT(oidData->oid.len > 0);
-          PR_ASSERT(oidData->oid.len <= mozilla::pkix::CertPolicyId::MAX_BYTES);
-          if (oidData && oidData->oid.data && oidData->oid.len > 0 &&
-              oidData->oid.len <= mozilla::pkix::CertPolicyId::MAX_BYTES) {
-            policy.numBytes = static_cast<uint16_t>(oidData->oid.len);
-            memcpy(policy.bytes, oidData->oid.data, policy.numBytes);
-            policyOidTag = oid_tag;
-            found = true;
-          }
-          break;
-        }
-      }
-      CERT_DestroyCertificatePoliciesExtension(policies);
-      if (found) {
-        return SECSuccess;
-      }
+    if (GetFirstEVPolicyFromPolicyList(policies, policy, policyOidTag)) {
+      return true;
     }
   }
 
-  PR_SetError(SEC_ERROR_POLICY_VALIDATION_FAILED, 0);
-  return SECFailure;
+  return false;
 }
 
 } } // namespace mozilla::psm

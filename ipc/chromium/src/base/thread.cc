@@ -9,12 +9,12 @@
 #include "base/string_util.h"
 #include "base/thread_local.h"
 #include "base/waitable_event.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "mozilla/IOInterposer.h"
 #include "nsThreadUtils.h"
 
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracer.h"
+#include "GoannaTaskTracer.h"
 #endif
 
 namespace base {
@@ -153,8 +153,7 @@ void Thread::StopSoon() {
 }
 
 void Thread::ThreadMain() {
-  char aLocal;
-  profiler_register_thread(name_.c_str(), &aLocal);
+  mozilla::AutoProfilerRegister registerThread(name_.c_str());
   mozilla::IOInterposer::RegisterCurrentThread();
 
   // The message loop for this thread.
@@ -186,7 +185,6 @@ void Thread::ThreadMain() {
   DCHECK(GetThreadWasQuitProperly());
 
   mozilla::IOInterposer::UnregisterCurrentThread();
-  profiler_unregister_thread();
 
 #ifdef MOZ_TASK_TRACER
   mozilla::tasktracer::FreeTraceInfo();

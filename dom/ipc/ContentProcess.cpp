@@ -96,7 +96,7 @@ SetUpSandboxEnvironment()
     return;
   }
 
-  // Change the gecko defined temp directory to our sandbox-writable one.
+  // Change the goanna defined temp directory to our sandbox-writable one.
   // Undefine returns a failure if the property is not already set.
   Unused << nsDirectoryService::gService->Undefine(NS_OS_TEMP_DIR);
   rv = nsDirectoryService::gService->Set(NS_OS_TEMP_DIR, sandboxedContentTemp);

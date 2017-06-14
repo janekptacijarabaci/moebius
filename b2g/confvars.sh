@@ -11,14 +11,13 @@ MOZ_APP_UA_NAME=Firefox
 MOZ_UA_OS_AGNOSTIC=1
 
 MOZ_B2G_VERSION=2.6.0.0-prerelease
-MOZ_B2G_OS_NAME=Boot2Gecko
+MOZ_B2G_OS_NAME=Boot2Goanna
 
 MOZ_BRANDING_DIRECTORY=b2g/branding/unofficial
 MOZ_OFFICIAL_BRANDING_DIRECTORY=b2g/branding/official
 # MOZ_APP_DISPLAYNAME is set by branding/configure.sh
 
 MOZ_NO_SMART_CARDS=1
-MOZ_APP_STATIC_INI=1
 
 if test "$OS_TARGET" = "Android"; then
 MOZ_CAPTURE=1

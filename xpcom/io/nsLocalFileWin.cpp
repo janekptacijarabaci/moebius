@@ -12,7 +12,7 @@
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
 #include "nsMemory.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 #include "nsLocalFile.h"
 #include "nsIDirectoryEnumerator.h"

@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-GeckoProgram('jsapi-tests', linkage=None)
+GoannaProgram('jsapi-tests', linkage=None)
 
 UNIFIED_SOURCES += [
     'selfTest.cpp',
@@ -37,6 +37,7 @@ UNIFIED_SOURCES += [
     'testForOfIterator.cpp',
     'testForwardSetProperty.cpp',
     'testFreshGlobalEvalRedefinition.cpp',
+    'testFunctionBinding.cpp',
     'testFunctionProperties.cpp',
     'testGCAllocator.cpp',
     'testGCCellPtr.cpp',
@@ -76,6 +77,7 @@ UNIFIED_SOURCES += [
     'testPrintf.cpp',
     'testPrivateGCThingValue.cpp',
     'testProfileStrings.cpp',
+    'testPromise.cpp',
     'testPropCache.cpp',
     'testRegExp.cpp',
     'testResolveRecursion.cpp',
@@ -121,11 +123,6 @@ if CONFIG['ENABLE_ION']:
         'testJitRangeAnalysis.cpp',
         'testJitRegisterSet.cpp',
         'testJitRValueAlloc.cpp',
-    ]
-
-if CONFIG['SPIDERMONKEY_PROMISE']:
-    UNIFIED_SOURCES += [
-        'testPromise.cpp',
     ]
 
 DEFINES['EXPORT_JS_API'] = True

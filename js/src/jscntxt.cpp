@@ -246,6 +246,13 @@ js::ReportOutOfMemory(ExclusiveContext* cxArg)
     cx->setPendingException(StringValue(cx->names().outOfMemory));
 }
 
+mozilla::GenericErrorResult<OOM&>
+js::ReportOutOfMemoryResult(ExclusiveContext* cx)
+{
+    ReportOutOfMemory(cx);
+    return cx->alreadyReportedOOM();
+}
+
 void
 js::ReportOverRecursed(JSContext* maybecx, unsigned errorNumber)
 {
@@ -803,7 +810,7 @@ js::ReportMissingArg(JSContext* cx, HandleValue v, unsigned arg)
 
     SprintfLiteral(argbuf, "%u", arg);
     if (IsFunctionObject(v)) {
-        RootedAtom name(cx, v.toObject().as<JSFunction>().name());
+        RootedAtom name(cx, v.toObject().as<JSFunction>().explicitName());
         bytes = DecompileValueGenerator(cx, JSDVG_SEARCH_STACK, v, name);
         if (!bytes)
             return;
@@ -875,6 +882,34 @@ ExclusiveContext::recoverFromOutOfMemory()
         task->outOfMemory = false;
 }
 
+JS::Error ExclusiveContext::reportedError;
+JS::OOM ExclusiveContext::reportedOOM;
+
+mozilla::GenericErrorResult<OOM&>
+ExclusiveContext::alreadyReportedOOM()
+{
+#ifdef DEBUG
+    if (JSContext* maybecx = maybeJSContext()) {
+        MOZ_ASSERT(maybecx->isThrowingOutOfMemory());
+    } else {
+        // Keep in sync with addPendingOutOfMemory.
+        if (ParseTask* task = helperThread()->parseTask())
+            MOZ_ASSERT(task->outOfMemory);
+    }
+#endif
+    return mozilla::MakeGenericErrorResult(reportedOOM);
+}
+
+mozilla::GenericErrorResult<JS::Error&>
+ExclusiveContext::alreadyReportedError()
+{
+#ifdef DEBUG
+    if (JSContext* maybecx = maybeJSContext())
+        MOZ_ASSERT(maybecx->isExceptionPending());
+#endif
+    return mozilla::MakeGenericErrorResult(reportedError);
+}
+
 JSContext::JSContext(JSRuntime* parentRuntime)
   : ExclusiveContext(this, &this->JSRuntime::mainThread, Context_JS, JS::ContextOptions()),
     JSRuntime(parentRuntime),
@@ -943,12 +978,6 @@ JSContext::isThrowingDebuggeeWouldRun()
            unwrappedException_.toObject().as<ErrorObject>().type() == JSEXN_DEBUGGEEWOULDRUN;
 }
 
-bool
-JSContext::currentlyRunning() const
-{
-    return !!activation();
-}
-
 static bool
 ComputeIsJITBroken()
 {
@@ -964,12 +993,12 @@ ComputeIsJITBroken()
     // Check for the known-bad kernel version (2.6.29).
     std::ifstream osrelease("/proc/sys/kernel/osrelease");
     std::getline(osrelease, line);
-    __android_log_print(ANDROID_LOG_INFO, "Gecko", "Detected osrelease `%s'",
+    __android_log_print(ANDROID_LOG_INFO, "Goanna", "Detected osrelease `%s'",
                         line.c_str());
 
     if (line.npos == line.find("2.6.29")) {
         // We're using something other than 2.6.29, so the JITs should work.
-        __android_log_print(ANDROID_LOG_INFO, "Gecko", "JITs are not broken");
+        __android_log_print(ANDROID_LOG_INFO, "Goanna", "JITs are not broken");
         return false;
     }
 
@@ -990,7 +1019,7 @@ ComputeIsJITBroken()
             };
             for (const char* const* hw = &blacklist[0]; *hw; ++hw) {
                 if (line.npos != line.find(*hw)) {
-                    __android_log_print(ANDROID_LOG_INFO, "Gecko",
+                    __android_log_print(ANDROID_LOG_INFO, "Goanna",
                                         "Blacklisted device `%s'", *hw);
                     broken = true;
                     break;
@@ -1001,7 +1030,7 @@ ComputeIsJITBroken()
         std::getline(cpuinfo, line);
     } while(!cpuinfo.fail() && !cpuinfo.eof());
 
-    __android_log_print(ANDROID_LOG_INFO, "Gecko", "JITs are %sbroken",
+    __android_log_print(ANDROID_LOG_INFO, "Goanna", "JITs are %sbroken",
                         broken ? "" : "not ");
 
     return broken;
@@ -1038,12 +1067,12 @@ JSContext::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const
 }
 
 void
-JSContext::mark(JSTracer* trc)
+JSContext::trace(JSTracer* trc)
 {
     if (cycleDetectorSet.initialized())
         TraceCycleDetectionSet(trc, cycleDetectorSet);
 
-    if (compartment_)
+    if (trc->isMarkingTracer() && compartment_)
         compartment_->mark();
 }
 

@@ -26,7 +26,7 @@ static int gNotOptimized;
 #include "android_npapi.h"
 #include <android/log.h>
 #undef ALOG
-#define ALOG(args...) __android_log_print(ANDROID_LOG_INFO, "GeckoJavaEnv", ## args)
+#define ALOG(args...) __android_log_print(ANDROID_LOG_INFO, "GoannaJavaEnv", ## args)
 #endif
 
 using namespace mozilla::layers;
@@ -319,7 +319,7 @@ PluginPRLibrary::BeginUpdateBackground(NPP instance, const nsIntRect&,
 nsresult
 PluginPRLibrary::EndUpdateBackground(NPP instance, const nsIntRect&)
 {
-  NS_RUNTIMEABORT("This should never be called");
+  MOZ_CRASH("This should never be called");
   return NS_ERROR_NOT_AVAILABLE;
 }
 

@@ -61,7 +61,7 @@ Interceptor::~Interceptor()
   MOZ_ASSERT(NS_IsMainThread());
   for (uint32_t index = 0, len = mInterceptorMap.Length(); index < len; ++index) {
     MapEntry& entry = mInterceptorMap[index];
-    entry.mInterceptor->Release();
+    entry.mInterceptor = nullptr;
     entry.mTargetInterface->Release();
   }
 }
@@ -234,12 +234,9 @@ Interceptor::GetInterceptorForIID(REFIID aIid, void** aOutInterceptor)
     if (entry && entry->mInterceptor) {
       unkInterceptor = entry->mInterceptor;
     } else {
-      // We're inserting unkInterceptor into the map but we still want to hang
-      // onto it locally so that we can QI it below.
-      unkInterceptor->AddRef();
-      // OTOH we must not touch the refcount for the target interface
-      // because we are just moving it into the map and its refcounting might
-      // not be thread-safe.
+      // MapEntry has a RefPtr to unkInterceptor, OTOH we must not touch the
+      // refcount for the target interface because we are just moving it into
+      // the map and its refcounting might not be thread-safe.
       IUnknown* rawTargetInterface = targetInterface.release();
       mInterceptorMap.AppendElement(MapEntry(aIid,
                                              unkInterceptor,
@@ -254,7 +251,7 @@ HRESULT
 Interceptor::QueryInterfaceTarget(REFIID aIid, void** aOutput)
 {
   // NB: This QI needs to run on the main thread because the target object
-  // is probably Gecko code that is not thread-safe. Note that this main
+  // is probably Goanna code that is not thread-safe. Note that this main
   // thread invocation is *synchronous*.
   MainThreadInvoker invoker;
   HRESULT hr;

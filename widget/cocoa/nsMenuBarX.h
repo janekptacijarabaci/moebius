@@ -15,9 +15,18 @@
 #include "nsINativeMenuService.h"
 #include "nsString.h"
 
+class nsMenuBarX;
 class nsMenuX;
 class nsIWidget;
 class nsIContent;
+
+// ApplicationMenuDelegate is used to receive Cocoa notifications.
+@interface ApplicationMenuDelegate : NSObject<NSMenuDelegate>
+{
+  nsMenuBarX* mApplicationMenu; // weak ref
+}
+- (id)initWithApplicationMenu:(nsMenuBarX*)aApplicationMenu;
+@end
 
 // The native menu service for creating native menu bars.
 class nsNativeMenuServiceX : public nsINativeMenuService
@@ -35,7 +44,7 @@ protected:
 
 // Objective-C class used to allow us to intervene with keyboard event handling.
 // We allow mouse actions to work normally.
-@interface GeckoNSMenu : NSMenu
+@interface GoannaNSMenu : NSMenu
 {
 }
 @end
@@ -47,10 +56,10 @@ protected:
 -(IBAction)menuItemHit:(id)sender;
 @end
 
-// Objective-C class used for menu items on the Services menu to allow Gecko
+// Objective-C class used for menu items on the Services menu to allow Goanna
 // to override their standard behavior in order to stop key equivalents from
 // firing in certain instances.
-@interface GeckoServicesNSMenuItem : NSMenuItem
+@interface GoannaServicesNSMenuItem : NSMenuItem
 {
 }
 - (id) target;
@@ -58,10 +67,10 @@ protected:
 - (void) _doNothing:(id)sender;
 @end
 
-// Objective-C class used as the Services menu so that Gecko can override the
+// Objective-C class used as the Services menu so that Goanna can override the
 // standard behavior of the Services menu in order to stop key equivalents
 // from firing in certain instances.
-@interface GeckoServicesNSMenu : NSMenu
+@interface GoannaServicesNSMenu : NSMenu
 {
 }
 - (void)addItem:(NSMenuItem *)newItem;
@@ -80,7 +89,7 @@ public:
   virtual ~nsMenuBarX();
 
   static NativeMenuItemTarget* sNativeEventTarget;
-  static nsMenuBarX*           sLastGeckoMenuBarPainted;
+  static nsMenuBarX*           sLastGoannaMenuBarPainted;
 
   // The following content nodes have been removed from the menu system.
   // We save them here for use in command handling.
@@ -108,6 +117,8 @@ public:
   void              ForceNativeMenuReload(); // used for testing
   static char       GetLocalizedAccelKey(const char *shortcutID);
   static void       ResetNativeApplicationMenu();
+  void              SetNeedsRebuild();
+  void              ApplicationMenuOpened();
 
 protected:
   void              ConstructNativeMenus();
@@ -122,7 +133,9 @@ protected:
 
   nsTArray<mozilla::UniquePtr<nsMenuX>> mMenuArray;
   nsIWidget*         mParentWindow;        // [weak]
-  GeckoNSMenu*       mNativeMenu;            // root menu, representing entire menu bar
+  GoannaNSMenu*       mNativeMenu;            // root menu, representing entire menu bar
+  bool               mNeedsRebuild;
+  ApplicationMenuDelegate* mApplicationMenuDelegate;
 };
 
 #endif // nsMenuBarX_h_

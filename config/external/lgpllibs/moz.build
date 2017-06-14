@@ -6,11 +6,11 @@
 
 # The lgpllibs library stores symbols from third-party LGPL licensed libraries,
 # such as libav and libsoundtouch. It fulfills the requirement of dynamically
-# linking these symbols into gecko.
+# linking these symbols into goanna.
 #
 # Any library added here should also be reflected in the about:license page.
 
-GeckoSharedLibrary('lgpllibs', linkage=None)
+GoannaSharedLibrary('lgpllibs', linkage=None)
 SHARED_LIBRARY_NAME = 'lgpllibs'
 
 if CONFIG['MOZ_LIBAV_FFT']:

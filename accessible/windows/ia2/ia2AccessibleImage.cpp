@@ -43,8 +43,6 @@ ia2AccessibleImage::QueryInterface(REFIID iid, void** ppv)
 STDMETHODIMP
 ia2AccessibleImage::get_description(BSTR* aDescription)
 {
-  A11Y_TRYBLOCK_BEGIN
-
   if (!aDescription)
     return E_INVALIDARG;
 
@@ -61,8 +59,6 @@ ia2AccessibleImage::get_description(BSTR* aDescription)
 
   *aDescription = ::SysAllocStringLen(description.get(), description.Length());
   return *aDescription ? S_OK : E_OUTOFMEMORY;
-
-  A11Y_TRYBLOCK_END
 }
 
 STDMETHODIMP
@@ -70,8 +66,6 @@ ia2AccessibleImage::get_imagePosition(enum IA2CoordinateType aCoordType,
                                       long* aX,
                                       long* aY)
 {
-  A11Y_TRYBLOCK_BEGIN
-
   if (!aX || !aY)
     return E_INVALIDARG;
 
@@ -82,23 +76,19 @@ ia2AccessibleImage::get_imagePosition(enum IA2CoordinateType aCoordType,
   if (imageAcc->IsDefunct())
     return CO_E_OBJNOTCONNECTED;
 
-  uint32_t geckoCoordType = (aCoordType == IA2_COORDTYPE_SCREEN_RELATIVE) ?
+  uint32_t goannaCoordType = (aCoordType == IA2_COORDTYPE_SCREEN_RELATIVE) ?
     nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE :
     nsIAccessibleCoordinateType::COORDTYPE_PARENT_RELATIVE;
 
-  nsIntPoint pos = imageAcc->Position(geckoCoordType);
+  nsIntPoint pos = imageAcc->Position(goannaCoordType);
   *aX = pos.x;
   *aY = pos.y;
   return S_OK;
-
-  A11Y_TRYBLOCK_END
 }
 
 STDMETHODIMP
 ia2AccessibleImage::get_imageSize(long* aHeight, long* aWidth)
 {
-  A11Y_TRYBLOCK_BEGIN
-
   if (!aHeight || !aWidth)
     return E_INVALIDARG;
 
@@ -113,7 +103,5 @@ ia2AccessibleImage::get_imageSize(long* aHeight, long* aWidth)
   *aHeight = size.width;
   *aWidth = size.height;
   return S_OK;
-
-  A11Y_TRYBLOCK_END
 }
 

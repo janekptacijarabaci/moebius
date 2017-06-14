@@ -19,8 +19,8 @@ MOZ_ANDROID_MIN_SDK_VERSION=15
 
 # There are several entry points into the Firefox application.  These are the names of some of the classes that are
 # listed in the Android manifest.  They are specified in here to avoid hard-coding them in source code files.
-MOZ_ANDROID_APPLICATION_CLASS=org.mozilla.gecko.GeckoApplication
-MOZ_ANDROID_BROWSER_INTENT_CLASS=org.mozilla.gecko.BrowserApp
+MOZ_ANDROID_APPLICATION_CLASS=org.mozilla.goanna.GoannaApplication
+MOZ_ANDROID_BROWSER_INTENT_CLASS=org.mozilla.goanna.BrowserApp
 MOZ_ANDROID_SEARCH_INTENT_CLASS=org.mozilla.search.SearchActivity
 
 MOZ_NO_SMART_CARDS=1
@@ -36,8 +36,6 @@ MOZ_RUST_MP4PARSE=1
 MOZ_USE_NATIVE_POPUP_WINDOWS=1
 
 MOZ_APP_ID={aa3c5121-dab2-40e2-81ca-7ea25febc110}
-
-MOZ_APP_STATIC_INI=1
 
 # Enable second screen using native Android libraries.
 MOZ_NATIVE_DEVICES=1

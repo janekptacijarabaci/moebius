@@ -31,7 +31,7 @@ function setupUpdaterTestFinished() {
  * Called after the call to waitForHelperSleep finishes.
  */
 function waitForHelperSleepFinished() {
-  stageUpdate(true);
+  stageUpdate();
 }
 
 /**
@@ -40,7 +40,7 @@ function waitForHelperSleepFinished() {
 function stageUpdateFinished() {
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getStageDirFile, true);
-  checkUpdateLogContents(LOG_COMPLETE_SUCCESS, true);
+  checkUpdateLogContents(LOG_COMPLETE_SUCCESS_STAGE, true);
   // Switch the application to the staged application that was updated.
   runUpdate(STATE_SUCCEEDED, true, 0, true);
 }
@@ -84,7 +84,8 @@ function checkPostUpdateAppLogFinished() {
  * Setup symlinks for the test.
  */
 function setupSymLinks() {
-  if (IS_UNIX) {
+  // The tests don't support symlinks on gonk.
+  if (IS_UNIX && !IS_TOOLKIT_GONK) {
     removeSymlink();
     createSymlink();
     do_register_cleanup(removeSymlink);
@@ -107,7 +108,8 @@ function setupSymLinks() {
  * Checks the state of the symlinks for the test.
  */
 function checkSymLinks() {
-  if (IS_UNIX) {
+  // The tests don't support symlinks on gonk.
+  if (IS_UNIX && !IS_TOOLKIT_GONK) {
     checkSymlink();
   }
 }

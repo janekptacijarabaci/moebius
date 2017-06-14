@@ -33,10 +33,10 @@ IdToObjectMap::init()
 }
 
 void
-IdToObjectMap::trace(JSTracer* trc, uint64_t minimimId)
+IdToObjectMap::trace(JSTracer* trc, uint64_t minimumId)
 {
     for (Table::Range r(table_.all()); !r.empty(); r.popFront()) {
-        if (r.front().key().serialNumber() >= minimimId)
+        if (r.front().key().serialNumber() >= minimumId)
             JS::TraceEdge(trc, &r.front().value(), "ipc-object");
     }
 }
@@ -59,6 +59,15 @@ IdToObjectMap::find(ObjectId id)
     if (!p)
         return nullptr;
     return p->value();
+}
+
+JSObject*
+IdToObjectMap::findPreserveColor(ObjectId id)
+{
+    Table::Ptr p = table_.lookup(id);
+    if (!p)
+        return nullptr;
+    return p->value().unbarrieredGet();
 }
 
 bool
@@ -92,7 +101,7 @@ IdToObjectMap::has(const ObjectId& id, const JSObject* obj) const
     auto p = table_.lookup(id);
     if (!p)
         return false;
-    return p->value().unbarrieredGet() == obj;
+    return p->value() == obj;
 }
 #endif
 
@@ -200,7 +209,7 @@ JavaScriptShared::incref()
 }
 
 bool
-JavaScriptShared::convertIdToGeckoString(JSContext* cx, JS::HandleId id, nsString* to)
+JavaScriptShared::convertIdToGoannaString(JSContext* cx, JS::HandleId id, nsString* to)
 {
     RootedValue idval(cx);
     if (!JS_IdToValue(cx, id, &idval))
@@ -214,7 +223,7 @@ JavaScriptShared::convertIdToGeckoString(JSContext* cx, JS::HandleId id, nsStrin
 }
 
 bool
-JavaScriptShared::convertGeckoStringToId(JSContext* cx, const nsString& from, JS::MutableHandleId to)
+JavaScriptShared::convertGoannaStringToId(JSContext* cx, const nsString& from, JS::MutableHandleId to)
 {
     RootedString str(cx, JS_NewUCStringCopyN(cx, from.BeginReading(), from.Length()));
     if (!str)
@@ -400,7 +409,7 @@ JavaScriptShared::fromJSIDVariant(JSContext* cx, const JSIDVariant& from, Mutabl
       }
 
       case JSIDVariant::TnsString:
-        return convertGeckoStringToId(cx, from.get_nsString(), to);
+        return convertGoannaStringToId(cx, from.get_nsString(), to);
 
       case JSIDVariant::Tint32_t:
         to.set(INT_TO_JSID(from.get_int32_t()));
@@ -731,7 +740,7 @@ JavaScriptShared::Wrap(JSContext* cx, HandleObject aObj, InfallibleTArray<CpowEn
         id = ids[i];
 
         nsString str;
-        if (!convertIdToGeckoString(cx, id, &str))
+        if (!convertIdToGoannaString(cx, id, &str))
             return false;
 
         if (!JS_GetPropertyById(cx, aObj, id, &v))

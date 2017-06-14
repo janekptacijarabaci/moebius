@@ -9,7 +9,7 @@
 #include <stack>                        // for stack
 #include "BasicContainerLayer.h"        // for BasicContainerLayer
 #include "BasicLayersImpl.h"            // for ToData, BasicReadbackLayer, etc
-#include "GeckoProfiler.h"              // for PROFILER_LABEL
+#include "GoannaProfiler.h"              // for PROFILER_LABEL
 #include "ImageContainer.h"             // for ImageFactory
 #include "Layers.h"                     // for Layer, ContainerLayer, etc
 #include "ReadbackLayer.h"              // for ReadbackLayer
@@ -720,10 +720,12 @@ BasicLayerManager::PaintSelfOrChildren(PaintLayerContext& aPaintContext,
   } else {
     ContainerLayer* container =
         static_cast<ContainerLayer*>(aPaintContext.mLayer);
-    AutoTArray<Layer*, 12> children;
-    container->SortChildrenBy3DZOrder(children);
+
+    nsTArray<LayerPolygon> children =
+      container->SortChildrenBy3DZOrder(ContainerLayer::SortMode::WITHOUT_GEOMETRY);
+
     for (uint32_t i = 0; i < children.Length(); i++) {
-      Layer* layer = children.ElementAt(i);
+      Layer* layer = children.ElementAt(i).layer;
       if (layer->IsBackfaceHidden()) {
         continue;
       }

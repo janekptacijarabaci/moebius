@@ -7,7 +7,7 @@
 
 #include "mozilla/gfx/2D.h"
 #include "DecodePool.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #include "IDecodingTask.h"
 #include "ISurfaceProvider.h"
 #include "nsProxyRelease.h"

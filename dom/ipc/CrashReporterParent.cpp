@@ -40,11 +40,11 @@ CrashReporterParent::ActorDestroy(ActorDestroyReason aWhy)
   // Implement me! Bug 1005155
 }
 
-bool
+mozilla::ipc::IPCResult
 CrashReporterParent::RecvAppendAppNotes(const nsCString& data)
 {
   mAppNotes.Append(data);
-  return true;
+  return IPC_OK();
 }
 
 CrashReporterParent::CrashReporterParent()
@@ -69,7 +69,7 @@ CrashReporterParent::SetChildData(const NativeThreadId& tid,
 {
   mInitialized = true;
   mMainThread = tid;
-  mProcessType = GeckoProcessType(processType);
+  mProcessType = GoannaProcessType(processType);
 }
 
 #ifdef MOZ_CRASHREPORTER
@@ -98,11 +98,11 @@ CrashReporterParent::GenerateChildData(const AnnotationTable* processNotes)
 
   nsAutoCString type;
   switch (mProcessType) {
-    case GeckoProcessType_Content:
+    case GoannaProcessType_Content:
       type = NS_LITERAL_CSTRING("content");
       break;
-    case GeckoProcessType_Plugin:
-    case GeckoProcessType_GMPlugin:
+    case GoannaProcessType_Plugin:
+    case GoannaProcessType_GMPlugin:
       type = NS_LITERAL_CSTRING("plugin");
       break;
     default:

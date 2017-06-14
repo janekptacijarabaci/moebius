@@ -403,7 +403,7 @@ nsHtml5StreamParser::SetEncodingFromExpat(const char16_t* aEncoding)
       mCharsetSource = kCharsetFromMetaTag; // closest for XML
       return;
     }
-    // else the page declared an encoding Gecko doesn't support and we'd
+    // else the page declared an encoding Goanna doesn't support and we'd
     // end up defaulting to UTF-8 anyway. Might as well fall through here
     // right away and let the encoding be set to UTF-8 which we'd default to
     // anyway.
@@ -948,7 +948,7 @@ nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
     // XXX does Necko have a way to renavigate POST, etc. without hitting
     // the network?
     if (!method.EqualsLiteral("GET")) {
-      // This is the old Gecko behavior but the HTML5 spec disagrees.
+      // This is the old Goanna behavior but the HTML5 spec disagrees.
       // Don't reparse on POST.
       mReparseForbidden = true;
       mFeedChardet = false; // can't restart anyway
@@ -981,13 +981,15 @@ nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   }
   
   nsCOMPtr<nsIWyciwygChannel> wyciwygChannel(do_QueryInterface(mRequest));
-  if (!wyciwygChannel) {
+  if (mCharsetSource < kCharsetFromUtf8OnlyMime && !wyciwygChannel) {
     // we aren't ready to commit to an encoding yet
     // leave converter uninstantiated for now
     return NS_OK;
   }
 
-  // We are reloading a document.open()ed doc.
+  // We are reloading a document.open()ed doc or loading JSON/WebVTT/etc. into
+  // a browsing context. In the latter case, there's no need to remove the
+  // BOM manually here, because the UTF-8 decoder removes it.
   mReparseForbidden = true;
   mFeedChardet = false;
 
@@ -1319,7 +1321,10 @@ nsHtml5StreamParser::FlushTreeOpsAndDisarmTimer()
     mTokenizer->FlushViewSource();
   }
   mTreeBuilder->Flush();
-  if (NS_FAILED(NS_DispatchToMainThread(mExecutorFlusher))) {
+  nsCOMPtr<nsIRunnable> runnable(mExecutorFlusher);
+  if (NS_FAILED(mExecutor->GetDocument()->Dispatch("FlushTreeOpsAndDisarmTimer",
+                                                   dom::TaskCategory::Other,
+                                                   runnable.forget()))) {
     NS_WARNING("failed to dispatch executor flush event");
   }
 }

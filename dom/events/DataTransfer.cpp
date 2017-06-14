@@ -57,7 +57,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(DataTransfer)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mItems)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDragTarget)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDragImage)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(DataTransfer)
 
@@ -311,11 +310,10 @@ DataTransfer::GetFiles(nsIDOMFileList** aFileList)
 }
 
 void
-DataTransfer::GetTypes(nsTArray<nsString>& aTypes,
-                       nsIPrincipal& aSubjectPrincipal) const
+DataTransfer::GetTypes(nsTArray<nsString>& aTypes, CallerType aCallerType) const
 {
   // When called from bindings, aTypes will be empty, but since we might have
-  // Gecko-internal callers too, clear it to be safe.
+  // Goanna-internal callers too, clear it to be safe.
   aTypes.Clear();
   
   const nsTArray<RefPtr<DataTransferItem>>* items = mItems->MozItemsAt(0);
@@ -327,7 +325,7 @@ DataTransfer::GetTypes(nsTArray<nsString>& aTypes,
     DataTransferItem* item = items->ElementAt(i);
     MOZ_ASSERT(item);
 
-    if (item->ChromeOnly() && !nsContentUtils::IsSystemPrincipal(&aSubjectPrincipal)) {
+    if (item->ChromeOnly() && aCallerType != CallerType::System) {
       continue;
     }
 
@@ -501,7 +499,8 @@ DataTransfer::GetMozSourceNode(nsIDOMNode** aSourceNode)
 }
 
 already_AddRefed<DOMStringList>
-DataTransfer::MozTypesAt(uint32_t aIndex, ErrorResult& aRv) const
+DataTransfer::MozTypesAt(uint32_t aIndex, CallerType aCallerType,
+                         ErrorResult& aRv) const
 {
   // Only the first item is valid for clipboard events
   if (aIndex > 0 &&
@@ -518,7 +517,7 @@ DataTransfer::MozTypesAt(uint32_t aIndex, ErrorResult& aRv) const
 
     bool addFile = false;
     for (uint32_t i = 0; i < items.Length(); i++) {
-      if (items[i]->ChromeOnly() && !nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
+      if (items[i]->ChromeOnly() && aCallerType != CallerType::System) {
         continue;
       }
 
@@ -543,15 +542,6 @@ DataTransfer::MozTypesAt(uint32_t aIndex, ErrorResult& aRv) const
   }
 
   return types.forget();
-}
-
-NS_IMETHODIMP
-DataTransfer::MozTypesAt(uint32_t aIndex, nsISupports** aTypes)
-{
-  ErrorResult rv;
-  RefPtr<DOMStringList> types = MozTypesAt(aIndex, rv);
-  types.forget(aTypes);
-  return rv.StealNSResult();
 }
 
 nsresult
@@ -773,28 +763,36 @@ DataTransfer::MozClearDataAtHelper(const nsAString& aFormat, uint32_t aIndex,
 }
 
 void
-DataTransfer::SetDragImage(Element& aImage, int32_t aX, int32_t aY,
-                           ErrorResult& aRv)
+DataTransfer::SetDragImage(Element& aImage, int32_t aX, int32_t aY)
 {
-  if (mReadOnly) {
-    aRv.Throw(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR);
-    return;
+  if (!mReadOnly) {
+    mDragImage = &aImage;
+    mDragImageX = aX;
+    mDragImageY = aY;
   }
-
-  mDragImage = &aImage;
-  mDragImageX = aX;
-  mDragImageY = aY;
 }
 
 NS_IMETHODIMP
 DataTransfer::SetDragImage(nsIDOMElement* aImage, int32_t aX, int32_t aY)
 {
-  ErrorResult rv;
   nsCOMPtr<Element> image = do_QueryInterface(aImage);
   if (image) {
-    SetDragImage(*image, aX, aY, rv);
+    SetDragImage(*image, aX, aY);
   }
-  return rv.StealNSResult();
+  return NS_OK;
+}
+
+void
+DataTransfer::UpdateDragImage(Element& aImage, int32_t aX, int32_t aY)
+{
+  if (mEventMessage < eDragDropEventFirst || mEventMessage > eDragDropEventLast) {
+    return;
+  }
+
+  nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession();
+  if (dragSession) {
+    dragSession->UpdateDragImage(aImage.AsDOMNode(), aX, aY);
+  }
 }
 
 already_AddRefed<Promise>
@@ -945,14 +943,7 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
 
   bool added = false;
   bool handlingCustomFormats = true;
-
-  // When writing the custom data, we need to ensure that there is sufficient
-  // space for a (uint32_t) data ending type, and the null byte character at
-  // the end of the nsCString. We claim that space upfront and store it in
-  // baseLength. This value will be set to zero if a write error occurs
-  // indicating that the data and length are no longer valid.
-  const uint32_t baseLength = sizeof(uint32_t) + 1;
-  uint32_t totalCustomLength = baseLength;
+  uint32_t totalCustomLength = 0;
 
   const char* knownFormats[] = {
     kTextMime, kHTMLMime, kNativeHTMLMime, kRTFMime,
@@ -1014,9 +1005,8 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
         }
 
         // When handling custom types, add the data to the stream if this is a
-        // custom type. If totalCustomLength is 0, then a write error occurred
-        // on a previous item, so ignore any others.
-        if (isCustomFormat && totalCustomLength > 0) {
+        // custom type.
+        if (isCustomFormat) {
           // If it isn't a string, just ignore it. The dataTransfer is cached in
           // the drag sesion during drag-and-drop, so non-strings will be
           // available when dragging locally.
@@ -1036,91 +1026,58 @@ DataTransfer::GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext)
               stream->SetOutputStream(outputStream);
             }
 
-            CheckedInt<uint32_t> formatLength =
-              CheckedInt<uint32_t>(type.Length()) * sizeof(nsString::char_type);
+            int32_t formatLength = type.Length() * sizeof(nsString::char_type);
+
+            stream->Write32(eCustomClipboardTypeId_String);
+            stream->Write32(formatLength);
+            stream->WriteBytes((const char *)type.get(),
+                               formatLength);
+            stream->Write32(lengthInBytes);
+            stream->WriteBytes((const char *)data.get(), lengthInBytes);
 
             // The total size of the stream is the format length, the data
-            // length, two integers to hold the lengths and one integer for
-            // the string flag. Guard against large data by ignoring any that
-            // don't fit.
-            CheckedInt<uint32_t> newSize = formatLength + totalCustomLength +
-                                           lengthInBytes + (sizeof(uint32_t) * 3);
-            if (newSize.isValid()) {
-              // If a write error occurs, set totalCustomLength to 0 so that
-              // further processing gets ignored.
-              nsresult rv = stream->Write32(eCustomClipboardTypeId_String);
-              if (NS_WARN_IF(NS_FAILED(rv))) {
-                totalCustomLength = 0;
-                continue;
-              }
-              rv = stream->Write32(formatLength.value());
-              if (NS_WARN_IF(NS_FAILED(rv))) {
-                totalCustomLength = 0;
-                continue;
-              }
-              rv = stream->WriteBytes((const char *)type.get(), formatLength.value());
-              if (NS_WARN_IF(NS_FAILED(rv))) {
-                totalCustomLength = 0;
-                continue;
-              }
-              rv = stream->Write32(lengthInBytes);
-              if (NS_WARN_IF(NS_FAILED(rv))) {
-                totalCustomLength = 0;
-                continue;
-              }
-              rv = stream->WriteBytes((const char *)data.get(), lengthInBytes);
-              if (NS_WARN_IF(NS_FAILED(rv))) {
-                totalCustomLength = 0;
-                continue;
-              }
-
-              totalCustomLength = newSize.value();
-            }
+            // length, two integers to hold the lengths and one integer for the
+            // string flag.
+            totalCustomLength +=
+              formatLength + lengthInBytes + (sizeof(uint32_t) * 3);
           }
         }
       } else if (isCustomFormat && stream) {
         // This is the second pass of the loop (handlingCustomFormats is false).
         // When encountering the first custom format, append all of the stream
-        // at this position. If totalCustomLength is 0 indicating a write error
-        // occurred, or no data has been added to it, don't output anything,
-        if (totalCustomLength > baseLength) {
-          // Write out an end of data terminator.
-          nsresult rv = stream->Write32(eCustomClipboardTypeId_None);
-          if (NS_SUCCEEDED(rv)) {
-            nsCOMPtr<nsIInputStream> inputStream;
-            storageStream->NewInputStream(0, getter_AddRefs(inputStream));
+        // at this position.
 
-            RefPtr<nsStringBuffer> stringBuffer =
-              nsStringBuffer::Alloc(totalCustomLength);
+        // Write out a terminator.
+        totalCustomLength += sizeof(uint32_t);
+        stream->Write32(eCustomClipboardTypeId_None);
 
-            // Subtract off the null terminator when reading.
-            totalCustomLength--;
+        nsCOMPtr<nsIInputStream> inputStream;
+        storageStream->NewInputStream(0, getter_AddRefs(inputStream));
 
-            // Read the data from the stream and add a null-terminator as
-            // ToString needs it.
-            uint32_t amountRead;
-            rv = inputStream->Read(static_cast<char*>(stringBuffer->Data()),
-                              totalCustomLength, &amountRead);
-            if (NS_SUCCEEDED(rv)) {
-              static_cast<char*>(stringBuffer->Data())[amountRead] = 0;
+        RefPtr<nsStringBuffer> stringBuffer =
+          nsStringBuffer::Alloc(totalCustomLength + 1);
 
-              nsCString str;
-              stringBuffer->ToString(totalCustomLength, str);
-              nsCOMPtr<nsISupportsCString>
-                strSupports(do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID));
-              strSupports->SetData(str);
+        // Read the data from the string and add a null-terminator as ToString
+        // needs it.
+        uint32_t amountRead;
+        inputStream->Read(static_cast<char*>(stringBuffer->Data()),
+                          totalCustomLength, &amountRead);
+        static_cast<char*>(stringBuffer->Data())[amountRead] = 0;
 
-              nsresult rv = transferable->SetTransferData(kCustomTypesMime,
-                                                          strSupports,
-                                                          totalCustomLength);
-              if (NS_FAILED(rv)) {
-                return nullptr;
-              }
+        nsCString str;
+        stringBuffer->ToString(totalCustomLength, str);
+        nsCOMPtr<nsISupportsCString>
+          strSupports(do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID));
+        strSupports->SetData(str);
 
-              added = true;
-            }
-          }
+        nsresult rv = transferable->SetTransferData(kCustomTypesMime,
+                                                    strSupports,
+                                                    totalCustomLength);
+        if (NS_FAILED(rv)) {
+          return nullptr;
         }
+
+        added = true;
 
         // Clear the stream so it doesn't get used again.
         stream = nullptr;

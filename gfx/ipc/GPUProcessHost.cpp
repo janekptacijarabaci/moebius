@@ -16,7 +16,7 @@ namespace gfx {
 using namespace ipc;
 
 GPUProcessHost::GPUProcessHost(Listener* aListener)
- : GeckoChildProcessHost(GeckoProcessType_GPU),
+ : GoannaChildProcessHost(GoannaProcessType_GPU),
    mListener(aListener),
    mTaskFactory(this),
    mLaunchPhase(LaunchPhase::Unlaunched),
@@ -41,7 +41,7 @@ GPUProcessHost::Launch()
   mLaunchPhase = LaunchPhase::Waiting;
   mLaunchTime = TimeStamp::Now();
 
-  if (!GeckoChildProcessHost::AsyncLaunch()) {
+  if (!GoannaChildProcessHost::AsyncLaunch()) {
     mLaunchPhase = LaunchPhase::Complete;
     return false;
   }
@@ -55,12 +55,12 @@ GPUProcessHost::WaitForLaunch()
     return !!mGPUChild;
   }
 
-  int32_t timeoutMs = gfxPrefs::GPUProcessDevTimeoutMs();
+  int32_t timeoutMs = gfxPrefs::GPUProcessTimeoutMs();
 
   // Our caller expects the connection to be finished after we return, so we
   // immediately set up the IPDL actor and fire callbacks. The IO thread will
   // still dispatch a notification to the main thread - we'll just ignore it.
-  bool result = GeckoChildProcessHost::WaitUntilConnected(timeoutMs);
+  bool result = GoannaChildProcessHost::WaitUntilConnected(timeoutMs);
   InitAfterConnect(result);
   return result;
 }
@@ -70,7 +70,7 @@ GPUProcessHost::OnChannelConnected(int32_t peer_pid)
 {
   MOZ_ASSERT(!NS_IsMainThread());
 
-  GeckoChildProcessHost::OnChannelConnected(peer_pid);
+  GoannaChildProcessHost::OnChannelConnected(peer_pid);
 
   // Post a task to the main thread. Take the lock because mTaskFactory is not
   // thread-safe.
@@ -87,7 +87,7 @@ GPUProcessHost::OnChannelError()
 {
   MOZ_ASSERT(!NS_IsMainThread());
 
-  GeckoChildProcessHost::OnChannelError();
+  GoannaChildProcessHost::OnChannelError();
 
   // Post a task to the main thread. Take the lock because mTaskFactory is not
   // thread-safe.
@@ -217,10 +217,10 @@ GPUProcessHost::GetProcessToken() const
 }
 
 static void
-DelayedDeleteSubprocess(GeckoChildProcessHost* aSubprocess)
+DelayedDeleteSubprocess(GoannaChildProcessHost* aSubprocess)
 {
   XRE_GetIOMessageLoop()->
-    PostTask(mozilla::MakeAndAddRef<DeleteTask<GeckoChildProcessHost>>(aSubprocess));
+    PostTask(mozilla::MakeAndAddRef<DeleteTask<GoannaChildProcessHost>>(aSubprocess));
 }
 
 void

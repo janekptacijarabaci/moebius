@@ -25,7 +25,7 @@ function run_test() {
  * Called after the call to setupUpdaterTest finishes.
  */
 function setupUpdaterTestFinished() {
-  stageUpdate(true);
+  stageUpdate();
 }
 
 /**
@@ -34,7 +34,7 @@ function setupUpdaterTestFinished() {
 function stageUpdateFinished() {
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getStageDirFile, true);
-  checkUpdateLogContents(LOG_COMPLETE_SUCCESS, true);
+  checkUpdateLogContents(LOG_COMPLETE_SUCCESS_STAGE, true);
   // Switch the application to the staged application that was updated.
   runUpdate(STATE_SUCCEEDED, true, 0, true);
 }
@@ -101,7 +101,8 @@ function checkDistributionDir() {
 function setupSymLinks() {
   // Don't test symlinks on Mac OS X in this test since it tends to timeout.
   // It is tested on Mac OS X in marAppInUseStageSuccessComplete_unix.js
-  if (IS_UNIX && !IS_MACOSX) {
+  // The tests don't support symlinks on gonk.
+  if (IS_UNIX && !IS_MACOSX && !IS_TOOLKIT_GONK) {
     removeSymlink();
     createSymlink();
     do_register_cleanup(removeSymlink);
@@ -124,9 +125,8 @@ function setupSymLinks() {
  * Checks the state of the symlinks for the test.
  */
 function checkSymLinks() {
-  // Don't test symlinks on Mac OS X in this test since it tends to timeout.
-  // It is tested on Mac OS X in marAppInUseStageSuccessComplete_unix.js
-  if (IS_UNIX && !IS_MACOSX) {
+  // The tests don't support symlinks on gonk.
+  if (IS_UNIX && !IS_MACOSX && !IS_TOOLKIT_GONK) {
     checkSymlink();
   }
 }

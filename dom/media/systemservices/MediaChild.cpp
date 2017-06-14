@@ -20,19 +20,18 @@ namespace mozilla {
 namespace media {
 
 already_AddRefed<Pledge<nsCString>>
-GetOriginKey(const nsCString& aOrigin, bool aPrivateBrowsing, bool aPersist)
+GetPrincipalKey(const ipc::PrincipalInfo& aPrincipalInfo, bool aPersist)
 {
   RefPtr<MediaManager> mgr = MediaManager::GetInstance();
   MOZ_ASSERT(mgr);
 
   RefPtr<Pledge<nsCString>> p = new Pledge<nsCString>();
-  uint32_t id = mgr->mGetOriginKeyPledges.Append(*p);
+  uint32_t id = mgr->mGetPrincipalKeyPledges.Append(*p);
 
-  if (XRE_GetProcessType() == GeckoProcessType_Default) {
-    mgr->GetNonE10sParent()->RecvGetOriginKey(id, aOrigin, aPrivateBrowsing,
-                                              aPersist);
+  if (XRE_GetProcessType() == GoannaProcessType_Default) {
+    mgr->GetNonE10sParent()->RecvGetPrincipalKey(id, aPrincipalInfo, aPersist);
   } else {
-    Child::Get()->SendGetOriginKey(id, aOrigin, aPrivateBrowsing, aPersist);
+    Child::Get()->SendGetPrincipalKey(id, aPrincipalInfo, aPersist);
   }
   return p.forget();
 }
@@ -43,7 +42,7 @@ SanitizeOriginKeys(const uint64_t& aSinceWhen, bool aOnlyPrivateBrowsing)
   LOG(("SanitizeOriginKeys since %llu %s", aSinceWhen,
        (aOnlyPrivateBrowsing? "in Private Browsing." : ".")));
 
-  if (XRE_GetProcessType() == GeckoProcessType_Default) {
+  if (XRE_GetProcessType() == GoannaProcessType_Default) {
     // Avoid opening MediaManager in this case, since this is called by
     // sanitize.js when cookies are cleared, which can happen on startup.
     RefPtr<Parent<NonE10s>> tmpParent = new Parent<NonE10s>();
@@ -57,7 +56,7 @@ static Child* sChild;
 
 Child* Child::Get()
 {
-  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Content);
+  MOZ_ASSERT(XRE_GetProcessType() == GoannaProcessType_Content);
   MOZ_ASSERT(NS_IsMainThread());
   if (!sChild) {
     sChild = static_cast<Child*>(dom::ContentChild::GetSingleton()->SendPMediaConstructor());
@@ -84,18 +83,20 @@ void Child::ActorDestroy(ActorDestroyReason aWhy)
   mActorDestroyed = true;
 }
 
-bool
-Child::RecvGetOriginKeyResponse(const uint32_t& aRequestId, const nsCString& aKey)
+mozilla::ipc::IPCResult
+Child::RecvGetPrincipalKeyResponse(const uint32_t& aRequestId,
+                                   const nsCString& aKey)
 {
   RefPtr<MediaManager> mgr = MediaManager::GetInstance();
   if (!mgr) {
-    return false;
+    return IPC_FAIL_NO_REASON(this);
   }
-  RefPtr<Pledge<nsCString>> pledge = mgr->mGetOriginKeyPledges.Remove(aRequestId);
+  RefPtr<Pledge<nsCString>> pledge =
+    mgr->mGetPrincipalKeyPledges.Remove(aRequestId);
   if (pledge) {
     pledge->Resolve(aKey);
   }
-  return true;
+  return IPC_OK();
 }
 
 PMediaChild*

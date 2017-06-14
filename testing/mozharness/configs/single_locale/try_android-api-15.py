@@ -11,7 +11,7 @@ config = {
     "buildbot_json_path": "buildprops.json",
     "force_clobber": True,
     "clobberer_url": "https://api.pub.build.mozilla.org/clobberer/lastclobber",
-    "locales_file": "%s/mobile/android/locales/all-locales" % MOZILLA_DIR,
+    "locales_file": "%s/mobile/locales/l10n-changesets.json" % MOZILLA_DIR,
     "locales_dir": "mobile/android/locales",
     "ignore_locales": ["en-US"],
     "nightly_build": False,
@@ -24,7 +24,7 @@ config = {
     "exes": {
         'tooltool.py': '/builds/tooltool.py',
     },
-    "update_gecko_source_to_enUS": False,
+    "update_goanna_source_to_enUS": False,
     "repos": [{
         "vcs": "hg",
         "repo": "https://hg.mozilla.org/build/tools",

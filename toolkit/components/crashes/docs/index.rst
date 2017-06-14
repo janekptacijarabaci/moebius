@@ -5,7 +5,7 @@ Crash Manager
 =============
 
 The **Crash Manager** is a service and interface for managing crash
-data within the Gecko application.
+data within the Goanna application.
 
 From JavaScript, the service can be accessed via::
 
@@ -14,6 +14,12 @@ From JavaScript, the service can be accessed via::
 
 That will give you an instance of ``CrashManager`` from ``CrashManager.jsm``.
 From there, you can access and manipulate crash data.
+
+The crash manager stores statistical information about crashes as well as
+detailed information for both browser and content crashes. The crash manager
+automatically detects new browser crashes at startup by scanning for
+:ref:`crash-events`. Content process crash information on the other hand is
+provided externally.
 
 Other Documents
 ===============

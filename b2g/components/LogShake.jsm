@@ -152,8 +152,8 @@ var LogShake = {
     // Reset excitement to clear residual motion
     this.excitement = 0;
 
-    SystemAppProxy.addEventListener(CAPTURE_LOGS_CONTENT_EVENT, this, false);
-    SystemAppProxy.addEventListener(SCREEN_CHANGE_EVENT, this, false);
+    SystemAppProxy.addEventListener(CAPTURE_LOGS_CONTENT_EVENT, this);
+    SystemAppProxy.addEventListener(SCREEN_CHANGE_EVENT, this);
 
     Services.obs.addObserver(this, "xpcom-shutdown", false);
   },
@@ -213,13 +213,13 @@ var LogShake = {
     if (!this.deviceMotionEnabled &&
         this.listenToDeviceMotion &&
         this.screenEnabled) {
-      SystemAppProxy.addEventListener(DEVICE_MOTION_EVENT, this, false);
+      SystemAppProxy.addEventListener(DEVICE_MOTION_EVENT, this);
       this.deviceMotionEnabled = true;
     }
   },
 
   stopDeviceMotionListener: function() {
-    SystemAppProxy.removeEventListener(DEVICE_MOTION_EVENT, this, false);
+    SystemAppProxy.removeEventListener(DEVICE_MOTION_EVENT, this);
     this.deviceMotionEnabled = false;
   },
 
@@ -300,7 +300,7 @@ var LogShake = {
       Cu.reportError("Unable to get device properties: " + ex);
     }
 
-    // Let Gecko perfom the dump to a file, and just collect it
+    // Let Goanna perfom the dump to a file, and just collect it
     let readAboutMemoryPromise = new Promise(resolve => {
       // Wrap the readAboutMemory promise to make it infallible
       LogCapture.readAboutMemory().then(aboutMemory => {
@@ -389,7 +389,7 @@ var LogShake = {
    */
   uninit: function() {
     this.stopDeviceMotionListener();
-    SystemAppProxy.removeEventListener(SCREEN_CHANGE_EVENT, this, false);
+    SystemAppProxy.removeEventListener(SCREEN_CHANGE_EVENT, this);
     Services.obs.removeObserver(this, "xpcom-shutdown");
   }
 };

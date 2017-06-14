@@ -10,7 +10,7 @@ const PHONE_REGEX = /^\+?[0-9\s,-.\(\)*#pw]{1,30}$/; // Are we a phone #?
 
 
 /**
- * ActionBarHandler Object and methods. Interface between Gecko Text Selection code
+ * ActionBarHandler Object and methods. Interface between Goanna Text Selection code
  * (AccessibleCaret, etc) and the Mobile ActionBar UI.
  */
 var ActionBarHandler = {
@@ -129,7 +129,7 @@ var ActionBarHandler = {
   },
 
   /**
-   * Called when Gecko AccessibleCaret becomes visible.
+   * Called when Goanna AccessibleCaret becomes visible.
    */
   _init: function(boundingClientRect) {
     let [element, win] = this._getSelectionTargets();
@@ -137,13 +137,13 @@ var ActionBarHandler = {
       return this.START_TOUCH_ERROR.NO_CONTENT_WINDOW;
     }
 
-    // Hold the ActionBar ID provided by Gecko.
+    // Hold the ActionBar ID provided by Goanna.
     this._selectionID = this._nextSelectionID++;
     [this._targetElement, this._contentWindow] = [element, win];
     this._boundingClientRect = boundingClientRect;
 
     // Open the ActionBar, send it's actions list.
-    Messaging.sendRequest({
+    WindowEventDispatcher.sendRequest({
       type: "TextSelection:ActionbarInit",
       selectionID: this._selectionID,
     });
@@ -156,7 +156,7 @@ var ActionBarHandler = {
    * Called when content is scrolled and handles are hidden.
    */
   _updateVisibility: function() {
-    Messaging.sendRequest({
+    WindowEventDispatcher.sendRequest({
       type: "TextSelection:Visibility",
       selectionID: this._selectionID,
     });
@@ -196,7 +196,7 @@ var ActionBarHandler = {
   },
 
   /**
-   * Called when Gecko AccessibleCaret becomes hidden,
+   * Called when Goanna AccessibleCaret becomes hidden,
    * ActionBar is closed by user "close" request, or as a result of object
    * methods such as SELECT_ALL, PASTE, etc.
    */
@@ -207,7 +207,7 @@ var ActionBarHandler = {
     }
 
     // Close the ActionBar.
-    Messaging.sendRequest({
+    WindowEventDispatcher.sendRequest({
       type: "TextSelection:ActionbarUninit",
     });
 
@@ -218,7 +218,7 @@ var ActionBarHandler = {
     this._boundingClientRect = null;
 
     // Clear selection required if triggered by self, or TextSelection icon
-    // actions. If called by Gecko CaretStateChangedEvent,
+    // actions. If called by Goanna CaretStateChangedEvent,
     // visibility state is already correct.
     if (clearSelection) {
       this._clearSelection();
@@ -233,9 +233,9 @@ var ActionBarHandler = {
   _clearSelection: function(element = this._targetElement, win = this._contentWindow) {
     // Commit edit compositions, and clear focus from editables.
     if (element) {
-      let imeSupport = this._getEditor(element, win).QueryInterface(Ci.nsIEditorIMESupport);
-      if (imeSupport.composing) {
-        imeSupport.forceCompositionEnd();
+      let editor = this._getEditor(element, win);
+      if (editor.composing) {
+        editor.forceCompositionEnd();
       }
       element.blur();
     }
@@ -266,7 +266,7 @@ var ActionBarHandler = {
       });
 
     if (sendAlways || !actionsMatch) {
-      Messaging.sendRequest({
+      WindowEventDispatcher.sendRequest({
         type: "TextSelection:ActionbarStatus",
         selectionID: this._selectionID,
         actions: actions,
@@ -346,9 +346,8 @@ var ActionBarHandler = {
         if (element) {
           // If we have an active composition string, commit it, and 
           // ensure proper element focus.
-          let imeSupport = ActionBarHandler._getEditor(element, win).
-            QueryInterface(Ci.nsIEditorIMESupport);
-          if (imeSupport.composing) {
+          let editor = ActionBarHandler._getEditor(element, win)
+          if (editor.composing) {
             element.blur();
             element.focus();
           }
@@ -591,7 +590,7 @@ var ActionBarHandler = {
       },
 
       action: function(element, win) {
-        Messaging.sendRequest({
+        WindowEventDispatcher.sendRequest({
           type: "Share:Text",
           text: ActionBarHandler._getSelectedText(),
         });

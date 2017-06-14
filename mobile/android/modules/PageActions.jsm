@@ -17,16 +17,16 @@ this.EXPORTED_SYMBOLS = ["PageActions"];
 
 // Copied from browser.js
 // TODO: We should move this method to a common importable location
-function resolveGeckoURI(aURI) {
+function resolveGoannaURI(aURI) {
   if (!aURI)
     throw "Can't resolve an empty uri";
 
   if (aURI.startsWith("chrome://")) {
     let registry = Cc['@mozilla.org/chrome/chrome-registry;1'].getService(Ci["nsIChromeRegistry"]);
-    return registry.convertChromeURL(Services.io.newURI(aURI, null, null)).spec;
+    return registry.convertChromeURL(Services.io.newURI(aURI)).spec;
   } else if (aURI.startsWith("resource://")) {
     let handler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
-    return handler.resolveURI(Services.io.newURI(aURI, null, null));
+    return handler.resolveURI(Services.io.newURI(aURI));
   }
   return aURI;
 }
@@ -83,7 +83,7 @@ var PageActions = {
       type: "PageActions:Add",
       id: id,
       title: aOptions.title,
-      icon: resolveGeckoURI(aOptions.icon),
+      icon: resolveGoannaURI(aOptions.icon),
       important: "important" in aOptions ? aOptions.important : false
     });
 

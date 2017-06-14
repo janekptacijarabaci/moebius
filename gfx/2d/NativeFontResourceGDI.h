@@ -12,6 +12,7 @@
 #include "2D.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Vector.h"
+#include "u16string.h"
 
 namespace mozilla {
 namespace gfx {
@@ -40,12 +41,14 @@ public:
 
 private:
   NativeFontResourceGDI(HANDLE aFontResourceHandle,
+                        Vector<mozilla::u16string>&& aFontNames,
                         bool aNeedsCairo)
-    : mFontResourceHandle(aFontResourceHandle)
+    : mFontResourceHandle(aFontResourceHandle), mFontNames(Move(aFontNames))
     , mNeedsCairo(aNeedsCairo)
   {}
 
   HANDLE mFontResourceHandle;
+  Vector<mozilla::u16string> mFontNames;
   bool mNeedsCairo;
 };
 

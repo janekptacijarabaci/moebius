@@ -184,6 +184,8 @@ NS_IMETHODIMP
 nsPrintDialogServiceX::ShowPageSetup(nsPIDOMWindowOuter *aParent,
                                      nsIPrintSettings *aNSSettings)
 {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
+
   NS_PRECONDITION(aParent, "aParent must not be null");
   NS_PRECONDITION(aNSSettings, "aSettings must not be null");
   NS_ENSURE_TRUE(aNSSettings, NS_ERROR_FAILURE);
@@ -199,6 +201,8 @@ nsPrintDialogServiceX::ShowPageSetup(nsPIDOMWindowOuter *aParent,
   nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
 
   return button == NSFileHandlingPanelOKButton ? NS_OK : NS_ERROR_ABORT;
+
+  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
 }
 
 // Accessory view
@@ -429,9 +433,9 @@ static const char sHeaderFooterTags[][4] =  {"", "&T", "&U", "&D", "&P", "&PT"};
   mPrintBGColorsCheckbox = [self checkboxWithLabel:"printBGColors"
                                           andFrame:NSMakeRect(156, 188, 0, 0)];
 
-  bool geckoBool;
-  mSettings->GetPrintBGColors(&geckoBool);
-  [mPrintBGColorsCheckbox setState:(geckoBool ? NSOnState : NSOffState)];
+  bool goannaBool;
+  mSettings->GetPrintBGColors(&goannaBool);
+  [mPrintBGColorsCheckbox setState:(goannaBool ? NSOnState : NSOffState)];
 
   [self addSubview:mPrintBGColorsCheckbox];
 
@@ -439,8 +443,8 @@ static const char sHeaderFooterTags[][4] =  {"", "&T", "&U", "&D", "&P", "&PT"};
   mPrintBGImagesCheckbox = [self checkboxWithLabel:"printBGImages"
                                           andFrame:NSMakeRect(156, 166, 0, 0)];
 
-  mSettings->GetPrintBGImages(&geckoBool);
-  [mPrintBGImagesCheckbox setState:(geckoBool ? NSOnState : NSOffState)];
+  mSettings->GetPrintBGImages(&goannaBool);
+  [mPrintBGImagesCheckbox setState:(goannaBool ? NSOnState : NSOffState)];
 
   [self addSubview:mPrintBGImagesCheckbox];
 }

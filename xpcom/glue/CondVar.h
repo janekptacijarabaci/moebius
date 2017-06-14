@@ -13,7 +13,7 @@
 #include "mozilla/Mutex.h"
 
 #ifdef MOZILLA_INTERNAL_API
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 #endif //MOZILLA_INTERNAL_API
 
 namespace mozilla {
@@ -46,7 +46,7 @@ public:
     // |aLock| must necessarily already be known to the deadlock detector
     mCvar = PR_NewCondVar(mLock->mLock);
     if (!mCvar) {
-      NS_RUNTIMEABORT("Can't allocate mozilla::CondVar");
+      MOZ_CRASH("Can't allocate mozilla::CondVar");
     }
   }
 
@@ -73,7 +73,7 @@ public:
   {
 
 #ifdef MOZILLA_INTERNAL_API
-    GeckoProfilerSleepRAII profiler_sleep;
+    GoannaProfilerSleepRAII profiler_sleep;
 #endif //MOZILLA_INTERNAL_API
     // NSPR checks for lock ownership
     return PR_WaitCondVar(mCvar, aInterval) == PR_SUCCESS ? NS_OK :

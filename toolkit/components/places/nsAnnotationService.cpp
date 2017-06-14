@@ -18,7 +18,7 @@
 #include "nsVariant.h"
 #include "mozilla/storage.h"
 
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 #include "nsNetCID.h"
 
@@ -1484,7 +1484,7 @@ nsAnnotationService::RemoveItemAnnotations(int64_t aItemId,
 
 
 /**
- * @note If we use annotations for some standard items like GeckoFlags, it
+ * @note If we use annotations for some standard items like GoannaFlags, it
  *       might be a good idea to blacklist these standard annotations from this
  *       copy function.
  */
@@ -1670,6 +1670,27 @@ nsAnnotationService::RemoveObserver(nsIAnnotationObserver* aObserver)
 
   if (!mObservers.RemoveObject(aObserver))
     return NS_ERROR_INVALID_ARG;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsAnnotationService::GetObservers(uint32_t* _count,
+                                  nsIAnnotationObserver*** _observers)
+{
+  NS_ENSURE_ARG_POINTER(_count);
+  NS_ENSURE_ARG_POINTER(_observers);
+
+  *_count = 0;
+  *_observers = nullptr;
+
+  nsCOMArray<nsIAnnotationObserver> observers(mObservers);
+
+  if (observers.Count() == 0)
+    return NS_OK;
+
+  *_count = observers.Count();
+  observers.Forget(_observers);
+
   return NS_OK;
 }
 

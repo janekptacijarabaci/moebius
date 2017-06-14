@@ -176,7 +176,7 @@ ScriptSettingsStackEntry::~ScriptSettingsStackEntry()
 // |SpecialPowers.wrap(crossOriginWindow).eval(open())|
 //
 // trigger this case. Although both the entry global and the current global
-// have normal principals, the use of Gecko-specific System-Principaled JS
+// have normal principals, the use of Goanna-specific System-Principaled JS
 // puts the code from two different origins on the callstack at once, which
 // doesn't happen normally on the web.
 static nsIGlobalObject*
@@ -545,7 +545,7 @@ WarningOnlyErrorReporter(JSContext* aCx, JSErrorReport* aRep)
     // DOM Window.
     win = xpc::AddonWindowOrNull(JS::CurrentGlobalOrNull(aCx));
   }
-  xpcReport->Init(aRep, nullptr, nsContentUtils::IsCallerChrome(),
+  xpcReport->Init(aRep, nullptr, nsContentUtils::IsSystemCaller(aCx),
                   win ? win->AsInner()->WindowID() : 0);
   xpcReport->LogToConsole();
 }
@@ -585,8 +585,10 @@ AutoJSAPI::ReportException()
         win = xpc::AddonWindowOrNull(errorGlobal);
       }
       nsPIDOMWindowInner* inner = win ? win->AsInner() : nullptr;
+      bool isChrome = nsContentUtils::IsSystemPrincipal(
+        nsContentUtils::ObjectPrincipal(errorGlobal));
       xpcReport->Init(jsReport.report(), jsReport.toStringResult().c_str(),
-                      nsContentUtils::IsCallerChrome(),
+                      isChrome,
                       inner ? inner->WindowID() : 0);
       if (inner && jsReport.report()->errorNumber != JSMSG_OUT_OF_MEMORY) {
         JS::RootingContext* rcx = JS::RootingContext::get(cx());

@@ -4,10 +4,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-window.performance.mark('gecko-shell-loadstart');
+window.performance.mark('goanna-shell-loadstart');
 
 Cu.import('resource://gre/modules/NotificationDB.jsm');
-Cu.import("resource://gre/modules/AppsUtils.jsm");
 Cu.import('resource://gre/modules/UserAgentOverrides.jsm');
 Cu.import('resource://gre/modules/Keyboard.jsm');
 Cu.import('resource://gre/modules/ErrorPage.jsm');
@@ -15,7 +14,6 @@ Cu.import('resource://gre/modules/AlertsHelper.jsm');
 Cu.import('resource://gre/modules/SystemUpdateService.jsm');
 
 if (isGonk) {
-  Cu.import('resource://gre/modules/NetworkStatsService.jsm');
   Cu.import('resource://gre/modules/ResourceStatsService.jsm');
 }
 
@@ -68,7 +66,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "SafeBrowsing",
 XPCOMUtils.defineLazyModuleGetter(this, "SafeMode",
                                   "resource://gre/modules/SafeMode.jsm");
 
-window.performance.measure('gecko-shell-jsm-loaded', 'gecko-shell-loadstart');
+window.performance.measure('goanna-shell-jsm-loaded', 'goanna-shell-loadstart');
 
 function debug(str) {
   dump(' -*- Shell.js: ' + str + '\n');
@@ -78,9 +76,9 @@ const once = event => {
   let target = shell.contentBrowser;
   return new Promise((resolve, reject) => {
     target.addEventListener(event, function gotEvent(evt) {
-      target.removeEventListener(event, gotEvent, false);
+      target.removeEventListener(event, gotEvent);
       resolve(evt);
-    }, false);
+    });
   });
 }
 
@@ -248,7 +246,7 @@ var shell = {
   },
 
   bootstrap: function() {
-    window.performance.mark('gecko-shell-bootstrap');
+    window.performance.mark('goanna-shell-bootstrap');
 
     // Before anything, check if we want to start in safe mode.
     SafeMode.check(window).then(() => {
@@ -289,7 +287,7 @@ var shell = {
   },
 
   start: function shell_start() {
-    window.performance.mark('gecko-shell-start');
+    window.performance.mark('goanna-shell-start');
     this._started = true;
 
     // This forces the initialization of the cookie service before we hit the
@@ -358,7 +356,6 @@ var shell = {
       document.createElementNS('http://www.w3.org/1999/xhtml', 'html:iframe');
     systemAppFrame.setAttribute('id', 'systemapp');
     systemAppFrame.setAttribute('mozbrowser', 'true');
-    systemAppFrame.setAttribute('mozapp', manifestURL);
     systemAppFrame.setAttribute('allowfullscreen', 'true');
     systemAppFrame.setAttribute('src', 'blank.html');
     let container = document.getElementById('container');
@@ -422,7 +419,7 @@ var shell = {
 
     this._isEventListenerReady = false;
 
-    window.performance.mark('gecko-shell-system-frame-set');
+    window.performance.mark('goanna-shell-system-frame-set');
 
     ppmm.addMessageListener("content-handler", this);
     ppmm.addMessageListener("dial-handler", this);
@@ -610,9 +607,7 @@ var shell = {
           Services.perms.addFromPrincipal(principal, 'offline-app',
                                           Ci.nsIPermissionManager.ALLOW_ACTION);
 
-          let documentURI = Services.io.newURI(contentWindow.document.documentURI,
-                                               null,
-                                               null);
+          let documentURI = Services.io.newURI(contentWindow.document.documentURI);
           let manifestURI = Services.io.newURI(manifest, null, documentURI);
           let updateService = Cc['@mozilla.org/offlinecacheupdate-service;1']
                               .getService(Ci.nsIOfflineCacheUpdateService);
@@ -692,7 +687,7 @@ var shell = {
   },
 
   notifyContentStart: function shell_notifyContentStart() {
-    window.performance.mark('gecko-shell-notify-content-start');
+    window.performance.mark('goanna-shell-notify-content-start');
     this.contentBrowser.removeEventListener('mozbrowserloadstart', this, true);
     this.contentBrowser.removeEventListener('mozbrowserlocationchange', this, true);
 
@@ -798,7 +793,7 @@ var CustomEventManager = {
     window.addEventListener("ContentStart", (function(evt) {
       let content = shell.contentBrowser.contentWindow;
       content.addEventListener("mozContentEvent", this, false, true);
-    }).bind(this), false);
+    }).bind(this));
   },
 
   handleEvent: function custevt_handleEvent(evt) {
@@ -822,16 +817,16 @@ var CustomEventManager = {
                                      'ask-children-to-execute-copypaste-command', detail.cmd);
         break;
       case 'add-permission':
-        Services.perms.add(Services.io.newURI(detail.uri, null, null),
+        Services.perms.add(Services.io.newURI(detail.uri),
                            detail.permissionType, permissionMap.get(detail.permission));
         break;
       case 'remove-permission':
-        Services.perms.remove(Services.io.newURI(detail.uri, null, null),
+        Services.perms.remove(Services.io.newURI(detail.uri),
                               detail.permissionType);
         break;
       case 'test-permission':
         let result = Services.perms.testExactPermission(
-          Services.io.newURI(detail.uri, null, null), detail.permissionType);
+          Services.io.newURI(detail.uri), detail.permissionType);
         // Not equal check here because we want to prevent default only if it's not set
         if (result !== permissionMapRev.get(detail.permission)) {
           evt.preventDefault();
@@ -1185,8 +1180,8 @@ if (isGonk) {
   })();
 
   try {
-    let gmpService = Cc["@mozilla.org/gecko-media-plugin-service;1"]
-                       .getService(Ci.mozIGeckoMediaPluginChromeService);
+    let gmpService = Cc["@mozilla.org/goanna-media-plugin-service;1"]
+                       .getService(Ci.mozIGoannaMediaPluginChromeService);
     gmpService.addPluginDirectory("/system/b2g/gmp-clearkey/0.1");
   } catch(e) {
     dump("Failed to add clearkey path! " + e + "\n");

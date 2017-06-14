@@ -94,7 +94,7 @@ function sourceify(v)
 function messageReceiver(evt)
 {
   // It's not clear what the security model is for data: URLs and whether they
-  // can access their parents; WebKit denies access, while Gecko currently
+  // can access their parents; WebKit denies access, while Goanna currently
   // allows it.  We work around this problem by using postMessage (surprise!)
   // to start the round of tests when each iframe loads.
   if (evt.data === "next-test")
@@ -230,7 +230,7 @@ function setupBlank()
 function setupBlank2()
 {
   var aboutBlank2Frame = document.createElementNS(xhtmlns, "iframe");
-  aboutBlank2Frame.addEventListener("load", nextTest, false);
+  aboutBlank2Frame.addEventListener("load", nextTest);
   aboutBlank2Frame.setAttribute("src", "about:blank");
 
   insert(aboutBlank2Frame);
@@ -302,7 +302,7 @@ function testData()
   dataWindow.postMessage("from-opener", "http://mochi.test:8888");
 }
 
-window.addEventListener("message", messageReceiver, false);
+window.addEventListener("message", messageReceiver);
 
 addLoadEvent(setupBlank);
 ]]></script>

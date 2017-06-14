@@ -63,7 +63,7 @@ var checkUpdates = Task.async(function* (aData, aReason = AddonManager.UPDATE_WH
 
   let id = uuidGenerator.generateUUID().number;
   provide(aData, "addon.id", id);
-  provide(aData, "addon.manifest.applications.gecko.id", id);
+  provide(aData, "addon.manifest.applications.goanna.id", id);
 
   let updatePath = `/updates/${id}.json`.replace(/[{}]/g, "");
   let updateUrl = `http://localhost:${gPort}${updatePath}`
@@ -74,7 +74,7 @@ var checkUpdates = Task.async(function* (aData, aReason = AddonManager.UPDATE_WH
   };
 
 
-  provide(aData, "addon.manifest.applications.gecko.update_url", updateUrl);
+  provide(aData, "addon.manifest.applications.goanna.update_url", updateUrl);
   let awaitInstall = promiseInstallWebExtension(aData.addon);
 
 
@@ -83,7 +83,7 @@ var checkUpdates = Task.async(function* (aData, aReason = AddonManager.UPDATE_WH
     update.version = version;
 
     provide(update, "addon.id", id);
-    provide(update, "addon.manifest.applications.gecko.id", id);
+    provide(update, "addon.manifest.applications.goanna.id", id);
     let addon = update.addon;
 
     delete update.addon;
@@ -137,12 +137,12 @@ add_task(function* checkUpdateMetadata() {
     addon: {
       manifest: {
         version: "1.0",
-        applications: { gecko: { strict_max_version: "45" } },
+        applications: { goanna: { strict_max_version: "45" } },
       }
     },
     updates: {
       "1.0": {
-        applications: { gecko: { strict_min_version: "40",
+        applications: { goanna: { strict_min_version: "40",
                                  strict_max_version: "48" } },
       }
     }
@@ -166,7 +166,7 @@ add_task(function* checkUpdateToWebExt() {
     updates: {
       "1.1": { },
       "1.2": { },
-      "1.3": { "applications": { "gecko": { "strict_min_version": "48" } } },
+      "1.3": { "applications": { "goanna": { "strict_min_version": "48" } } },
     }
   });
 
@@ -227,18 +227,15 @@ add_task(function* checkIllegalUpdateURL() {
 
   for (let url of URLS) {
     let { messages } = yield promiseConsoleOutput(() => {
-      return new Promise((resolve, reject) => {
-        let addonFile = createTempWebExtensionFile({
-          manifest: { applications: { gecko: { update_url: url } } },
-        });
+      let addonFile = createTempWebExtensionFile({
+        manifest: { applications: { goanna: { update_url: url } } },
+      });
 
-        AddonManager.getInstallForFile(addonFile, install => {
-          Services.obs.notifyObservers(addonFile, "flush-cache-entry", null);
+      return AddonManager.getInstallForFile(addonFile).then(install => {
+        Services.obs.notifyObservers(addonFile, "flush-cache-entry", null);
 
-          if (install && install.state == AddonManager.STATE_DOWNLOAD_FAILED)
-            resolve();
-          reject(new Error("Unexpected state: " + (install && install.state)))
-        });
+        if (!install || install.state != AddonManager.STATE_DOWNLOAD_FAILED)
+          throw new Error("Unexpected state: " + (install && install.state));
       });
     });
 

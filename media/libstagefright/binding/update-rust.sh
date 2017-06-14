@@ -45,7 +45,7 @@ patch -p4 < mp4parse-cargo.patch
 echo "Cleaning up..."
 rm -rf _upstream
 
-echo "Updating gecko Cargo.lock..."
+echo "Updating goanna Cargo.lock..."
 pushd ../../../toolkit/library/rust/
 cargo update --package mp4parse_capi
 popd

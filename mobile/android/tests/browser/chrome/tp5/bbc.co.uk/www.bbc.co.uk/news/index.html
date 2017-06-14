@@ -182,7 +182,7 @@
 <script type="text/javascript">
 /*<![CDATA[*/
 gloaddisableder.loaddisabled(["glow","1","glow.dom"],{onLoad:function(glow){glow.dom.get("html").addClass("blq-js")}});
-gloaddisableder.loaddisabled(["glow","1","glow.dom"],{onLoad:function(glow){glow.ready(function(){if (glow.env.gecko){var gv = glow.env.version.split(".");for (var i=gv.length;i<4;i++){gv[i]=0;}if((gv[0]==1 && gv[1]==9 && gv[2]==0)||(gv[0]==1 && gv[1]<9)||(gv[0]<1)){glow.dom.get("body").addClass("firefox-older-than-3-5");}}});}});
+gloaddisableder.loaddisabled(["glow","1","glow.dom"],{onLoad:function(glow){glow.ready(function(){if (glow.env.goanna){var gv = glow.env.version.split(".");for (var i=gv.length;i<4;i++){gv[i]=0;}if((gv[0]==1 && gv[1]==9 && gv[2]==0)||(gv[0]==1 && gv[1]<9)||(gv[0]<1)){glow.dom.get("body").addClass("firefox-older-than-3-5");}}});}});
 
 window.disableFacebookSDK=true;
 if (window.location.pathname.indexOf('+')>=0){window.disableFacebookSDK=true;}

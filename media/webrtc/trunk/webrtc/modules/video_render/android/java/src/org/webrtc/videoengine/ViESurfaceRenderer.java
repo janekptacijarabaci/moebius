@@ -21,12 +21,13 @@ import java.nio.ByteBuffer;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.SurfaceHolder.Callback;
 
-import org.mozilla.gecko.annotation.WebRTCJNITarget;
+import android.util.Log;
+
+import org.mozilla.goanna.annotation.WebRTCJNITarget;
 
 public class ViESurfaceRenderer implements Callback {
 

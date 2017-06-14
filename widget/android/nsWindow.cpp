@@ -73,6 +73,7 @@ using mozilla::Unused;
 
 #include "AndroidBridge.h"
 #include "AndroidBridgeUtilities.h"
+#include "AndroidUiThread.h"
 #include "android_npapi.h"
 #include "FennecJNINatives.h"
 #include "GeneratedJNINatives.h"
@@ -82,7 +83,7 @@ using mozilla::Unused;
 #include "imgIEncoder.h"
 
 #include "nsString.h"
-#include "GeckoProfiler.h" // For PROFILER_LABEL
+#include "GoannaProfiler.h" // For PROFILER_LABEL
 #include "nsIXULRuntime.h"
 #include "nsPrintfCString.h"
 
@@ -95,9 +96,9 @@ using namespace mozilla::widget;
 NS_IMPL_ISUPPORTS_INHERITED0(nsWindow, nsBaseWidget)
 
 #include "mozilla/layers/CompositorBridgeChild.h"
-#include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorSession.h"
 #include "mozilla/layers/LayerTransactionParent.h"
+#include "mozilla/layers/UiCompositorControllerChild.h"
 #include "mozilla/Services.h"
 #include "nsThreadUtils.h"
 
@@ -112,7 +113,7 @@ static bool sFailedToCreateGLContext = false;
 static const double SWIPE_MAX_PINCH_DELTA_INCHES = 0.4;
 static const double SWIPE_MIN_DISTANCE_INCHES = 0.6;
 
-// Sync with GeckoEditableView class
+// Sync with GoannaEditableView class
 static const int IME_MONITOR_CURSOR_ONE_SHOT = 1;
 static const int IME_MONITOR_CURSOR_START_MONITOR = 2;
 static const int IME_MONITOR_CURSOR_END_MONITOR = 3;
@@ -139,7 +140,7 @@ class nsWindow::WindowEvent : public nsAppShell::LambdaEvent<Lambda>
         MOZ_CATCH_JNI_EXCEPTION(env);
 
         // The call is stale if the nsWindow has been destroyed on the
-        // Gecko side, but the Java object is still attached to it through
+        // Goanna side, but the Java object is still attached to it through
         // a weak pointer. Stale calls should be discarded. Note that it's
         // an error if natives is nullptr here; we return false but the
         // native call will throw an error.
@@ -279,33 +280,34 @@ public:
 };
 
 
-class nsWindow::GeckoViewSupport final
-    : public GeckoView::Window::Natives<GeckoViewSupport>
-    , public GeckoEditable::Natives<GeckoViewSupport>
-    , public SupportsWeakPtr<GeckoViewSupport>
+class nsWindow::GoannaViewSupport final
+    : public GoannaView::Window::Natives<GoannaViewSupport>
+    , public GoannaEditable::Natives<GoannaViewSupport>
+    , public SupportsWeakPtr<GoannaViewSupport>
 {
     nsWindow& window;
 
 public:
-    typedef GeckoView::Window::Natives<GeckoViewSupport> Base;
-    typedef GeckoEditable::Natives<GeckoViewSupport> EditableBase;
+    typedef GoannaView::Window::Natives<GoannaViewSupport> Base;
+    typedef GoannaEditable::Natives<GoannaViewSupport> EditableBase;
+    typedef SupportsWeakPtr<GoannaViewSupport> SupportsWeakPtr;
 
-    MOZ_DECLARE_WEAKREFERENCE_TYPENAME(GeckoViewSupport);
+    MOZ_DECLARE_WEAKREFERENCE_TYPENAME(GoannaViewSupport);
 
     template<typename Functor>
     static void OnNativeCall(Functor&& aCall)
     {
         if (aCall.IsTarget(&Open) && NS_IsMainThread()) {
-            // Gecko state probably just switched to PROFILE_READY, and the
+            // Goanna state probably just switched to PROFILE_READY, and the
             // event loop is not running yet. Skip the event loop here so we
             // can get a head start on opening our window.
             return aCall();
         }
 
         const nsAppShell::Event::Type eventType =
-                aCall.IsTarget(&GeckoViewSupport::OnKeyEvent) ||
-                aCall.IsTarget(&GeckoViewSupport::OnImeReplaceText) ||
-                aCall.IsTarget(&GeckoViewSupport::OnImeUpdateComposition) ?
+                aCall.IsTarget(&GoannaViewSupport::OnKeyEvent) ||
+                aCall.IsTarget(&GoannaViewSupport::OnImeReplaceText) ||
+                aCall.IsTarget(&GoannaViewSupport::OnImeUpdateComposition) ?
                 nsAppShell::Event::Type::kUIActivity :
                 nsAppShell::Event::Type::kGeneralActivity;
 
@@ -313,11 +315,11 @@ public:
                 mozilla::Move(aCall), eventType));
     }
 
-    GeckoViewSupport(nsWindow* aWindow,
-                     const GeckoView::Window::LocalRef& aInstance,
-                     GeckoView::Param aView)
+    GoannaViewSupport(nsWindow* aWindow,
+                     const GoannaView::Window::LocalRef& aInstance,
+                     GoannaView::Param aView)
         : window(*aWindow)
-        , mEditable(GeckoEditable::New(aView))
+        , mEditable(GoannaEditable::New(aView))
         , mIMERanges(new TextRangeArray())
         , mIMEMaskEventsCount(1) // Mask IME events since there's no focus yet
         , mIMEUpdatingContext(false)
@@ -325,17 +327,18 @@ public:
         , mIMETextChangedDuringFlush(false)
         , mIMEMonitorCursor(false)
     {
-        Base::AttachNative(aInstance, this);
-        EditableBase::AttachNative(mEditable, this);
+        Base::AttachNative(aInstance, static_cast<SupportsWeakPtr*>(this));
+        EditableBase::AttachNative(
+                mEditable, static_cast<SupportsWeakPtr*>(this));
     }
 
-    ~GeckoViewSupport();
+    ~GoannaViewSupport();
 
     using Base::DisposeNative;
     using EditableBase::DisposeNative;
 
     /**
-     * GeckoView methods
+     * GoannaView methods
      */
 private:
     nsCOMPtr<nsPIDOMWindowOuter> mDOMWindow;
@@ -343,32 +346,34 @@ private:
 public:
     // Create and attach a window.
     static void Open(const jni::Class::LocalRef& aCls,
-                     GeckoView::Window::Param aWindow,
-                     GeckoView::Param aView, jni::Object::Param aCompositor,
+                     GoannaView::Window::Param aWindow,
+                     GoannaView::Param aView, jni::Object::Param aCompositor,
+                     jni::Object::Param aDispatcher,
                      jni::String::Param aChromeURI,
                      int32_t screenId);
 
     // Close and destroy the nsWindow.
     void Close();
 
-    // Reattach this nsWindow to a new GeckoView.
-    void Reattach(const GeckoView::Window::LocalRef& inst,
-                  GeckoView::Param aView, jni::Object::Param aCompositor);
+    // Reattach this nsWindow to a new GoannaView.
+    void Reattach(const GoannaView::Window::LocalRef& inst,
+                  GoannaView::Param aView, jni::Object::Param aCompositor,
+                  jni::Object::Param aDispatcher);
 
     void LoadUri(jni::String::Param aUri, int32_t aFlags);
 
     /**
-     * GeckoEditable methods
+     * GoannaEditable methods
      */
 private:
     /*
-        Rules for managing IME between Gecko and Java:
+        Rules for managing IME between Goanna and Java:
 
-        * Gecko controls the text content, and Java shadows the Gecko text
+        * Goanna controls the text content, and Java shadows the Goanna text
            through text updates
-        * Gecko and Java maintain separate selections, and synchronize when
+        * Goanna and Java maintain separate selections, and synchronize when
            needed through selection updates and set-selection events
-        * Java controls the composition, and Gecko shadows the Java
+        * Java controls the composition, and Goanna shadows the Java
            composition through update composition events
     */
 
@@ -394,8 +399,8 @@ private:
         bool IsEmpty() const { return mStart < 0; }
     };
 
-    // GeckoEditable instance used by this nsWindow;
-    java::GeckoEditable::GlobalRef mEditable;
+    // GoannaEditable instance used by this nsWindow;
+    java::GoannaEditable::GlobalRef mEditable;
     AutoTArray<mozilla::UniquePtr<mozilla::WidgetEvent>, 8> mIMEKeyEvents;
     AutoTArray<IMETextChange, 4> mIMETextChanges;
     InputContext mInputContext;
@@ -432,9 +437,9 @@ public:
     // RAII helper class that automatically sends an event reply through
     // OnImeSynchronize, as required by events like OnImeReplaceText.
     class AutoIMESynchronize {
-        GeckoViewSupport* const mGVS;
+        GoannaViewSupport* const mGVS;
     public:
-        AutoIMESynchronize(GeckoViewSupport* gvs) : mGVS(gvs) {}
+        AutoIMESynchronize(GoannaViewSupport* gvs) : mGVS(gvs) {}
         ~AutoIMESynchronize() { mGVS->OnImeSynchronize(); }
     };
 
@@ -445,7 +450,7 @@ public:
                     int32_t aRepeatCount, int32_t aFlags,
                     bool aIsSynthesizedImeKey, jni::Object::Param originalEvent);
 
-    // Synchronize Gecko thread with the InputConnection thread.
+    // Synchronize Goanna thread with the InputConnection thread.
     void OnImeSynchronize();
 
     // Replace a range of text with new text.
@@ -467,7 +472,7 @@ public:
 
 /**
  * NativePanZoomController handles its native calls on the UI thread, so make
- * it separate from GeckoViewSupport.
+ * it separate from GoannaViewSupport.
  */
 class nsWindow::NPZCSupport final
     : public NativePanZoomController::Natives<NPZCSupport>
@@ -477,6 +482,50 @@ class nsWindow::NPZCSupport final
     WindowPtr<NPZCSupport> mWindow;
     NativePanZoomController::GlobalRef mNPZC;
     int mPreviousButtons;
+
+    template<typename Lambda>
+    class InputEvent final : public nsAppShell::Event
+    {
+        NativePanZoomController::GlobalRef mNPZC;
+        Lambda mLambda;
+
+    public:
+        InputEvent(const NPZCSupport* aNPZCSupport, Lambda&& aLambda)
+            : mNPZC(aNPZCSupport->mNPZC)
+            , mLambda(mozilla::Move(aLambda))
+        {}
+
+        void Run() override
+        {
+            MOZ_ASSERT(NS_IsMainThread());
+
+            JNIEnv* const env = jni::GetGoannaThreadEnv();
+            NPZCSupport* npzcSupport = GetNative(
+                    NativePanZoomController::LocalRef(env, mNPZC));
+
+            if (!npzcSupport || !npzcSupport->mWindow) {
+                // We already shut down.
+                env->ExceptionClear();
+                return;
+            }
+
+            nsWindow* const window = npzcSupport->mWindow;
+            window->UserActivity();
+            return mLambda(window);
+        }
+
+        nsAppShell::Event::Type ActivityType() const override
+        {
+            return nsAppShell::Event::Type::kUIActivity;
+        }
+    };
+
+    template<typename Lambda>
+    void PostInputEvent(Lambda&& aLambda)
+    {
+        nsAppShell::PostEvent(MakeUnique<InputEvent<Lambda>>(
+                this, mozilla::Move(aLambda)));
+    }
 
 public:
     typedef NativePanZoomController::Natives<NPZCSupport> Base;
@@ -497,19 +546,19 @@ public:
     void OnDetach()
     {
         // There are several considerations when shutting down NPZC. 1) The
-        // Gecko thread may destroy NPZC at any time when nsWindow closes. 2)
-        // There may be pending events on the Gecko thread when NPZC is
+        // Goanna thread may destroy NPZC at any time when nsWindow closes. 2)
+        // There may be pending events on the Goanna thread when NPZC is
         // destroyed. 3) mWindow may not be available when the pending event
-        // runs. 4) The UI thread may destroy NPZC at any time when GeckoView
+        // runs. 4) The UI thread may destroy NPZC at any time when GoannaView
         // is destroyed. 5) The UI thread may destroy NPZC at the same time as
-        // Gecko thread trying to destroy NPZC. 6) There may be pending calls
+        // Goanna thread trying to destroy NPZC. 6) There may be pending calls
         // on the UI thread when NPZC is destroyed. 7) mWindow may have been
-        // cleared on the Gecko thread when the pending call happens on the UI
+        // cleared on the Goanna thread when the pending call happens on the UI
         // thread.
         //
         // 1) happens through OnDetach, which first notifies the UI
         // thread through Destroy; Destroy then calls DisposeNative, which
-        // finally disposes the native instance back on the Gecko thread. Using
+        // finally disposes the native instance back on the Goanna thread. Using
         // Destroy to indirectly call DisposeNative here also solves 5), by
         // making everything go through the UI thread, avoiding contention.
         //
@@ -524,7 +573,7 @@ public:
         // and only make a pending call if the destroyed flag is not set.
         //
         // 7) is solved by taking a lock whenever mWindow is modified on the
-        // Gecko thread or accessed on the UI thread. That way, we don't
+        // Goanna thread or accessed on the UI thread. That way, we don't
         // release mWindow until the UI thread is done using it, thus avoiding
         // the race condition.
 
@@ -604,22 +653,7 @@ public:
             return true;
         }
 
-        NativePanZoomController::GlobalRef npzc = mNPZC;
-        nsAppShell::PostEvent([npzc, input, guid, blockId, status] {
-            MOZ_ASSERT(NS_IsMainThread());
-
-            JNIEnv* const env = jni::GetGeckoThreadEnv();
-            NPZCSupport* npzcSupport = GetNative(
-                    NativePanZoomController::LocalRef(env, npzc));
-
-            if (!npzcSupport || !npzcSupport->mWindow) {
-                // We already shut down.
-                env->ExceptionClear();
-                return;
-            }
-
-            nsWindow* const window = npzcSupport->mWindow;
-            window->UserActivity();
+        PostInputEvent([input, guid, blockId, status] (nsWindow* window) {
             WidgetWheelEvent wheelEvent = input.ToWidgetWheelEvent(window);
             window->ProcessUntransformedAPZEvent(&wheelEvent, guid,
                                                  blockId, status);
@@ -733,22 +767,7 @@ public:
             return true;
         }
 
-        NativePanZoomController::GlobalRef npzc = mNPZC;
-        nsAppShell::PostEvent([npzc, input, guid, blockId, status] {
-            MOZ_ASSERT(NS_IsMainThread());
-
-            JNIEnv* const env = jni::GetGeckoThreadEnv();
-            NPZCSupport* npzcSupport = GetNative(
-                    NativePanZoomController::LocalRef(env, npzc));
-
-            if (!npzcSupport || !npzcSupport->mWindow) {
-                // We already shut down.
-                env->ExceptionClear();
-                return;
-            }
-
-            nsWindow* const window = npzcSupport->mWindow;
-            window->UserActivity();
+        PostInputEvent([input, guid, blockId, status] (nsWindow* window) {
             WidgetMouseEvent mouseEvent = input.ToWidgetMouseEvent(window);
             window->ProcessUntransformedAPZEvent(&mouseEvent, guid,
                                                  blockId, status);
@@ -870,23 +889,8 @@ public:
             return true;
         }
 
-        // Dispatch APZ input event on Gecko thread.
-        NativePanZoomController::GlobalRef npzc = mNPZC;
-        nsAppShell::PostEvent([npzc, input, guid, blockId, status] {
-            MOZ_ASSERT(NS_IsMainThread());
-
-            JNIEnv* const env = jni::GetGeckoThreadEnv();
-            NPZCSupport* npzcSupport = GetNative(
-                    NativePanZoomController::LocalRef(env, npzc));
-
-            if (!npzcSupport || !npzcSupport->mWindow) {
-                // We already shut down.
-                env->ExceptionClear();
-                return;
-            }
-
-            nsWindow* const window = npzcSupport->mWindow;
-            window->UserActivity();
+        // Dispatch APZ input event on Goanna thread.
+        PostInputEvent([input, guid, blockId, status] (nsWindow* window) {
             WidgetTouchEvent touchEvent = input.ToWidgetTouchEvent(window);
             window->ProcessUntransformedAPZEvent(&touchEvent, guid,
                                                  blockId, status);
@@ -934,9 +938,13 @@ public:
 template<> const char
 nsWindow::NativePtr<nsWindow::NPZCSupport>::sName[] = "NPZCSupport";
 
+NS_IMPL_ISUPPORTS(nsWindow::AndroidView,
+                  nsIAndroidEventDispatcher,
+                  nsIAndroidView)
+
 /**
  * Compositor has some unique requirements for its native calls, so make it
- * separate from GeckoViewSupport.
+ * separate from GoannaViewSupport.
  */
 class nsWindow::LayerViewSupport final
     : public LayerView::Compositor::Natives<LayerViewSupport>
@@ -945,7 +953,7 @@ class nsWindow::LayerViewSupport final
 
     WindowPtr<LayerViewSupport> mWindow;
     LayerView::Compositor::GlobalRef mCompositor;
-    GeckoLayerClient::GlobalRef mLayerClient;
+    GoannaLayerClient::GlobalRef mLayerClient;
     Atomic<bool, ReleaseAcquire> mCompositorPaused;
     jni::Object::GlobalRef mSurface;
 
@@ -1020,7 +1028,7 @@ public:
         mCompositor->Destroy();
     }
 
-    const GeckoLayerClient::Ref& GetLayerClient() const
+    const GoannaLayerClient::Ref& GetLayerClient() const
     {
         return mLayerClient;
     }
@@ -1063,30 +1071,20 @@ public:
             return; // Already shut down.
         }
 
-        const auto& layerClient = GeckoLayerClient::Ref::From(aClient);
-
-        // If resetting is true, Android destroyed our GeckoApp activity and we
-        // had to recreate it, but all the Gecko-side things were not
-        // destroyed.  We therefore need to link up the new java objects to
-        // Gecko, and that's what we do here.
-        const bool resetting = !!mLayerClient;
-        mLayerClient = layerClient;
+        mLayerClient = GoannaLayerClient::Ref::From(aClient);
 
         MOZ_ASSERT(aNPZC);
         auto npzc = NativePanZoomController::LocalRef(
-                jni::GetGeckoThreadEnv(),
+                jni::GetGoannaThreadEnv(),
                 NativePanZoomController::Ref::From(aNPZC));
         mWindow->mNPZCSupport.Attach(npzc, mWindow, npzc);
 
-        layerClient->OnGeckoReady();
+        mLayerClient->OnGoannaReady();
 
-        if (resetting) {
-            // Since we are re-linking the new java objects to Gecko, we need
-            // to get the viewport from the compositor (since the Java copy was
-            // thrown away) and we do that by setting the first-paint flag.
-            if (RefPtr<CompositorBridgeParent> bridge = mWindow->GetCompositorBridgeParent()) {
-                bridge->ForceIsFirstPaint();
-            }
+        // Set the first-paint flag so that we (re-)link any new Java objects
+        // to Goanna, co-ordinate viewports, etc.
+        if (RefPtr<CompositorBridgeChild> bridge = mWindow->GetCompositorBridgeChild()) {
+            bridge->SendForceIsFirstPaint();
         }
     }
 
@@ -1122,15 +1120,19 @@ public:
     {
         MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
 
-        RefPtr<CompositorBridgeParent> bridge;
-
+        int64_t id = 0;
         if (LockedWindowPtr window{mWindow}) {
-            bridge = window->GetCompositorBridgeParent();
+            id = window->GetRootLayerId();
         }
 
-        if (bridge) {
-            mCompositorPaused = true;
-            bridge->SchedulePauseOnCompositorThread();
+        if (id == 0) {
+            return;
+        }
+
+        RefPtr<UiCompositorControllerChild> child = UiCompositorControllerChild::Get();
+        if (child) {
+          mCompositorPaused = true;
+          child->SendPause(id);
         }
     }
 
@@ -1138,14 +1140,19 @@ public:
     {
         MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
 
-        RefPtr<CompositorBridgeParent> bridge;
-
+        int64_t id = 0;
         if (LockedWindowPtr window{mWindow}) {
-            bridge = window->GetCompositorBridgeParent();
+            id = window->GetRootLayerId();
         }
 
-        if (bridge && bridge->ScheduleResumeOnCompositorThread()) {
-            mCompositorPaused = false;
+        if (id == 0) {
+            return;
+        }
+
+        RefPtr<UiCompositorControllerChild> child = UiCompositorControllerChild::Get();
+        if (child) {
+          mCompositorPaused = false;
+          child->SendResume(id);
         }
     }
 
@@ -1155,17 +1162,25 @@ public:
     {
         MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
 
-        RefPtr<CompositorBridgeParent> bridge;
-
-        if (LockedWindowPtr window{mWindow}) {
-            bridge = window->GetCompositorBridgeParent();
-        }
-
         mSurface = aSurface;
 
-        if (!bridge || !bridge->ScheduleResumeOnCompositorThread(aWidth,
-                                                                 aHeight)) {
+        int64_t id = 0;
+        if (LockedWindowPtr window{mWindow}) {
+            id = window->GetRootLayerId();
+        }
+
+        if (id == 0) {
             return;
+        }
+
+        RefPtr<UiCompositorControllerChild> child = UiCompositorControllerChild::Get();
+
+        if (!child) {
+            // When starting, sometimes the UiCompositorControllerChild is still initializing
+            // so cache the resized surface dimensions until it has initialized.
+            UiCompositorControllerChild::CacheSurfaceResize(id, aWidth, aHeight);
+        } else {
+            child->SendResumeAndResize(id, aWidth, aHeight);
         }
 
         mCompositorPaused = false;
@@ -1183,7 +1198,7 @@ public:
             {
                 MOZ_ASSERT(NS_IsMainThread());
 
-                JNIEnv* const env = jni::GetGeckoThreadEnv();
+                JNIEnv* const env = jni::GetGoannaThreadEnv();
                 LayerViewSupport* const lvs = GetNative(
                         LayerView::Compositor::LocalRef(env, mCompositor));
                 MOZ_CATCH_JNI_EXCEPTION(env);
@@ -1198,16 +1213,34 @@ public:
 
     void SyncInvalidateAndScheduleComposite()
     {
-        RefPtr<CompositorBridgeParent> bridge;
+        RefPtr<UiCompositorControllerChild> child = UiCompositorControllerChild::Get();
 
+        if (!child) {
+            return;
+        }
+
+        int64_t id = 0;
         if (LockedWindowPtr window{mWindow}) {
-            bridge = window->GetCompositorBridgeParent();
+            id = window->GetRootLayerId();
         }
 
-        if (bridge) {
-            bridge->InvalidateOnCompositorThread();
-            bridge->ScheduleRenderOnCompositorThread();
+        if (id == 0) {
+            return;
         }
+
+        if (!AndroidBridge::IsJavaUiThread()) {
+            RefPtr<nsThread> uiThread = GetAndroidUiThread();
+            if (uiThread) {
+                uiThread->Dispatch(NewRunnableMethod<const int64_t&>(child,
+                                                                     &UiCompositorControllerChild::SendInvalidateAndRender,
+                                                                     id),
+                                   nsIThread::DISPATCH_NORMAL);
+            }
+            return;
+        }
+
+        MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
+        child->SendInvalidateAndRender(id);
     }
 };
 
@@ -1300,9 +1333,9 @@ ANativeWindow* nsWindow::PMPMSupport::sWindow;
 EGLSurface nsWindow::PMPMSupport::sSurface;
 
 
-nsWindow::GeckoViewSupport::~GeckoViewSupport()
+nsWindow::GoannaViewSupport::~GoannaViewSupport()
 {
-    // Disassociate our GeckoEditable instance with our native object.
+    // Disassociate our GoannaEditable instance with our native object.
     // OnDestroy will call disposeNative after any pending native calls have
     // been made.
     MOZ_ASSERT(mEditable);
@@ -1318,16 +1351,17 @@ nsWindow::GeckoViewSupport::~GeckoViewSupport()
 }
 
 /* static */ void
-nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
-                                 GeckoView::Window::Param aWindow,
-                                 GeckoView::Param aView,
+nsWindow::GoannaViewSupport::Open(const jni::Class::LocalRef& aCls,
+                                 GoannaView::Window::Param aWindow,
+                                 GoannaView::Param aView,
                                  jni::Object::Param aCompositor,
+                                 jni::Object::Param aDispatcher,
                                  jni::String::Param aChromeURI,
                                  int32_t aScreenId)
 {
     MOZ_ASSERT(NS_IsMainThread());
 
-    PROFILER_LABEL("nsWindow", "GeckoViewSupport::Open",
+    PROFILER_LABEL("nsWindow", "GoannaViewSupport::Open",
                    js::ProfileEntry::Category::OTHER);
 
     nsCOMPtr<nsIWindowWatcher> ww = do_GetService(NS_WINDOWWATCHER_CONTRACTID);
@@ -1343,9 +1377,13 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
         }
     }
 
+    RefPtr<AndroidView> androidView = new AndroidView();
+    androidView->mEventDispatcher->Attach(
+            java::EventDispatcher::Ref::From(aDispatcher), nullptr);
+
     nsCOMPtr<mozIDOMWindowProxy> domWindow;
     ww->OpenWindow(nullptr, url, nullptr, "chrome,dialog=0,resizable,scrollbars=yes",
-                   nullptr, getter_AddRefs(domWindow));
+                   androidView, getter_AddRefs(domWindow));
     MOZ_RELEASE_ASSERT(domWindow);
 
     nsCOMPtr<nsPIDOMWindowOuter> pdomWindow =
@@ -1356,16 +1394,21 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
     const auto window = static_cast<nsWindow*>(widget.get());
     window->SetScreenId(aScreenId);
 
-    // Attach a new GeckoView support object to the new window.
-    window->mGeckoViewSupport  = mozilla::MakeUnique<GeckoViewSupport>(
-            window, GeckoView::Window::LocalRef(aCls.Env(), aWindow), aView);
+    // Attach a new GoannaView support object to the new window.
+    window->mGoannaViewSupport  = mozilla::MakeUnique<GoannaViewSupport>(
+            window, GoannaView::Window::LocalRef(aCls.Env(), aWindow), aView);
 
-    window->mGeckoViewSupport->mDOMWindow = pdomWindow;
+    window->mGoannaViewSupport->mDOMWindow = pdomWindow;
 
     // Attach the Compositor to the new window.
     auto compositor = LayerView::Compositor::LocalRef(
             aCls.Env(), LayerView::Compositor::Ref::From(aCompositor));
     window->mLayerViewSupport.Attach(compositor, window, compositor);
+
+    // Attach again using the new window.
+    androidView->mEventDispatcher->Attach(
+            java::EventDispatcher::Ref::From(aDispatcher), pdomWindow);
+    window->mAndroidView = androidView;
 
     if (window->mWidgetListener) {
         nsCOMPtr<nsIXULWindow> xulWindow(
@@ -1379,8 +1422,12 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
 }
 
 void
-nsWindow::GeckoViewSupport::Close()
+nsWindow::GoannaViewSupport::Close()
 {
+    if (window.mAndroidView) {
+        window.mAndroidView->mEventDispatcher->Detach();
+    }
+
     if (!mDOMWindow) {
         return;
     }
@@ -1390,11 +1437,12 @@ nsWindow::GeckoViewSupport::Close()
 }
 
 void
-nsWindow::GeckoViewSupport::Reattach(const GeckoView::Window::LocalRef& inst,
-                                     GeckoView::Param aView,
-                                     jni::Object::Param aCompositor)
+nsWindow::GoannaViewSupport::Reattach(const GoannaView::Window::LocalRef& inst,
+                                     GoannaView::Param aView,
+                                     jni::Object::Param aCompositor,
+                                     jni::Object::Param aDispatcher)
 {
-    // Associate our previous GeckoEditable with the new GeckoView.
+    // Associate our previous GoannaEditable with the new GoannaView.
     mEditable->OnViewChange(aView);
 
     // mNPZCSupport might have already been detached through the Java side calling
@@ -1410,10 +1458,14 @@ nsWindow::GeckoViewSupport::Reattach(const GeckoView::Window::LocalRef& inst,
             inst.Env(), LayerView::Compositor::Ref::From(aCompositor));
     window.mLayerViewSupport.Attach(compositor, &window, compositor);
     compositor->Reattach();
+
+    MOZ_ASSERT(window.mAndroidView);
+    window.mAndroidView->mEventDispatcher->Attach(
+            java::EventDispatcher::Ref::From(aDispatcher), mDOMWindow);
 }
 
 void
-nsWindow::GeckoViewSupport::LoadUri(jni::String::Param aUri, int32_t aFlags)
+nsWindow::GoannaViewSupport::LoadUri(jni::String::Param aUri, int32_t aFlags)
 {
     if (!mDOMWindow) {
         return;
@@ -1432,9 +1484,9 @@ nsWindow::GeckoViewSupport::LoadUri(jni::String::Param aUri, int32_t aFlags)
         return;
     }
 
-    const int flags = aFlags == GeckoView::LOAD_NEW_TAB ?
+    const int flags = aFlags == GoannaView::LOAD_NEW_TAB ?
                         nsIBrowserDOMWindow::OPEN_NEWTAB :
-                      aFlags == GeckoView::LOAD_SWITCH_TAB ?
+                      aFlags == GoannaView::LOAD_SWITCH_TAB ?
                         nsIBrowserDOMWindow::OPEN_SWITCHTAB :
                         nsIBrowserDOMWindow::OPEN_CURRENTWINDOW;
     nsCOMPtr<mozIDOMWindowProxy> newWin;
@@ -1449,8 +1501,8 @@ nsWindow::GeckoViewSupport::LoadUri(jni::String::Param aUri, int32_t aFlags)
 void
 nsWindow::InitNatives()
 {
-    nsWindow::GeckoViewSupport::Base::Init();
-    nsWindow::GeckoViewSupport::EditableBase::Init();
+    nsWindow::GoannaViewSupport::Base::Init();
+    nsWindow::GoannaViewSupport::EditableBase::Init();
     nsWindow::LayerViewSupport::Init();
     nsWindow::NPZCSupport::Init();
     if (jni::IsFennec()) {
@@ -1566,9 +1618,9 @@ nsWindow::Destroy()
 {
     nsBaseWidget::mOnDestroyCalled = true;
 
-    if (mGeckoViewSupport) {
-        // Disassociate our native object with GeckoView.
-        mGeckoViewSupport = nullptr;
+    if (mGoannaViewSupport) {
+        // Disassociate our native object with GoannaView.
+        mGoannaViewSupport = nullptr;
     }
 
     // Stuff below may release the last ref to this
@@ -1594,7 +1646,7 @@ nsWindow::Destroy()
 #endif
 }
 
-NS_IMETHODIMP
+nsresult
 nsWindow::ConfigureChildren(const nsTArray<nsIWidget::Configuration>& config)
 {
     for (uint32_t i = 0; i < config.Length(); ++i) {
@@ -1619,11 +1671,17 @@ nsWindow::RedrawAll()
     }
 }
 
-NS_IMETHODIMP
+int64_t
+nsWindow::GetRootLayerId() const
+{
+    return mCompositorSession ? mCompositorSession->RootLayerTreeId() : 0;
+}
+
+void
 nsWindow::SetParent(nsIWidget *aNewParent)
 {
     if ((nsIWidget*)mParent == aNewParent)
-        return NS_OK;
+        return;
 
     // If we had a parent before, remove ourselves from its list of
     // children.
@@ -1638,8 +1696,6 @@ nsWindow::SetParent(nsIWidget *aNewParent)
     // if we are now in the toplevel window's hierarchy, schedule a redraw
     if (FindTopLevel() == nsWindow::TopWindow())
         RedrawAll();
-
-    return NS_OK;
 }
 
 nsIWidget*
@@ -1666,18 +1722,18 @@ nsWindow::GetDefaultScaleInternal()
     return screenAndroid->GetDensity();
 }
 
-NS_IMETHODIMP
+void
 nsWindow::Show(bool aState)
 {
     ALOG("nsWindow[%p]::Show %d", (void*)this, aState);
 
     if (mWindowType == eWindowType_invisible) {
         ALOG("trying to show invisible window! ignoring..");
-        return NS_ERROR_FAILURE;
+        return;
     }
 
     if (aState == mIsVisible)
-        return NS_OK;
+        return;
 
     mIsVisible = aState;
 
@@ -1713,8 +1769,6 @@ nsWindow::Show(bool aState)
 #ifdef DEBUG_ANDROID_WIDGET
     DumpWindows();
 #endif
-
-    return NS_OK;
 }
 
 bool
@@ -1737,33 +1791,33 @@ nsWindow::ConstrainPosition(bool aAllowSlop,
     }
 }
 
-NS_IMETHODIMP
+void
 nsWindow::Move(double aX,
                double aY)
 {
     if (IsTopLevel())
-        return NS_OK;
+        return;
 
-    return Resize(aX,
-                  aY,
-                  mBounds.width,
-                  mBounds.height,
-                  true);
+    Resize(aX,
+           aY,
+           mBounds.width,
+           mBounds.height,
+           true);
 }
 
-NS_IMETHODIMP
+void
 nsWindow::Resize(double aWidth,
                  double aHeight,
                  bool aRepaint)
 {
-    return Resize(mBounds.x,
-                  mBounds.y,
-                  aWidth,
-                  aHeight,
-                  aRepaint);
+    Resize(mBounds.x,
+           mBounds.y,
+           aWidth,
+           aHeight,
+           aRepaint);
 }
 
-NS_IMETHODIMP
+void
 nsWindow::Resize(double aX,
                  double aY,
                  double aWidth,
@@ -1789,11 +1843,9 @@ nsWindow::Resize(double aX,
 
     nsIWidgetListener* listener = GetWidgetListener();
     if (mAwaitingFullScreen && listener) {
-      listener->FullscreenChanged(mIsFullScreen);
-      mAwaitingFullScreen = false;
+        listener->FullscreenChanged(mIsFullScreen);
+        mAwaitingFullScreen = false;
     }
-
-    return NS_OK;
 }
 
 void
@@ -1807,7 +1859,7 @@ nsWindow::SetSizeMode(nsSizeMode aMode)
 {
     switch (aMode) {
         case nsSizeMode_Minimized:
-            GeckoAppShell::MoveTaskToBack();
+            GoannaAppShell::MoveTaskToBack();
             break;
         case nsSizeMode_Fullscreen:
             MakeFullScreen(true);
@@ -1817,11 +1869,10 @@ nsWindow::SetSizeMode(nsSizeMode aMode)
     }
 }
 
-NS_IMETHODIMP
+void
 nsWindow::Enable(bool aState)
 {
     ALOG("nsWindow[%p]::Enable %d ignored", (void*)this, aState);
-    return NS_OK;
 }
 
 bool
@@ -1830,10 +1881,9 @@ nsWindow::IsEnabled() const
     return true;
 }
 
-NS_IMETHODIMP
+void
 nsWindow::Invalidate(const LayoutDeviceIntRect& aRect)
 {
-    return NS_OK;
 }
 
 nsWindow*
@@ -1851,7 +1901,7 @@ nsWindow::FindTopLevel()
     return this;
 }
 
-NS_IMETHODIMP
+nsresult
 nsWindow::SetFocus(bool aRaise)
 {
     nsWindow *top = FindTopLevel();
@@ -1924,7 +1974,7 @@ nsWindow::WidgetToScreenOffset()
     return p;
 }
 
-NS_IMETHODIMP
+nsresult
 nsWindow::DispatchEvent(WidgetGUIEvent* aEvent,
                         nsEventStatus& aStatus)
 {
@@ -1948,7 +1998,7 @@ nsWindow::MakeFullScreen(bool aFullScreen, nsIScreen*)
 {
     mIsFullScreen = aFullScreen;
     mAwaitingFullScreen = true;
-    GeckoAppShell::SetFullScreen(aFullScreen);
+    GoannaAppShell::SetFullScreen(aFullScreen);
     return NS_OK;
 }
 
@@ -2312,10 +2362,7 @@ ConvertAndroidKeyCodeToKeyNameIndex(int keyCode, int action,
         case AKEYCODE_RO:                 // Japanese Ro key
             return KEY_NAME_INDEX_USE_STRING;
 
-        case AKEYCODE_ENDCALL:
         case AKEYCODE_NUM:                // XXX Not sure
-        case AKEYCODE_HEADSETHOOK:
-        case AKEYCODE_NOTIFICATION:       // XXX Not sure
         case AKEYCODE_PICTSYMBOLS:
 
         case AKEYCODE_BUTTON_A:
@@ -2334,10 +2381,7 @@ ConvertAndroidKeyCodeToKeyNameIndex(int keyCode, int action,
         case AKEYCODE_BUTTON_SELECT:
         case AKEYCODE_BUTTON_MODE:
 
-        case AKEYCODE_MUTE: // mutes the microphone
         case AKEYCODE_MEDIA_CLOSE:
-
-        case AKEYCODE_DVR:
 
         case AKEYCODE_BUTTON_1:
         case AKEYCODE_BUTTON_2:
@@ -2355,10 +2399,6 @@ ConvertAndroidKeyCodeToKeyNameIndex(int keyCode, int action,
         case AKEYCODE_BUTTON_14:
         case AKEYCODE_BUTTON_15:
         case AKEYCODE_BUTTON_16:
-
-        case AKEYCODE_MANNER_MODE:
-        case AKEYCODE_3D_MODE:
-        case AKEYCODE_CONTACTS:
             return KEY_NAME_INDEX_Unidentified;
 
         case AKEYCODE_UNKNOWN:
@@ -2493,7 +2533,7 @@ InitKeyEvent(WidgetKeyboardEvent& event,
 }
 
 void
-nsWindow::GeckoViewSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
+nsWindow::GoannaViewSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
         int32_t aScanCode, int32_t aMetaState, int64_t aTime,
         int32_t aUnicodeChar, int32_t aBaseUnicodeChar,
         int32_t aDomPrintableKeyValue, int32_t aRepeatCount, int32_t aFlags,
@@ -2594,7 +2634,7 @@ nsWindow::GetIMEComposition()
 void
 nsWindow::RemoveIMEComposition(RemoveIMECompositionFlag aFlag)
 {
-    // Remove composition on Gecko side
+    // Remove composition on Goanna side
     const RefPtr<mozilla::TextComposition> composition(GetIMEComposition());
     if (!composition) {
         return;
@@ -2617,7 +2657,7 @@ nsWindow::RemoveIMEComposition(RemoveIMECompositionFlag aFlag)
  * Our dummy key events have 0 as the keycode.
  */
 void
-nsWindow::GeckoViewSupport::SendIMEDummyKeyEvents()
+nsWindow::GoannaViewSupport::SendIMEDummyKeyEvents()
 {
     WidgetKeyboardEvent downEvent(true, eKeyDown, &window);
     window.InitEvent(downEvent, nullptr);
@@ -2631,7 +2671,7 @@ nsWindow::GeckoViewSupport::SendIMEDummyKeyEvents()
 }
 
 void
-nsWindow::GeckoViewSupport::AddIMETextChange(const IMETextChange& aChange)
+nsWindow::GoannaViewSupport::AddIMETextChange(const IMETextChange& aChange)
 {
     mIMETextChanges.AppendElement(aChange);
 
@@ -2697,7 +2737,7 @@ nsWindow::GeckoViewSupport::AddIMETextChange(const IMETextChange& aChange)
 }
 
 void
-nsWindow::GeckoViewSupport::PostFlushIMEChanges()
+nsWindow::GoannaViewSupport::PostFlushIMEChanges()
 {
     if (!mIMETextChanges.IsEmpty() || mIMESelectionChanged) {
         // Already posted
@@ -2715,7 +2755,7 @@ nsWindow::GeckoViewSupport::PostFlushIMEChanges()
 }
 
 void
-nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
+nsWindow::GoannaViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
 {
     // Only send change notifications if we are *not* masking events,
     // i.e. if we have a focused editor,
@@ -2759,7 +2799,7 @@ nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
             FlushIMEChanges(FLUSH_FLAG_RETRY);
         } else {
             // Don't retry if already retrying, to avoid infinite loops.
-            __android_log_print(ANDROID_LOG_WARN, "GeckoViewSupport",
+            __android_log_print(ANDROID_LOG_WARN, "GoannaViewSupport",
                     "Already retrying IME flush");
         }
         return true;
@@ -2810,7 +2850,7 @@ nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
         selEnd = int32_t(event.GetSelectionEnd());
     }
 
-    JNIEnv* const env = jni::GetGeckoThreadEnv();
+    JNIEnv* const env = jni::GetGoannaThreadEnv();
     auto flushOnException = [=] () -> bool {
         if (!env->ExceptionCheck()) {
             return false;
@@ -2818,7 +2858,7 @@ nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
         if (aFlags != FLUSH_FLAG_RECOVER) {
             // First time seeing an exception; try flushing text.
             env->ExceptionClear();
-            __android_log_print(ANDROID_LOG_WARN, "GeckoViewSupport",
+            __android_log_print(ANDROID_LOG_WARN, "GoannaViewSupport",
                     "Recovering from IME exception");
             FlushIMEText(FLUSH_FLAG_RECOVER);
         } else {
@@ -2847,7 +2887,7 @@ nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
 }
 
 void
-nsWindow::GeckoViewSupport::FlushIMEText(FlushChangesFlag aFlags)
+nsWindow::GoannaViewSupport::FlushIMEText(FlushChangesFlag aFlags)
 {
     // Notify Java of the newly focused content
     mIMETextChanges.Clear();
@@ -2884,7 +2924,7 @@ ConvertRectArrayToJavaRectFArray(JNIEnv* aJNIEnv, const nsTArray<LayoutDeviceInt
 }
 
 void
-nsWindow::GeckoViewSupport::UpdateCompositionRects()
+nsWindow::GoannaViewSupport::UpdateCompositionRects()
 {
     const auto composition(window.GetIMEComposition());
     if (NS_WARN_IF(!composition)) {
@@ -2897,7 +2937,7 @@ nsWindow::GeckoViewSupport::UpdateCompositionRects()
     window.DispatchEvent(&textRects);
 
     auto rects =
-        ConvertRectArrayToJavaRectFArray(jni::GetGeckoThreadEnv(),
+        ConvertRectArrayToJavaRectFArray(jni::GetGoannaThreadEnv(),
                                          textRects.mReply.mRectArray,
                                          window.WidgetToScreenOffset(),
                                          window.GetDefaultScale());
@@ -2906,7 +2946,7 @@ nsWindow::GeckoViewSupport::UpdateCompositionRects()
 }
 
 void
-nsWindow::GeckoViewSupport::AsyncNotifyIME(int32_t aNotification)
+nsWindow::GoannaViewSupport::AsyncNotifyIME(int32_t aNotification)
 {
     // Keep a strong reference to the window to keep 'this' alive.
     RefPtr<nsWindow> window(&this->window);
@@ -2921,7 +2961,7 @@ nsWindow::GeckoViewSupport::AsyncNotifyIME(int32_t aNotification)
 }
 
 bool
-nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
+nsWindow::GoannaViewSupport::NotifyIME(const IMENotification& aIMENotification)
 {
     MOZ_ASSERT(mEditable);
 
@@ -2931,7 +2971,7 @@ nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
 
             window.RemoveIMEComposition();
 
-            AsyncNotifyIME(GeckoEditableListener::
+            AsyncNotifyIME(GoannaEditableListener::
                            NOTIFY_IME_TO_COMMIT_COMPOSITION);
             return true;
         }
@@ -2941,7 +2981,7 @@ nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
 
             window.RemoveIMEComposition(CANCEL_IME_COMPOSITION);
 
-            AsyncNotifyIME(GeckoEditableListener::
+            AsyncNotifyIME(GoannaEditableListener::
                            NOTIFY_IME_TO_CANCEL_COMPOSITION);
             return true;
         }
@@ -2967,7 +3007,7 @@ nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
                 mIMEMonitorCursor = false;
 
                 MOZ_ASSERT(mEditable);
-                mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_OF_FOCUS);
+                mEditable->NotifyIME(GoannaEditableListener::NOTIFY_IME_OF_FOCUS);
             });
             return true;
         }
@@ -2976,7 +3016,7 @@ nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
             ALOGIME("IME: NOTIFY_IME_OF_BLUR");
 
             if (!mIMEMaskEventsCount) {
-                mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_OF_BLUR);
+                mEditable->NotifyIME(GoannaEditableListener::NOTIFY_IME_OF_BLUR);
             }
 
             // Mask events because we lost focus. Unmask on the next focus.
@@ -3021,7 +3061,7 @@ nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
 }
 
 void
-nsWindow::GeckoViewSupport::SetInputContext(const InputContext& aContext,
+nsWindow::GoannaViewSupport::SetInputContext(const InputContext& aContext,
                                             const InputContextAction& aAction)
 {
     MOZ_ASSERT(mEditable);
@@ -3054,7 +3094,7 @@ nsWindow::GeckoViewSupport::SetInputContext(const InputContext& aContext,
 
     if (enabled == IMEState::ENABLED && aAction.UserMightRequestOpenVKB()) {
         // Don't reset keyboard when we should simply open the vkb
-        mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_OPEN_VKB);
+        mEditable->NotifyIME(GoannaEditableListener::NOTIFY_IME_OPEN_VKB);
         return;
     }
 
@@ -3080,7 +3120,7 @@ nsWindow::GeckoViewSupport::SetInputContext(const InputContext& aContext,
 }
 
 InputContext
-nsWindow::GeckoViewSupport::GetInputContext()
+nsWindow::GoannaViewSupport::GetInputContext()
 {
     InputContext context = mInputContext;
     context.mIMEState.mOpen = IMEState::OPEN_STATE_NOT_SUPPORTED;
@@ -3088,16 +3128,16 @@ nsWindow::GeckoViewSupport::GetInputContext()
 }
 
 void
-nsWindow::GeckoViewSupport::OnImeSynchronize()
+nsWindow::GoannaViewSupport::OnImeSynchronize()
 {
     if (!mIMEMaskEventsCount) {
         FlushIMEChanges();
     }
-    mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_REPLY_EVENT);
+    mEditable->NotifyIME(GoannaEditableListener::NOTIFY_IME_REPLY_EVENT);
 }
 
 void
-nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
+nsWindow::GoannaViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
                                              jni::String::Param aText)
 {
     AutoIMESynchronize as(this);
@@ -3108,7 +3148,7 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
     }
 
     /*
-        Replace text in Gecko thread from aStart to aEnd with the string text.
+        Replace text in Goanna thread from aStart to aEnd with the string text.
     */
     RefPtr<nsWindow> kungFuDeathGrip(&window);
     nsString string(aText->ToString());
@@ -3214,7 +3254,7 @@ nsWindow::GeckoViewSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
 }
 
 void
-nsWindow::GeckoViewSupport::OnImeAddCompositionRange(
+nsWindow::GoannaViewSupport::OnImeAddCompositionRange(
         int32_t aStart, int32_t aEnd, int32_t aRangeType, int32_t aRangeStyle,
         int32_t aRangeLineStyle, bool aRangeBoldLine, int32_t aRangeForeColor,
         int32_t aRangeBackColor, int32_t aRangeLineColor)
@@ -3241,7 +3281,7 @@ nsWindow::GeckoViewSupport::OnImeAddCompositionRange(
 }
 
 void
-nsWindow::GeckoViewSupport::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
+nsWindow::GoannaViewSupport::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
 {
     if (mIMEMaskEventsCount > 0) {
         // Not focused.
@@ -3338,7 +3378,7 @@ nsWindow::GeckoViewSupport::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
 }
 
 void
-nsWindow::GeckoViewSupport::OnImeRequestCursorUpdates(int aRequestMode)
+nsWindow::GoannaViewSupport::OnImeRequestCursorUpdates(int aRequestMode)
 {
     if (aRequestMode == IME_MONITOR_CURSOR_ONE_SHOT) {
         UpdateCompositionRects();
@@ -3365,26 +3405,26 @@ nsWindow::NotifyIMEInternal(const IMENotification& aIMENotification)
 {
     MOZ_ASSERT(this == FindTopLevel());
 
-    if (!mGeckoViewSupport) {
-        // Non-GeckoView windows don't support IME operations.
+    if (!mGoannaViewSupport) {
+        // Non-GoannaView windows don't support IME operations.
         return NS_ERROR_NOT_AVAILABLE;
     }
 
-    if (mGeckoViewSupport->NotifyIME(aIMENotification)) {
+    if (mGoannaViewSupport->NotifyIME(aIMENotification)) {
         return NS_OK;
     }
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-NS_IMETHODIMP_(void)
+void
 nsWindow::SetInputContext(const InputContext& aContext,
                           const InputContextAction& aAction)
 {
     nsWindow* top = FindTopLevel();
     MOZ_ASSERT(top);
 
-    if (!top->mGeckoViewSupport) {
-        // Non-GeckoView windows don't support IME operations.
+    if (!top->mGoannaViewSupport) {
+        // Non-GoannaView windows don't support IME operations.
         return;
     }
 
@@ -3392,23 +3432,23 @@ nsWindow::SetInputContext(const InputContext& aContext,
     // will be processed by the top window. Therefore, to ensure the
     // IME event uses the correct mInputContext, we need to let the top
     // window process SetInputContext
-    top->mGeckoViewSupport->SetInputContext(aContext, aAction);
+    top->mGoannaViewSupport->SetInputContext(aContext, aAction);
 }
 
-NS_IMETHODIMP_(InputContext)
+InputContext
 nsWindow::GetInputContext()
 {
     nsWindow* top = FindTopLevel();
     MOZ_ASSERT(top);
 
-    if (!top->mGeckoViewSupport) {
-        // Non-GeckoView windows don't support IME operations.
+    if (!top->mGoannaViewSupport) {
+        // Non-GoannaView windows don't support IME operations.
         return InputContext();
     }
 
     // We let the top window process SetInputContext,
     // so we should let it process GetInputContext as well.
-    return top->mGeckoViewSupport->GetInputContext();
+    return top->mGoannaViewSupport->GetInputContext();
 }
 
 nsIMEUpdatePreference
@@ -3452,7 +3492,7 @@ nsWindow::SynthesizeNativeTouchPoint(uint32_t aPointerId,
     }
 
     MOZ_ASSERT(mLayerViewSupport);
-    GeckoLayerClient::LocalRef client = mLayerViewSupport->GetLayerClient();
+    GoannaLayerClient::LocalRef client = mLayerViewSupport->GetLayerClient();
     client->SynthesizeNativeTouchPoint(aPointerId, eventType,
         aPoint.x, aPoint.y, aPointerPressure, aPointerOrientation);
 
@@ -3468,7 +3508,7 @@ nsWindow::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
     mozilla::widget::AutoObserverNotifier notifier(aObserver, "mouseevent");
 
     MOZ_ASSERT(mLayerViewSupport);
-    GeckoLayerClient::LocalRef client = mLayerViewSupport->GetLayerClient();
+    GoannaLayerClient::LocalRef client = mLayerViewSupport->GetLayerClient();
     client->SynthesizeNativeMouseEvent(aNativeMessage, aPoint.x, aPoint.y);
 
     return NS_OK;
@@ -3481,7 +3521,7 @@ nsWindow::SynthesizeNativeMouseMove(LayoutDeviceIntPoint aPoint,
     mozilla::widget::AutoObserverNotifier notifier(aObserver, "mouseevent");
 
     MOZ_ASSERT(mLayerViewSupport);
-    GeckoLayerClient::LocalRef client = mLayerViewSupport->GetLayerClient();
+    GoannaLayerClient::LocalRef client = mLayerViewSupport->GetLayerClient();
     client->SynthesizeNativeMouseEvent(sdk::MotionEvent::ACTION_HOVER_MOVE, aPoint.x, aPoint.y);
 
     return NS_OK;
@@ -3496,7 +3536,7 @@ nsWindow::PreRender(WidgetRenderingContext* aContext)
 
     layers::Compositor* compositor = aContext->mCompositor;
 
-    GeckoLayerClient::LocalRef client;
+    GoannaLayerClient::LocalRef client;
 
     if (NativePtr<LayerViewSupport>::Locked lvs{mLayerViewSupport}) {
         client = lvs->GetLayerClient();
@@ -3517,7 +3557,7 @@ nsWindow::DrawWindowUnderlay(WidgetRenderingContext* aContext,
         return;
     }
 
-    GeckoLayerClient::LocalRef client;
+    GoannaLayerClient::LocalRef client;
 
     if (NativePtr<LayerViewSupport>::Locked lvs{mLayerViewSupport}) {
         client = lvs->GetLayerClient();
@@ -3585,20 +3625,20 @@ nsWindow::NeedsPaint()
 void
 nsWindow::ConfigureAPZControllerThread()
 {
-    APZThreadUtils::SetControllerThread(nullptr);
+    APZThreadUtils::SetControllerThread(mozilla::GetAndroidUiThreadMessageLoop());
 }
 
-already_AddRefed<GeckoContentController>
+already_AddRefed<GoannaContentController>
 nsWindow::CreateRootContentController()
 {
-    RefPtr<GeckoContentController> controller = new AndroidContentController(this, mAPZEventState, mAPZC);
+    RefPtr<GoannaContentController> controller = new AndroidContentController(this, mAPZEventState, mAPZC);
     return controller.forget();
 }
 
 uint32_t
 nsWindow::GetMaxTouchPoints() const
 {
-    return GeckoAppShell::GetMaxTouchPoints();
+    return GoannaAppShell::GetMaxTouchPoints();
 }
 
 void
@@ -3609,10 +3649,10 @@ nsWindow::UpdateZoomConstraints(const uint32_t& aPresShellId,
     nsBaseWidget::UpdateZoomConstraints(aPresShellId, aViewId, aConstraints);
 }
 
-CompositorBridgeParent*
-nsWindow::GetCompositorBridgeParent() const
+CompositorBridgeChild*
+nsWindow::GetCompositorBridgeChild() const
 {
-    return mCompositorSession ? mCompositorSession->GetInProcessBridge() : nullptr;
+    return mCompositorSession ? mCompositorSession->GetCompositorBridgeChild() : nullptr;
 }
 
 already_AddRefed<nsIScreen>
@@ -3628,7 +3668,7 @@ nsWindow::GetWidgetScreen()
     return screen.forget();
 }
 
-jni::DependentRef<java::GeckoLayerClient>
+jni::DependentRef<java::GoannaLayerClient>
 nsWindow::GetLayerClient()
 {
     if (NativePtr<LayerViewSupport>::Locked lvs{mLayerViewSupport}) {

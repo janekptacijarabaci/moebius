@@ -436,7 +436,7 @@ class DeviceManagerADB(DeviceManager):
         else:
             args = cmd[i:].strip()
         acmd.append("-n")
-        acmd.append(cmd[0:i] + "/org.mozilla.gecko.BrowserApp")
+        acmd.append(cmd[0:i] + "/org.mozilla.goanna.BrowserApp")
         if args != "":
             acmd.append("--es")
             acmd.append("args")

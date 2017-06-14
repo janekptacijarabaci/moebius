@@ -31,11 +31,11 @@
                   android:inputType="textUri|textNoSuggestions"
                   android:imeOptions="actionGo|flagNoExtractUi|flagNoFullscreen"
                   android:singleLine="true"
-                  android:gravity="center_vertical|left"/>
+                  android:gravity="center_vertical|left|start"/>
 
     </LinearLayout>
 
-    <org.mozilla.gecko.home.HomeListView android:id="@+id/list"
+    <org.mozilla.goanna.home.HomeListView android:id="@+id/list"
                                          android:layout_width="match_parent"
                                          android:layout_height="0dip"
                                          android:layout_weight="1.0"/>

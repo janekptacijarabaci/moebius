@@ -280,7 +280,7 @@ function getPotentialLeaks() {
 
   let ioService = Cc["@mozilla.org/network/io-service;1"].
                  getService(Ci.nsIIOService);
-  let uri = ioService.newURI("chrome://global/content/", "UTF-8", null);
+  let uri = ioService.newURI("chrome://global/content/", "UTF-8");
   let chromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].
                   getService(Ci.nsIChromeRegistry);
   uri = chromeReg.convertChromeURL(uri);
@@ -594,7 +594,7 @@ var runTests = exports.runTests = function runTests(options) {
   try {
     consoleListener.register();
     print("Running tests on " + system.name + " " + system.version +
-          "/Gecko " + system.platformVersion + " (Build " +
+          "/Goanna " + system.platformVersion + " (Build " +
           system.build + ") (" + system.id + ") under " +
           system.platform + "/" + system.architecture + ".\n");
 

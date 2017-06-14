@@ -12,7 +12,7 @@
 #include "prenv.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/widget/CompositorWidget.h"
-#include "GeckoProfiler.h"
+#include "GoannaProfiler.h"
 
 #import <UIKit/UIKit.h>
 

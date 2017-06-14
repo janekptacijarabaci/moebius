@@ -7,7 +7,7 @@
 #define GMPService_h_
 
 #include "nsString.h"
-#include "mozIGeckoMediaPluginService.h"
+#include "mozIGoannaMediaPluginService.h"
 #include "nsIObserver.h"
 #include "nsTArray.h"
 #include "mozilla/Attributes.h"
@@ -16,58 +16,37 @@
 #include "nsCOMPtr.h"
 #include "nsIThread.h"
 #include "nsThreadUtils.h"
-#include "nsPIDOMWindow.h"
 #include "nsIDocument.h"
 #include "nsIWeakReference.h"
 #include "mozilla/AbstractThread.h"
 #include "nsClassHashtable.h"
 #include "nsISupportsImpl.h"
+#include "mozilla/MozPromise.h"
+#include "GMPContentParent.h"
 
 template <class> struct already_AddRefed;
 
-// For every GMP actor requested, the caller can specify a crash helper,
-// which is an object which supplies the nsPIDOMWindowInner to which we'll
-// dispatch the PluginCrashed event if the GMP crashes.
-// GMPCrashHelper has threadsafe refcounting. Its release method ensures
-// that instances are destroyed on the main thread.
-class GMPCrashHelper
-{
-public:
-  NS_METHOD_(MozExternalRefCountType) AddRef(void);
-  NS_METHOD_(MozExternalRefCountType) Release(void);
-
-  // Called on the main thread.
-  virtual already_AddRefed<nsPIDOMWindowInner> GetPluginCrashedEventTarget() = 0;
-
-protected:
-  virtual ~GMPCrashHelper()
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-  }
-  void Destroy();
-  mozilla::ThreadSafeAutoRefCnt mRefCnt;
-  NS_DECL_OWNINGTHREAD
-};
-
 namespace mozilla {
+
+class GMPCrashHelper;
 
 extern LogModule* GetGMPLog();
 
 namespace gmp {
 
-class GetGMPContentParentCallback;
+typedef MozPromise<RefPtr<GMPContentParent::CloseBlocker>, nsresult, /* IsExclusive = */ true> GetGMPContentParentPromise;
 
-class GeckoMediaPluginService : public mozIGeckoMediaPluginService
+class GoannaMediaPluginService : public mozIGoannaMediaPluginService
                               , public nsIObserver
 {
 public:
-  static already_AddRefed<GeckoMediaPluginService> GetGeckoMediaPluginService();
+  static already_AddRefed<GoannaMediaPluginService> GetGoannaMediaPluginService();
 
   virtual nsresult Init();
 
   NS_DECL_THREADSAFE_ISUPPORTS
 
-  // mozIGeckoMediaPluginService
+  // mozIGoannaMediaPluginService
   NS_IMETHOD GetThread(nsIThread** aThread) override;
   NS_IMETHOD GetDecryptingGMPVideoDecoder(GMPCrashHelper* aHelper,
                                           nsTArray<nsCString>* aTags,
@@ -79,11 +58,6 @@ public:
                                 nsTArray<nsCString>* aTags,
                                 const nsACString& aNodeId,
                                 UniquePtr<GetGMPVideoEncoderCallback>&& aCallback)
-    override;
-  NS_IMETHOD GetGMPAudioDecoder(GMPCrashHelper* aHelper,
-                                nsTArray<nsCString>* aTags,
-                                const nsACString& aNodeId,
-                                UniquePtr<GetGMPAudioDecoderCallback>&& aCallback)
     override;
   NS_IMETHOD GetGMPDecryptor(GMPCrashHelper* aHelper,
                              nsTArray<nsCString>* aTags,
@@ -101,8 +75,6 @@ public:
     return GetDecryptingGMPVideoDecoder(aHelper, aTags, aNodeId, Move(aCallback), 0);
   }
 
-  int32_t AsyncShutdownTimeoutMs();
-
   NS_IMETHOD RunPluginCrashCallbacks(uint32_t aPluginId,
                                      const nsACString& aPluginName) override;
 
@@ -112,15 +84,16 @@ public:
   void DisconnectCrashHelper(GMPCrashHelper* aHelper);
 
 protected:
-  GeckoMediaPluginService();
-  virtual ~GeckoMediaPluginService();
+  GoannaMediaPluginService();
+  virtual ~GoannaMediaPluginService();
 
   virtual void InitializePlugins(AbstractThread* aAbstractGMPThread) = 0;
-  virtual bool GetContentParentFrom(GMPCrashHelper* aHelper,
-                                    const nsACString& aNodeId,
-                                    const nsCString& aAPI,
-                                    const nsTArray<nsCString>& aTags,
-                                    UniquePtr<GetGMPContentParentCallback>&& aCallback) = 0;
+
+  virtual RefPtr<GetGMPContentParentPromise>
+  GetContentParent(GMPCrashHelper* aHelper,
+                   const nsACString& aNodeId,
+                   const nsCString& aAPI,
+                   const nsTArray<nsCString>& aTags) = 0;
 
   nsresult GMPDispatch(nsIRunnable* event, uint32_t flags = NS_DISPATCH_NORMAL);
   nsresult GMPDispatch(already_AddRefed<nsIRunnable> event, uint32_t flags = NS_DISPATCH_NORMAL);

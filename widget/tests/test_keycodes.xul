@@ -295,10 +295,10 @@ function* runKeyEventTests()
   //                               specify it as string.  Otherwise, specify
   //                               each key value in array.
   function testKey(aEvent, aExpectedKeyValues, aExpectedCodeValue,
-                   aExpectedGeckoKeyCode, aExpectGeckoChar,
+                   aExpectedGoannaKeyCode, aExpectGoannaChar,
                    aShouldDelivedEvent, aExpectLocation)
   {
-    ok(aExpectedGeckoKeyCode != undefined, "keycode is undefined");
+    ok(aExpectedGoannaKeyCode != undefined, "keycode is undefined");
     eventList = [];
 
     // The modifier key events which are fired for state changing are har to
@@ -331,7 +331,7 @@ function* runKeyEventTests()
     }
 
     testingEvent = aEvent;
-    expectedDOMKeyCode = aExpectedGeckoKeyCode;
+    expectedDOMKeyCode = aExpectedGoannaKeyCode;
 
     var name = eventToString(aEvent);
     ok(true, "Starting: " + name);
@@ -343,7 +343,7 @@ function* runKeyEventTests()
         expectEventTypeList.push("keydown");
       if (aShouldDelivedEvent & SHOULD_DELIVER_KEYPRESS) {
         expectEventTypeList.push("keypress");
-        for (var i = 1; i < aExpectGeckoChar.length; i++) {
+        for (var i = 1; i < aExpectGoannaChar.length; i++) {
           expectEventTypeList.push("keypress");
         }
       }
@@ -384,19 +384,19 @@ function* runKeyEventTests()
           is(e.key, expectedKeyValue, name + ", wrong key value");
           is(e.code, aExpectedCodeValue, name + ", wrong code value");
 
-          if (aExpectGeckoChar.length > 0 && e.type == "keypress") {
-            is(e.charCode, aExpectGeckoChar.charCodeAt(keypressCount++), name + ", charcode");
-            if (aExpectedGeckoKeyCode >= 0) {
-              if (aExpectGeckoChar) {
+          if (aExpectGoannaChar.length > 0 && e.type == "keypress") {
+            is(e.charCode, aExpectGoannaChar.charCodeAt(keypressCount++), name + ", charcode");
+            if (aExpectedGoannaKeyCode >= 0) {
+              if (aExpectGoannaChar) {
                 is(e.keyCode, 0, name + ", wrong keycode");
               } else {
-                is(e.keyCode, aExpectedGeckoKeyCode, name + ", wrong keycode");
+                is(e.keyCode, aExpectedGoannaKeyCode, name + ", wrong keycode");
               }
             }
           } else {
             is(e.charCode, 0, name + ", no charcode");
-            if (aExpectedGeckoKeyCode >= 0) {
-              is(e.keyCode, aExpectedGeckoKeyCode, name + ", wrong keycode");
+            if (aExpectedGoannaKeyCode >= 0) {
+              is(e.keyCode, aExpectedGoannaKeyCode, name + ", wrong keycode");
             }
           }
           is(e.location, aExpectLocation, name + ", wrong location");
@@ -2115,16 +2115,6 @@ function* runKeyEventTests()
     yield testKey({layout:KEYBOARD_LAYOUT_EN_US, keyCode:WIN_VK_F4,
                    modifiers:{}, chars:"a"},
                   ["a", "a", "F4"], "F4", nsIDOMKeyEvent.DOM_VK_F4, "a", SHOULD_DELIVER_ALL, KeyboardEvent.DOM_KEY_LOCATION_STANDARD);
-
-    // Even if key message is processed by IME, when the key causes inputting text,
-    // keypress event(s) should be fired.
-    const WIN_VK_PROCESSKEY_WITH_SC_A = WIN_VK_PROCESSKEY | 0x001E0000;
-    yield testKey({layout:KEYBOARD_LAYOUT_EN_US, keyCode:WIN_VK_PROCESSKEY_WITH_SC_A,
-                   modifiers:{}, chars:"a"},
-                  ["a", "a", "Unidentified" /* TODO: Process */], "KeyA", 0 /* TODO: 0xE5 */, "a", SHOULD_DELIVER_ALL, KeyboardEvent.DOM_KEY_LOCATION_STANDARD);
-    yield testKey({layout:KEYBOARD_LAYOUT_EN_US, keyCode:WIN_VK_PROCESSKEY_WITH_SC_A,
-                   modifiers:{altKey:1}, chars:"a"},
-                  ["a", "a", "Unidentified" /* TODO: Process */], "KeyA", 0 /* TODO: 0xE5 */, "a", SHOULD_DELIVER_ALL, KeyboardEvent.DOM_KEY_LOCATION_STANDARD);
 
     // US
     // Alphabet

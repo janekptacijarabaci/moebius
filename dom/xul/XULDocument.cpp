@@ -1337,7 +1337,7 @@ XULDocument::GetViewportSize(int32_t* aWidth,
 {
     *aWidth = *aHeight = 0;
 
-    FlushPendingNotifications(Flush_Layout);
+    FlushPendingNotifications(FlushType::Layout);
 
     nsIPresShell *shell = GetShell();
     NS_ENSURE_TRUE(shell, NS_ERROR_FAILURE);
@@ -3499,7 +3499,7 @@ XULDocument::ExecuteScript(nsXULPrototypeScript *aScript)
     nsAutoMicroTask mt;
 
     // We're about to run script via JS::CloneAndExecuteScript, so we need an
-    // AutoEntryScript. This is Gecko specific and not in any spec.
+    // AutoEntryScript. This is Goanna specific and not in any spec.
     AutoEntryScript aes(mScriptGlobalObject, "precompiled XUL <script> element");
     JSContext* cx = aes.cx();
 

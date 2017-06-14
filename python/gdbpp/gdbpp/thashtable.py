@@ -6,7 +6,7 @@
 
 import gdb
 import itertools
-from gdbpp import GeckoPrettyPrinter
+from gdbpp import GoannaPrettyPrinter
 
 def walk_template_to_given_base(value, desired_tag_prefix):
     '''Given a value of some template subclass, walk up its ancestry until we
@@ -42,12 +42,12 @@ def walk_template_to_given_base(value, desired_tag_prefix):
 # the nsTHashtable core at the center.  All we care about is that nsTHashtable,
 # but we register for the descendant types in order to avoid the default pretty
 # printers having to unwrap those onion layers, wasting precious lines.
-@GeckoPrettyPrinter('nsClassHashtable', '^nsClassHashtable<.*>$')
-@GeckoPrettyPrinter('nsDataHashtable', '^nsDataHashtable<.*>$')
-@GeckoPrettyPrinter('nsInterfaceHashtable', '^nsInterfaceHashtable<.*>$')
-@GeckoPrettyPrinter('nsRefPtrHashtable', '^nsRefPtrHashtable<.*>$')
-@GeckoPrettyPrinter('nsBaseHashtable', '^nsBaseHashtable<.*>$')
-@GeckoPrettyPrinter('nsTHashtable', '^nsTHashtable<.*>$')
+@GoannaPrettyPrinter('nsClassHashtable', '^nsClassHashtable<.*>$')
+@GoannaPrettyPrinter('nsDataHashtable', '^nsDataHashtable<.*>$')
+@GoannaPrettyPrinter('nsInterfaceHashtable', '^nsInterfaceHashtable<.*>$')
+@GoannaPrettyPrinter('nsRefPtrHashtable', '^nsRefPtrHashtable<.*>$')
+@GoannaPrettyPrinter('nsBaseHashtable', '^nsBaseHashtable<.*>$')
+@GoannaPrettyPrinter('nsTHashtable', '^nsTHashtable<.*>$')
 class thashtable_printer(object):
     def __init__(self, outer_value):
         self.outermost_type = outer_value.type

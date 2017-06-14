@@ -17,8 +17,9 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsIContent.h"
 #include "nsJSUtils.h"
-#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SRILogHelper.h"
 #include "nsGkAtoms.h"
 #include "nsNetUtil.h"
@@ -345,7 +346,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsModuleScript)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLoader)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(nsModuleScript)
@@ -1572,7 +1572,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
     }
     if (!aElement->GetParserCreated() && !request->IsModuleRequest()) {
       // Violate the HTML5 spec in order to make LABjs and the "order" plug-in
-      // for RequireJS work with their Gecko-sniffed code path. See
+      // for RequireJS work with their Goanna-sniffed code path. See
       // http://lists.w3.org/Archives/Public/public-html/2010Oct/0088.html
       request->mIsNonAsyncScriptInserted = true;
       mNonAsyncExternalScriptInsertedRequests.AppendElement(request);
@@ -1718,19 +1718,31 @@ class NotifyOffThreadScriptLoadCompletedRunnable : public Runnable
 {
   RefPtr<nsScriptLoadRequest> mRequest;
   RefPtr<nsScriptLoader> mLoader;
+  RefPtr<DocGroup> mDocGroup;
   void *mToken;
 
 public:
   NotifyOffThreadScriptLoadCompletedRunnable(nsScriptLoadRequest* aRequest,
                                              nsScriptLoader* aLoader)
-    : mRequest(aRequest), mLoader(aLoader), mToken(nullptr)
-  {}
+    : mRequest(aRequest)
+    , mLoader(aLoader)
+    , mDocGroup(aLoader->GetDocGroup())
+    , mToken(nullptr)
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+  }
 
   virtual ~NotifyOffThreadScriptLoadCompletedRunnable();
 
   void SetToken(void* aToken) {
     MOZ_ASSERT(aToken && !mToken);
     mToken = aToken;
+  }
+
+  static void Dispatch(already_AddRefed<NotifyOffThreadScriptLoadCompletedRunnable>&& aSelf) {
+    RefPtr<NotifyOffThreadScriptLoadCompletedRunnable> self = aSelf;
+    RefPtr<DocGroup> docGroup = self->mDocGroup;
+    docGroup->Dispatch("OffThreadScriptLoader", TaskCategory::Other, self.forget());
   }
 
   NS_DECL_NSIRUNNABLE
@@ -1810,7 +1822,7 @@ OffThreadScriptLoaderCallback(void *aToken, void *aCallbackData)
   RefPtr<NotifyOffThreadScriptLoadCompletedRunnable> aRunnable =
     dont_AddRef(static_cast<NotifyOffThreadScriptLoadCompletedRunnable*>(aCallbackData));
   aRunnable->SetToken(aToken);
-  NS_DispatchToMainThread(aRunnable);
+  NotifyOffThreadScriptLoadCompletedRunnable::Dispatch(aRunnable.forget());
 }
 
 nsresult
@@ -2075,6 +2087,10 @@ nsScriptLoader::FillCompileOptionsForRequest(const AutoJSAPI&jsapi,
     return rv;
   }
 
+  if (mDocument) {
+    mDocument->NoteScriptTrackingStatus(aRequest->mURL, aRequest->IsTracking());
+  }
+
   bool isScriptElement = !aRequest->IsModuleRequest() ||
                          aRequest->AsModuleRequest()->IsTopLevel();
   aOptions->setIntroductionType(isScriptElement ? "scriptElement"
@@ -2209,8 +2225,13 @@ nsScriptLoader::ProcessPendingRequestsAsync()
       !mNonAsyncExternalScriptInsertedRequests.isEmpty() ||
       !mDeferRequests.isEmpty() ||
       !mPendingChildLoaders.IsEmpty()) {
-    NS_DispatchToCurrentThread(NewRunnableMethod(this,
-                                                 &nsScriptLoader::ProcessPendingRequests));
+    nsCOMPtr<nsIRunnable> task = NewRunnableMethod(this,
+                                                   &nsScriptLoader::ProcessPendingRequests);
+    if (mDocument) {
+      mDocument->Dispatch("ScriptLoader", TaskCategory::Other, task.forget());
+    } else {
+      NS_DispatchToCurrentThread(task.forget());
+    }
   }
 }
 
@@ -2252,7 +2273,7 @@ nsScriptLoader::ProcessPendingRequests()
          mNonAsyncExternalScriptInsertedRequests.getFirst()->IsReadyToRun()) {
     // Violate the HTML5 spec and execute these in the insertion order in
     // order to make LABjs and the "order" plug-in for RequireJS work with
-    // their Gecko-sniffed code path. See
+    // their Goanna-sniffed code path. See
     // http://lists.w3.org/Archives/Public/public-html/2010Oct/0088.html
     request = mNonAsyncExternalScriptInsertedRequests.StealFirst();
     ProcessRequest(request);
@@ -2634,6 +2655,10 @@ nsScriptLoader::PrepareLoadedRequest(nsScriptLoadRequest* aRequest,
     if (NS_SUCCEEDED(rv)) {
       aRequest->mHasSourceMapURL = true;
       aRequest->mSourceMapURL = NS_ConvertUTF8toUTF16(sourceMapURL);
+    }
+
+    if (httpChannel->GetIsTrackingResource()) {
+      aRequest->SetIsTracking();
     }
   }
 

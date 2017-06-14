@@ -449,7 +449,7 @@ public:
     mInited = mNotification->AddRefObject();
   }
 
-  // This is only required because Gecko runs script in a worker's onclose
+  // This is only required because Goanna runs script in a worker's onclose
   // handler (non-standard, Bug 790919) where calls to HoldWorker() will
   // fail. Due to non-standardness and added complications if we decide to
   // support this, attempts to create a Notification in onclose just throw
@@ -1881,7 +1881,7 @@ Notification::GetPermission(nsIGlobalObject* aGlobal, ErrorResult& aRv)
     MOZ_ASSERT(worker);
     RefPtr<GetPermissionRunnable> r =
       new GetPermissionRunnable(worker);
-    r->Dispatch(aRv);
+    r->Dispatch(Terminating, aRv);
     if (aRv.Failed()) {
       return NotificationPermission::Denied;
     }
@@ -2484,7 +2484,7 @@ NotificationWorkerHolder::Notify(Status aStatus)
     RefPtr<CloseNotificationRunnable> r =
       new CloseNotificationRunnable(kungFuDeathGrip);
     ErrorResult rv;
-    r->Dispatch(rv);
+    r->Dispatch(Killing, rv);
     // XXXbz I'm told throwing and returning false from here is pointless (and
     // also that doing sync stuff from here is really weird), so I guess we just
     // suppress the exception on rv, if any.
@@ -2627,7 +2627,7 @@ Notification::ShowPersistentNotification(JSContext* aCx,
     worker->AssertIsOnWorkerThread();
     RefPtr<CheckLoadRunnable> loadChecker =
       new CheckLoadRunnable(worker, NS_ConvertUTF16toUTF8(aScope));
-    loadChecker->Dispatch(aRv);
+    loadChecker->Dispatch(Terminating, aRv);
     if (aRv.Failed()) {
       return nullptr;
     }
@@ -2766,4 +2766,3 @@ Notification::Observe(nsISupports* aSubject, const char* aTopic,
 
 } // namespace dom
 } // namespace mozilla
-

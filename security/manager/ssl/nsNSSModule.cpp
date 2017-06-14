@@ -10,7 +10,6 @@
 #include "PSMContentListener.h"
 #include "SecretDecoderRing.h"
 #include "TransportSecurityInfo.h"
-#include "WeakCryptoOverride.h"
 #include "mozilla/ModuleUtils.h"
 #include "nsCURILoader.h"
 #include "nsCertOverrideService.h"
@@ -44,7 +43,7 @@
 #endif
 
 #define NS_IS_PROCESS_DEFAULT                                                 \
-    (GeckoProcessType_Default == XRE_GetProcessType())
+    (GoannaProcessType_Default == XRE_GetProcessType())
 
 #define NS_NSS_INSTANTIATE(ensureOperator, _InstanceClass)                    \
     PR_BEGIN_MACRO                                                            \
@@ -219,7 +218,6 @@ NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsCertOverrideService, Init)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsSecureBrowserUIImpl)
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(CertBlocklist, Init)
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsSiteSecurityService, Init)
-NS_GENERIC_FACTORY_CONSTRUCTOR(WeakCryptoOverride)
 
 NS_DEFINE_NAMED_CID(NS_NSSCOMPONENT_CID);
 NS_DEFINE_NAMED_CID(NS_SSLSOCKETPROVIDER_CID);
@@ -253,7 +251,6 @@ NS_DEFINE_NAMED_CID(NS_NSSVERSION_CID);
 NS_DEFINE_NAMED_CID(NS_SECURE_BROWSER_UI_CID);
 NS_DEFINE_NAMED_CID(NS_SITE_SECURITY_SERVICE_CID);
 NS_DEFINE_NAMED_CID(NS_CERT_BLOCKLIST_CID);
-NS_DEFINE_NAMED_CID(NS_WEAKCRYPTOOVERRIDE_CID);
 
 static const mozilla::Module::CIDEntry kNSSCIDs[] = {
   { &kNS_NSSCOMPONENT_CID, false, nullptr, nsNSSComponentConstructor },
@@ -288,7 +285,6 @@ static const mozilla::Module::CIDEntry kNSSCIDs[] = {
   { &kNS_SECURE_BROWSER_UI_CID, false, nullptr, nsSecureBrowserUIImplConstructor },
   { &kNS_SITE_SECURITY_SERVICE_CID, false, nullptr, nsSiteSecurityServiceConstructor },
   { &kNS_CERT_BLOCKLIST_CID, false, nullptr, CertBlocklistConstructor},
-  { &kNS_WEAKCRYPTOOVERRIDE_CID, false, nullptr, WeakCryptoOverrideConstructor },
   { nullptr }
 };
 
@@ -324,7 +320,6 @@ static const mozilla::Module::ContractIDEntry kNSSContracts[] = {
   { NS_SECURE_BROWSER_UI_CONTRACTID, &kNS_SECURE_BROWSER_UI_CID },
   { NS_SSSERVICE_CONTRACTID, &kNS_SITE_SECURITY_SERVICE_CID },
   { NS_CERTBLOCKLIST_CONTRACTID, &kNS_CERT_BLOCKLIST_CID },
-  { NS_WEAKCRYPTOOVERRIDE_CONTRACTID, &kNS_WEAKCRYPTOOVERRIDE_CID },
   { nullptr }
 };
 

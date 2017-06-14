@@ -24,10 +24,8 @@
 #include "mozilla/dom/indexedDB/PBackgroundIndexedDBUtilsChild.h"
 #include "mozilla/dom/ipc/BlobChild.h"
 #include "mozilla/dom/quota/PQuotaChild.h"
-#ifdef MOZ_GAMEPAD
 #include "mozilla/dom/GamepadEventChannelChild.h"
 #include "mozilla/dom/GamepadTestChannelChild.h"
-#endif
 #include "mozilla/dom/MessagePortChild.h"
 #include "mozilla/ipc/PBackgroundTestChild.h"
 #include "mozilla/ipc/PSendStreamChild.h"
@@ -52,13 +50,13 @@ class TestChild final : public mozilla::ipc::PBackgroundTestChild
   }
 
 protected:
-  ~TestChild()
+  ~TestChild() override
   {
     MOZ_COUNT_DTOR(TestChild);
   }
 
 public:
-  virtual bool
+  mozilla::ipc::IPCResult
   Recv__delete__(const nsCString& aTestArg) override;
 };
 
@@ -138,7 +136,9 @@ BackgroundChildImpl::ProcessingError(Result aCode, const char* aReason)
       MOZ_CRASH("Unknown error code!");
   }
 
-  MOZ_CRASH_UNSAFE_PRINTF("%s: %s", abortMessage.get(), aReason);
+  // This is just MOZ_CRASH() un-inlined so that we can pass the result code as
+  // a string. MOZ_CRASH() only supports string literals at the moment.
+  MOZ_ReportCrash(abortMessage.get(), __FILE__, __LINE__); MOZ_REALLY_CRASH();
 }
 
 void
@@ -479,40 +479,34 @@ BackgroundChildImpl::AllocPGamepadEventChannelChild()
 bool
 BackgroundChildImpl::DeallocPGamepadEventChannelChild(PGamepadEventChannelChild* aActor)
 {
-#ifdef MOZ_GAMEPAD
   MOZ_ASSERT(aActor);
   delete static_cast<dom::GamepadEventChannelChild*>(aActor);
-#endif
   return true;
 }
 
 dom::PGamepadTestChannelChild*
 BackgroundChildImpl::AllocPGamepadTestChannelChild()
 {
-#ifdef MOZ_GAMEPAD
   MOZ_CRASH("PGamepadTestChannelChild actor should be manually constructed!");
-#endif
   return nullptr;
 }
 
 bool
 BackgroundChildImpl::DeallocPGamepadTestChannelChild(PGamepadTestChannelChild* aActor)
 {
-#ifdef MOZ_GAMEPAD
   MOZ_ASSERT(aActor);
   delete static_cast<dom::GamepadTestChannelChild*>(aActor);
-#endif
   return true;
 }
 
 } // namespace ipc
 } // namespace mozilla
 
-bool
+mozilla::ipc::IPCResult
 TestChild::Recv__delete__(const nsCString& aTestArg)
 {
   MOZ_RELEASE_ASSERT(aTestArg == mTestArg,
                      "BackgroundTest message was corrupted!");
 
-  return true;
+  return IPC_OK();
 }

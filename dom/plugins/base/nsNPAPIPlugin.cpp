@@ -103,7 +103,7 @@ using mozilla::plugins::PluginModuleContentParent;
 #include "ANPBase.h"
 #include "GeneratedJNIWrappers.h"
 #undef LOG
-#define LOG(args...)  __android_log_print(ANDROID_LOG_INFO, "GeckoPlugins" , ## args)
+#define LOG(args...)  __android_log_print(ANDROID_LOG_INFO, "GoannaPlugins" , ## args)
 #endif
 
 #include "nsIAudioChannelAgent.h"
@@ -464,9 +464,9 @@ class nsPluginThreadRunnable : public Runnable,
 public:
   nsPluginThreadRunnable(NPP instance, PluginThreadCallback func,
                          void *userData);
-  virtual ~nsPluginThreadRunnable();
+  ~nsPluginThreadRunnable() override;
 
-  NS_IMETHOD Run();
+  NS_IMETHOD Run() override;
 
   bool IsForInstance(NPP instance)
   {
@@ -620,7 +620,7 @@ nsPluginThreadRunnable::Run()
     PluginDestructionGuard guard(mInstance);
 
     NS_TRY_SAFE_CALL_VOID(mFunc(mUserData), nullptr,
-                          NS_PLUGIN_CALL_SAFE_TO_REENTER_GECKO);
+                          NS_PLUGIN_CALL_SAFE_TO_REENTER_GOANNA);
   }
 
   return NS_OK;
@@ -722,23 +722,6 @@ _geturl(NPP npp, const char* relativeURL, const char* target)
 
   PluginDestructionGuard guard(npp);
 
-  // Block Adobe Acrobat from loading URLs that are not http:, https:,
-  // or ftp: URLs if the given target is null.
-  if (!target && relativeURL &&
-      (strncmp(relativeURL, "http:", 5) != 0) &&
-      (strncmp(relativeURL, "https:", 6) != 0) &&
-      (strncmp(relativeURL, "ftp:", 4) != 0)) {
-    nsNPAPIPluginInstance *inst = (nsNPAPIPluginInstance *) npp->ndata;
-
-    const char *name = nullptr;
-    RefPtr<nsPluginHost> host = nsPluginHost::GetInst();
-    host->GetPluginName(inst, &name);
-
-    if (name && strstr(name, "Adobe") && strstr(name, "Acrobat")) {
-      return NPERR_NO_ERROR;
-    }
-  }
-
   return MakeNewNPAPIStreamInternal(npp, relativeURL, target,
                                     eNPPStreamTypeInternal_Get);
 }
@@ -827,7 +810,7 @@ _newstream(NPP npp, NPMIMEType type, const char* target, NPStream* *result)
     nsCOMPtr<nsIOutputStream> stream;
     if (NS_SUCCEEDED(inst->NewStreamFromPlugin((const char*) type, target,
                                                getter_AddRefs(stream)))) {
-      nsNPAPIStreamWrapper* wrapper = new nsNPAPIStreamWrapper(stream, nullptr);
+      auto* wrapper = new nsNPAPIStreamWrapper(stream, nullptr);
       if (wrapper) {
         (*result) = &wrapper->mNPStream;
         err = NPERR_NO_ERROR;
@@ -2104,7 +2087,7 @@ _getvalue(NPP npp, NPNVariable variable, void *result)
 
     case kJavaContext_ANPGetValue: {
       LOG("get java context");
-      auto ret = java::GeckoAppShell::GetContext();
+      auto ret = java::GoannaAppShell::GetContext();
       if (!ret)
         return NPERR_GENERIC_ERROR;
 

@@ -79,7 +79,7 @@ nsHistory::GetLength(ErrorResult& aRv) const
   }
 
   int32_t len;
-  nsresult rv = sHistory->GetCount(&len);
+  nsresult rv = sHistory->GetGlobalCount(&len);
 
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
@@ -186,7 +186,7 @@ nsHistory::Go(int32_t aDelta, ErrorResult& aRv)
       // 4.x needed it, but we don't, and it's a horrible experience
       // for nothing.  In stead of reloading the page, just clear
       // style data and reflow the page since some sites may use this
-      // trick to work around gecko reflow bugs, and this should have
+      // trick to work around goanna reflow bugs, and this should have
       // the same effect.
 
       nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
@@ -211,8 +211,8 @@ nsHistory::Go(int32_t aDelta, ErrorResult& aRv)
 
   int32_t curIndex = -1;
   int32_t len = 0;
-  session_history->GetIndex(&curIndex);
-  session_history->GetCount(&len);
+  session_history->GetGlobalIndex(&curIndex);
+  session_history->GetGlobalCount(&len);
 
   int32_t index = curIndex + aDelta;
   if (index > -1 && index < len)

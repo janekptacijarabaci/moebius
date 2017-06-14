@@ -26,7 +26,7 @@ class CrashReporterHost
   typedef CrashReporter::AnnotationTable AnnotationTable;
 
 public:
-  CrashReporterHost(GeckoProcessType aProcessType, const Shmem& aShmem);
+  CrashReporterHost(GoannaProcessType aProcessType, const Shmem& aShmem);
 
 #ifdef MOZ_CRASHREPORTER
   void GenerateCrashReport(base::ProcessId aPid) {
@@ -43,16 +43,18 @@ public:
   // called from the main thread, will post a synchronous message to the
   // main thread.
   static void NotifyCrashService(
-    GeckoProcessType aProcessType,
+    GoannaProcessType aProcessType,
     const nsString& aChildDumpID,
     const AnnotationTable* aNotes);
 #endif
 
 private:
   void GenerateCrashReport(RefPtr<nsIFile> aCrashDump);
+  static void AsyncAddCrash(int32_t aProcessType, int32_t aCrashType,
+                            const nsString& aChildDumpID);
 
 private:
-  GeckoProcessType mProcessType;
+  GoannaProcessType mProcessType;
   Shmem mShmem;
   time_t mStartTime;
 };

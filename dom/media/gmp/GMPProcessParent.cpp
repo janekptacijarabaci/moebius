@@ -21,14 +21,14 @@ using std::vector;
 using std::string;
 
 using mozilla::gmp::GMPProcessParent;
-using mozilla::ipc::GeckoChildProcessHost;
+using mozilla::ipc::GoannaChildProcessHost;
 using base::ProcessArchitecture;
 
 namespace mozilla {
 namespace gmp {
 
 GMPProcessParent::GMPProcessParent(const std::string& aGMPPath)
-: GeckoChildProcessHost(GeckoProcessType_GMPlugin),
+: GoannaChildProcessHost(GoannaProcessType_GMPlugin),
   mGMPPath(aGMPPath)
 {
   MOZ_COUNT_CTOR(GMPProcessParent);
@@ -42,14 +42,6 @@ GMPProcessParent::~GMPProcessParent()
 bool
 GMPProcessParent::Launch(int32_t aTimeoutMs)
 {
-  nsCOMPtr<nsIFile> path;
-  if (!GetEMEVoucherPath(getter_AddRefs(path))) {
-    NS_WARNING("GMPProcessParent can't get EME voucher path!");
-    return false;
-  }
-  nsAutoCString voucherPath;
-  path->GetNativePath(voucherPath);
-
   vector<string> args;
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
@@ -81,8 +73,6 @@ GMPProcessParent::Launch(int32_t aTimeoutMs)
 #else
   args.push_back(mGMPPath);
 #endif
-
-  args.push_back(string(voucherPath.BeginReading(), voucherPath.EndReading()));
 
   return SyncLaunch(args, aTimeoutMs, base::GetCurrentProcessArchitecture());
 }

@@ -36,7 +36,7 @@
     {
       "name": "is-matching",
         "match": {
-          "appId": "^org.mozilla.gecko$"
+          "appId": "^org.mozilla.goanna$"
         },
         "buckets": {
           "min": "0",

@@ -5,7 +5,7 @@
 // Based on:
 // https://bugzilla.mozilla.org/show_bug.cgi?id=549539
 // https://bug549539.bugzilla.mozilla.org/attachment.cgi?id=429661
-// https://developer.mozilla.org/en/XPCOM/XPCOM_changes_in_Gecko_1.9.3
+// https://developer.mozilla.org/en/XPCOM/XPCOM_changes_in_Goanna_1.9.3
 // https://developer.mozilla.org/en/how_to_build_an_xpcom_component_in_javascript
 
 var EXPORTED_SYMBOLS = ["SpecialPowersObserver", "SpecialPowersObserverFactory"];
@@ -87,7 +87,6 @@ SpecialPowersObserver.prototype._loadFrameScript = function()
     this._messageManager.addMessageListener("SPUnloadExtension", this);
     this._messageManager.addMessageListener("SPExtensionMessage", this);
     this._messageManager.addMessageListener("SPCleanUpSTSData", this);
-    this._messageManager.addMessageListener("SPClearAppPrivateData", this);
 
     this._messageManager.loadFrameScript(CHILD_LOGGER_SCRIPT, true);
     this._messageManager.loadFrameScript(CHILD_SCRIPT_API, true);
@@ -159,7 +158,6 @@ SpecialPowersObserver.prototype.uninit = function()
     this._messageManager.removeMessageListener("SPUnloadExtension", this);
     this._messageManager.removeMessageListener("SPExtensionMessage", this);
     this._messageManager.removeMessageListener("SPCleanUpSTSData", this);
-    this._messageManager.removeMessageListener("SPClearAppPrivateData", this);
 
     this._messageManager.removeDelayedFrameScript(CHILD_LOGGER_SCRIPT);
     this._messageManager.removeDelayedFrameScript(CHILD_SCRIPT_API);

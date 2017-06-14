@@ -43,7 +43,7 @@ dictionary UIEventInit : EventInit
   long    detail = 0;
 };
 
-// NOTE: Gecko doesn't support commented out modifiers yet.
+// NOTE: Goanna doesn't support commented out modifiers yet.
 dictionary EventModifierInit : UIEventInit
 {
   boolean ctrlKey = false;

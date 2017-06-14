@@ -111,20 +111,19 @@ add_task(function* test_multiple_no_id_extensions() {
   };
 
   let extension1 = ExtensionTestUtils.loadExtension({
-    manifest: manifest,
+    manifest,
     useAddonManager: "temporary",
   });
 
   let extension2 = ExtensionTestUtils.loadExtension({
-    manifest: manifest,
+    manifest,
     useAddonManager: "temporary",
   });
 
   yield Promise.all([extension1.startup(), extension2.startup()]);
 
-  const allAddons = yield new Promise(resolve => {
-    AddonManager.getAllAddons(addons => resolve(addons));
-  });
+  const allAddons = yield AddonManager.getAllAddons();
+
   do_print(`Found these add-ons: ${allAddons.map(a => a.name).join(", ")}`);
   const filtered = allAddons.filter(addon => addon.name === manifest.name);
   // Make sure we have two add-ons by the same name.
@@ -146,7 +145,7 @@ add_task(function* test_bss_id() {
     version: "1.0",
 
     browser_specific_settings: {
-      gecko: {
+      goanna: {
         id: ID
       }
     }
@@ -156,7 +155,7 @@ add_task(function* test_bss_id() {
   equal(addon, null, "Add-on is not installed");
 
   let extension = ExtensionTestUtils.loadExtension({
-    manifest: manifest,
+    manifest,
     useAddonManager: "temporary",
   });
   yield extension.startup();
@@ -180,20 +179,20 @@ add_task(function* test_two_ids() {
     version: "1.0",
 
     applications: {
-      gecko: {
+      goanna: {
         id: BAD_ID
       }
     },
 
     browser_specific_settings: {
-      gecko: {
+      goanna: {
         id: GOOD_ID
       }
     }
   }
 
   let extension = ExtensionTestUtils.loadExtension({
-    manifest: manifest,
+    manifest,
     useAddonManager: "temporary",
   });
   yield extension.startup();
@@ -221,7 +220,7 @@ add_task(function* test_strict_min_max() {
   // bad max good min
   let apps = {
     applications: {
-      gecko: {
+      goanna: {
         id: addonId,
         strict_min_version: "1",
         strict_max_version: "1"
@@ -247,7 +246,7 @@ add_task(function* test_strict_min_max() {
   // bad min good max
   apps = {
     applications: {
-      gecko: {
+      goanna: {
         id: addonId,
         strict_min_version: "2",
         strict_max_version: "2"
@@ -273,7 +272,7 @@ add_task(function* test_strict_min_max() {
   // bad both
   apps = {
     applications: {
-      gecko: {
+      goanna: {
         id: addonId,
         strict_min_version: "2",
         strict_max_version: "1"
@@ -299,7 +298,7 @@ add_task(function* test_strict_min_max() {
   // bad only min
   apps = {
     applications: {
-      gecko: {
+      goanna: {
         id: addonId,
         strict_min_version: "2"
       },
@@ -324,7 +323,7 @@ add_task(function* test_strict_min_max() {
   // bad only max
   apps = {
     applications: {
-      gecko: {
+      goanna: {
         id: addonId,
         strict_max_version: "1"
       },
@@ -349,7 +348,7 @@ add_task(function* test_strict_min_max() {
   // good both
   apps = {
     applications: {
-      gecko: {
+      goanna: {
         id: addonId,
         strict_min_version: "1",
         strict_max_version: "2"
@@ -374,7 +373,7 @@ add_task(function* test_strict_min_max() {
   let newId = "strict_min_only@tests.mozilla.org";
   apps = {
     applications: {
-      gecko: {
+      goanna: {
         id: newId,
         strict_min_version: "1",
       },
@@ -399,7 +398,7 @@ add_task(function* test_strict_min_max() {
   newId = "strict_max_only@tests.mozilla.org";
   apps = {
     applications: {
-      gecko: {
+      goanna: {
         id: newId,
         strict_max_version: "2",
       },
@@ -425,7 +424,7 @@ add_task(function* test_strict_min_max() {
     newId = "strict_min_star@tests.mozilla.org";
     let minStarApps = {
       applications: {
-        gecko: {
+        goanna: {
           id: newId,
           strict_min_version: version,
         },
@@ -452,7 +451,7 @@ add_task(function* test_strict_min_max() {
   newId = "checkCompatibility@tests.mozilla.org";
   apps = {
     applications: {
-      gecko: {
+      goanna: {
         id: newId,
         strict_max_version: "1",
       },
@@ -475,4 +474,73 @@ add_task(function* test_strict_min_max() {
 
   yield extension.unload();
   AddonManager.checkCompatibility = savedCheckCompatibilityValue;
+});
+
+// Check permissions prompt
+add_task(function* test_permissions() {
+  const manifest = {
+    name: "permissions test",
+    description: "permissions test",
+    manifest_version: 2,
+    version: "1.0",
+
+    permissions: ["tabs", "storage", "https://*.example.com/*", "<all_urls>", "experiments.test"],
+  };
+
+  let xpi = ExtensionTestCommon.generateXPI({manifest});
+
+  let install = yield AddonManager.getInstallForFile(xpi);
+
+  let perminfo;
+  install.promptHandler = info => {
+    perminfo = info;
+    return Promise.resolve();
+  };
+
+  yield promiseCompleteInstall(install);
+
+  notEqual(perminfo, undefined, "Permission handler was invoked");
+  equal(perminfo.existingAddon, null, "Permission info does not include an existing addon");
+  notEqual(perminfo.addon, null, "Permission info includes the new addon");
+  let perms = perminfo.addon.userPermissions;
+  deepEqual(perms.permissions, ["tabs", "storage"], "API permissions are correct");
+  deepEqual(perms.hosts, ["https://*.example.com/*", "<all_urls>"], "Host permissions are correct");
+  deepEqual(perms.apis, ["test"], "Experiments permissions are correct");
+
+  let addon = yield promiseAddonByID(perminfo.addon.id);
+  notEqual(addon, null, "Extension was installed");
+
+  addon.uninstall();
+  yield OS.File.remove(xpi.path);
+});
+
+// Check permissions prompt cancellation
+add_task(function* test_permissions() {
+  const manifest = {
+    name: "permissions test",
+    description: "permissions test",
+    manifest_version: 2,
+    version: "1.0",
+
+    permissions: ["webRequestBlocking"],
+  };
+
+  let xpi = ExtensionTestCommon.generateXPI({manifest});
+
+  let install = yield AddonManager.getInstallForFile(xpi);
+
+  let perminfo;
+  install.promptHandler = info => {
+    perminfo = info;
+    return Promise.reject();
+  };
+
+  yield promiseCompleteInstall(install);
+
+  notEqual(perminfo, undefined, "Permission handler was invoked");
+
+  let addon = yield promiseAddonByID(perminfo.addon.id);
+  equal(addon, null, "Extension was not installed");
+
+  yield OS.File.remove(xpi.path);
 });

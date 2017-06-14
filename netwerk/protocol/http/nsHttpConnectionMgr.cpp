@@ -1023,7 +1023,7 @@ nsHttpConnectionMgr::ReportFailedToProcess(nsIURI *uri)
     // private versions of this host
     RefPtr<nsHttpConnectionInfo> ci =
         new nsHttpConnectionInfo(host, port, EmptyCString(), username, nullptr,
-                                 NeckoOriginAttributes(), usingSSL);
+                                 OriginAttributes(), usingSSL);
     ci->SetAnonymous(false);
     ci->SetPrivate(false);
     PipelineFeedbackInfo(ci, RedCorruptedContent, nullptr, 0);
@@ -2293,7 +2293,7 @@ nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason, ARefBase *param)
         // Cancel is a pretty strong signal that things might be hanging
         // so we want to cancel any null transactions related to this connection
         // entry. They are just optimizations, but they aren't hooked up to
-        // anything that might get canceled from the rest of gecko, so best
+        // anything that might get canceled from the rest of goanna, so best
         // to assume that's what was meant by the cancel we did receive if
         // it only applied to something in the queue.
         for (uint32_t index = 0;
@@ -3089,9 +3089,8 @@ nsHalfOpenSocket::SetupStreams(nsISocketTransport **transport,
 
     socketTransport->SetConnectionFlags(tmpFlags);
 
-    NeckoOriginAttributes originAttributes =
-        mEnt->mConnInfo->GetOriginAttributes();
-    if (originAttributes != NeckoOriginAttributes()) {
+    const OriginAttributes& originAttributes = mEnt->mConnInfo->GetOriginAttributes();
+    if (originAttributes != OriginAttributes()) {
         socketTransport->SetOriginAttributes(originAttributes);
     }
 

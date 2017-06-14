@@ -25,7 +25,7 @@ using namespace android;
 #include "webrtc/video_engine/include/vie_external_codec.h"
 #include "runnable_utils.h"
 
-// Gecko
+// Goanna
 #if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 21
 #include "GonkBufferQueueProducer.h"
 #endif
@@ -549,7 +549,7 @@ public:
     CODEC_LOGD("Decoder NewFrame: %dx%d, timestamp %lld, renderTimeMs %lld",
                picSize.width, picSize.height, timestamp, renderTimeMs);
 
-    nsAutoPtr<webrtc::I420VideoFrame> videoFrame(new webrtc::I420VideoFrame(
+    nsAutoPtr<webrtc::VideoFrame> videoFrame(new webrtc::VideoFrame(
       new ImageNativeHandle(grallocImage.forget()),
       picSize.width,
       picSize.height,
@@ -874,9 +874,9 @@ WebrtcOMXH264VideoEncoder::InitEncode(const webrtc::VideoCodec* aCodecSettings,
 }
 
 int32_t
-WebrtcOMXH264VideoEncoder::Encode(const webrtc::I420VideoFrame& aInputImage,
+WebrtcOMXH264VideoEncoder::Encode(const webrtc::VideoFrame& aInputImage,
                                   const webrtc::CodecSpecificInfo* aCodecSpecificInfo,
-                                  const std::vector<webrtc::VideoFrameType>* aFrameTypes)
+                                  const std::vector<webrtc::FrameType>* aFrameTypes)
 {
   MOZ_ASSERT(mOMX != nullptr);
   if (mOMX == nullptr) {
@@ -990,7 +990,7 @@ WebrtcOMXH264VideoEncoder::Encode(const webrtc::I420VideoFrame& aInputImage,
 #endif
   }
 
-  // Wrap I420VideoFrame input with PlanarYCbCrImage for OMXVideoEncoder.
+  // Wrap VideoFrame input with PlanarYCbCrImage for OMXVideoEncoder.
   layers::PlanarYCbCrData yuvData;
   yuvData.mYChannel = const_cast<uint8_t*>(aInputImage.buffer(webrtc::kYPlane));
   yuvData.mYSize = gfx::IntSize(aInputImage.width(), aInputImage.height());

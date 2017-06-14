@@ -178,7 +178,7 @@ var SystemAppProxy = {
    * Common way to send an event to the main system app.
    * Only used for the main system app.
    *
-   * // In gecko code:
+   * // In goanna code:
    *   SystemAppProxy.sendCustomEvent('foo', { data: 'bar' });
    * // In system app:
    *   window.addEventListener('foo', function (event) {
@@ -206,7 +206,7 @@ var SystemAppProxy = {
   /*
    * Common way to send an event to the specific system app.
    *
-   * // In gecko code (send custom event from main system app):
+   * // In goanna code (send custom event from main system app):
    *   SystemAppProxy.sendCustomEventWithId('main', 'foo', { data: 'bar' });
    * // In system app:
    *   window.addEventListener('foo', function (event) {

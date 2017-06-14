@@ -31,7 +31,7 @@ add_task(function*() {
     version: "1.0",
     manifest_version: 2,
     applications: {
-      gecko: {
+      goanna: {
         id: ID
       }
     },
@@ -95,7 +95,7 @@ add_task(function*() {
     version: "1.0",
     manifest_version: 2,
     applications: {
-      gecko: {
+      goanna: {
         id: ID
       }
     },
@@ -141,7 +141,7 @@ add_task(function*() {
     version: "1.0",
     manifest_version: 2,
     applications: {
-      gecko: {
+      goanna: {
         id: ID
       }
     }
@@ -152,8 +152,6 @@ add_task(function*() {
 
   let addon = yield promiseAddonByID(ID);
   do_check_neq(addon, null);
-
-  let uri = do_get_addon_root_uri(profileDir, ID);
 
   deepEqual(addon.icons, {});
 
@@ -166,4 +164,3 @@ add_task(function*() {
 
   yield promiseRestartManager();
 });
-

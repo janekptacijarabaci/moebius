@@ -5,7 +5,7 @@
 
 MOZ_APP_BASENAME=Basilisk
 MOZ_APP_VENDOR=Moonchild
-MOZ_UPDATER=
+MOZ_UPDATER=1
 MOZ_PHOENIX=1
 
 if test "$OS_ARCH" = "WINNT" -o \
@@ -14,23 +14,11 @@ if test "$OS_ARCH" = "WINNT" -o \
 fi
 
 if test "$OS_ARCH" = "WINNT"; then
-  MOZ_MAINTENANCE_SERVICE=1
-  if ! test "$HAVE_64BIT_BUILD"; then
-    if test "$MOZ_UPDATE_CHANNEL" = "nightly" -o \
-            "$MOZ_UPDATE_CHANNEL" = "aurora" -o \
-            "$MOZ_UPDATE_CHANNEL" = "beta" -o \
-            "$MOZ_UPDATE_CHANNEL" = "beta-dev" -o \
-            "$MOZ_UPDATE_CHANNEL" = "release" -o \
-            "$MOZ_UPDATE_CHANNEL" = "release-dev"; then
-      if ! test "$MOZ_DEBUG"; then
-        MOZ_STUB_INSTALLER=1
-      fi
-    fi
-  fi
+  MOZ_MAINTENANCE_SERVICE=
 fi
 
 # Enable building ./signmar and running libmar signature tests
-MOZ_ENABLE_SIGNMAR=1
+MOZ_ENABLE_SIGNMAR=
 
 MOZ_APP_VERSION=$FIREFOX_VERSION
 MOZ_APP_VERSION_DISPLAY=$FIREFOX_VERSION_DISPLAY
@@ -47,15 +35,13 @@ MOZ_APP_ID={ec8030f7-c20a-464f-9b0e-13a3a9e97384}
 # This should usually be the same as the value MAR_CHANNEL_ID.
 # If more than one ID is needed, then you should use a comma separated list
 # of values.
-ACCEPTED_MAR_CHANNEL_IDS=basilisk-browser
+ACCEPTED_MAR_CHANNEL_IDS=basilisk-release
 # The MAR_CHANNEL_ID must not contain the following 3 characters: ",\t "
-MAR_CHANNEL_ID=basilisk-browser
+MAR_CHANNEL_ID=basilisk-release
 MOZ_PROFILE_MIGRATOR=1
-MOZ_APP_STATIC_INI=1
 MOZ_WEBGL_CONFORMANT=1
 MOZ_JSDOWNLOADS=1
 MOZ_RUST_MP4PARSE=
-MOZ_RUST_URLPARSE=
 
 # Enable checking that add-ons are signed by the trusted root
 MOZ_ADDON_SIGNING=

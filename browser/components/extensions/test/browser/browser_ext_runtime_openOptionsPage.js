@@ -55,7 +55,7 @@ add_tasks(function* test_inline_options(extraOptions) {
 
   let extension = yield loadExtension(Object.assign({}, extraOptions, {
     manifest: {
-      applications: {gecko: {id: "inline_options@tests.mozilla.org"}},
+      applications: {goanna: {id: "inline_options@tests.mozilla.org"}},
       "options_ui": {
         "page": "options.html",
       },
@@ -155,7 +155,7 @@ add_tasks(function* test_tab_options(extraOptions) {
 
   let extension = yield loadExtension(Object.assign({}, extraOptions, {
     manifest: {
-      applications: {gecko: {id: "tab_options@tests.mozilla.org"}},
+      applications: {goanna: {id: "tab_options@tests.mozilla.org"}},
       "options_ui": {
         "page": "options.html",
         "open_in_tab": true,
@@ -256,7 +256,7 @@ add_tasks(function* test_options_no_manifest(extraOptions) {
 
   let extension = yield loadExtension(Object.assign({}, extraOptions, {
     manifest: {
-      applications: {gecko: {id: "no_options@tests.mozilla.org"}},
+      applications: {goanna: {id: "no_options@tests.mozilla.org"}},
     },
 
     async background() {

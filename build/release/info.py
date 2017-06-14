@@ -126,7 +126,7 @@ def getReleaseTag(tag):
     return "%s_RELEASE" % tag
 
 
-def generateRelbranchName(version, prefix='GECKO'):
+def generateRelbranchName(version, prefix='GOANNA'):
     return '%s%s_%s_RELBRANCH' % (
         prefix, version.replace('.', ''),
         datetime.now().strftime('%Y%m%d%H'))

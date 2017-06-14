@@ -42,16 +42,12 @@
 
 class nsPIDOMWindowOuter;
 
-namespace base {
-class Thread;
-} // end namespace base
-
 typedef void* EGLSurface;
+class nsIRunnable;
 
 namespace mozilla {
 
 class AutoLocalJNIFrame;
-class Runnable;
 
 namespace hal {
 class BatteryInformation;
@@ -59,7 +55,7 @@ class NetworkInformation;
 } // namespace hal
 
 // The order and number of the members in this structure must correspond
-// to the attrsAppearance array in GeckoAppShell.getSystemColors()
+// to the attrsAppearance array in GoannaAppShell.getSystemColors()
 typedef struct AndroidSystemColors {
     nscolor textColorPrimary;
     nscolor textColorPrimaryInverse;
@@ -96,7 +92,7 @@ class AndroidBridge final
 {
 public:
     enum {
-        // Values for NotifyIME, in addition to values from the Gecko
+        // Values for NotifyIME, in addition to values from the Goanna
         // IMEMessage enum; use negative values here to prevent conflict
         NOTIFY_IME_OPEN_VKB = -2,
         NOTIFY_IME_REPLY_EVENT = -1,
@@ -104,7 +100,7 @@ public:
 
     enum {
         LAYER_CLIENT_TYPE_NONE = 0,
-        LAYER_CLIENT_TYPE_GL = 2            // AndroidGeckoGLLayerClient
+        LAYER_CLIENT_TYPE_GL = 2            // AndroidGoannaGLLayerClient
     };
 
     static bool IsJavaUiThread() {
@@ -157,7 +153,7 @@ public:
     // DeleteGlobalRef() when the context is no longer needed.
     jobject GetGlobalContextRef(void);
 
-    void HandleGeckoMessage(JSContext* cx, JS::HandleObject message);
+    void HandleGoannaMessage(JSContext* cx, JS::HandleObject message);
 
     void GetCurrentBatteryInformation(hal::BatteryInformation* aBatteryInfo);
 
@@ -237,7 +233,7 @@ private:
     mozilla::Mutex mUiTaskQueueLock;
 
 public:
-    void PostTaskToUiThread(already_AddRefed<Runnable> aTask, int aDelayMs);
+    void PostTaskToUiThread(already_AddRefed<nsIRunnable> aTask, int aDelayMs);
     int64_t RunDelayedUiThreadTasks();
 };
 
@@ -285,12 +281,12 @@ class AutoJObject {
 public:
     AutoJObject(JNIEnv* aJNIEnv = nullptr) : mObject(nullptr)
     {
-        mJNIEnv = aJNIEnv ? aJNIEnv : jni::GetGeckoThreadEnv();
+        mJNIEnv = aJNIEnv ? aJNIEnv : jni::GetGoannaThreadEnv();
     }
 
     AutoJObject(JNIEnv* aJNIEnv, jobject aObject)
     {
-        mJNIEnv = aJNIEnv ? aJNIEnv : jni::GetGeckoThreadEnv();
+        mJNIEnv = aJNIEnv ? aJNIEnv : jni::GetGoannaThreadEnv();
         mObject = aObject;
     }
 
@@ -319,7 +315,7 @@ class AutoLocalJNIFrame {
 public:
     AutoLocalJNIFrame(int nEntries = 15)
         : mEntries(nEntries)
-        , mJNIEnv(jni::GetGeckoThreadEnv())
+        , mJNIEnv(jni::GetGoannaThreadEnv())
         , mHasFrameBeenPushed(false)
     {
         MOZ_ASSERT(mJNIEnv);
@@ -328,7 +324,7 @@ public:
 
     AutoLocalJNIFrame(JNIEnv* aJNIEnv, int nEntries = 15)
         : mEntries(nEntries)
-        , mJNIEnv(aJNIEnv ? aJNIEnv : jni::GetGeckoThreadEnv())
+        , mJNIEnv(aJNIEnv ? aJNIEnv : jni::GetGoannaThreadEnv())
         , mHasFrameBeenPushed(false)
     {
         MOZ_ASSERT(mJNIEnv);
@@ -401,6 +397,8 @@ public:
   NS_DECL_NSIANDROIDBRIDGE
   NS_DECL_NSIOBSERVER
 
+  NS_FORWARD_SAFE_NSIANDROIDEVENTDISPATCHER(mEventDispatcher)
+
   nsAndroidBridge();
 
 private:
@@ -412,6 +410,7 @@ private:
   void UpdateAudioPlayingWindows(uint64_t aWindowId, bool aPlaying);
 
   nsTArray<uint64_t> mAudioPlayingWindows;
+  nsCOMPtr<nsIAndroidEventDispatcher> mEventDispatcher;
 
 protected:
 };

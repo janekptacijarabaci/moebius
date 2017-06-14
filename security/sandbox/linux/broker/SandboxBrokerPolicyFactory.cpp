@@ -140,8 +140,13 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   // Bug 1308851: NVIDIA proprietary driver when using WebGL
   policy->AddPrefix(rdwr, "/dev", "nvidia");
 
-  // Bug 1312678: radeonsi/Intel with DRI when using WebGL
+    // Bug 1312678: radeonsi/Intel with DRI when using WebGL
   policy->AddDir(rdwr, "/dev/dri");
+
+#ifdef MOZ_ALSA
+  // Bug 1309098: ALSA support
+  policy->AddDir(rdwr, "/dev/snd");
+#endif
 
   mCommonContentPolicy.reset(policy);
 #endif
@@ -171,7 +176,7 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid)
 
   // Bug 1029337: where the profiler writes the data.
   nsPrintfCString profilerLogPath("/data/local/tmp/profile_%d_%d.txt",
-                                  GeckoProcessType_Content, aPid);
+                                  GoannaProcessType_Content, aPid);
   policy->AddPath(wrlog, profilerLogPath.get());
 
   // Bug 1198550: the profiler's replacement for dl_iterate_phdr

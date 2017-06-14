@@ -8,7 +8,6 @@
 
 #include "nsBaseAppShell.h"
 #include <windows.h>
-#include <vector>
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Mutex.h"
 
@@ -31,12 +30,9 @@ public:
   typedef mozilla::Mutex Mutex;
 
   nsresult Init();
-  void DoProcessMoreGeckoEvents();
+  void DoProcessMoreGoannaEvents();
 
   static UINT GetTaskbarButtonCreatedMessage();
-
-  NS_IMETHOD AfterProcessNextEvent(nsIThreadInternal* thread,
-                                   bool eventWasProcessed) final;
 
 protected:
   NS_IMETHOD Run();
@@ -53,7 +49,6 @@ protected:
 
   Mutex mLastNativeEventScheduledMutex;
   TimeStamp mLastNativeEventScheduled;
-  std::vector<MSG> mMsgsToRepost;
 };
 
 #endif // nsAppShell_h__

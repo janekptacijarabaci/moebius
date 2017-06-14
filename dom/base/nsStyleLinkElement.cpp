@@ -162,7 +162,9 @@ static uint32_t ToLinkMask(const nsAString& aLink, nsIPrincipal* aPrincipal)
     return nsStyleLinkElement::eHTMLIMPORT;
   else if (aLink.EqualsLiteral("preconnect"))
     return nsStyleLinkElement::ePRECONNECT;
-  else 
+  else if (aLink.EqualsLiteral("prerender"))
+    return nsStyleLinkElement::ePRERENDER;
+  else
     return 0;
 }
 
@@ -319,7 +321,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
     if (mStyleSheet->IsServo()) {
       NS_WARNING("stylo: ServoStyleSheets don't support <style scoped>");
     } else {
-      oldScopeElement = mStyleSheet->AsGecko()->GetScopeElement();
+      oldScopeElement = mStyleSheet->AsGoanna()->GetScopeElement();
     }
   }
 
@@ -484,7 +486,7 @@ nsStyleLinkElement::UpdateStyleSheetScopedness(bool aIsNowScoped)
     return;
   }
 
-  CSSStyleSheet* sheet = mStyleSheet->AsGecko();
+  CSSStyleSheet* sheet = mStyleSheet->AsGoanna();
 
   nsCOMPtr<nsIContent> thisContent;
   CallQueryInterface(this, getter_AddRefs(thisContent));

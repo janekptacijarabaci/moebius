@@ -180,10 +180,9 @@ CSSTransition::UpdateTiming(SeekFlag aSeekFlag, SyncNotifyFlag aSyncNotifyFlag)
 }
 
 void
-CSSTransition::QueueEvents()
+CSSTransition::QueueEvents(StickyTimeDuration aActiveTime)
 {
-  if (!mEffect ||
-      !mOwningElement.IsSet()) {
+  if (!mOwningElement.IsSet()) {
     return;
   }
 
@@ -197,69 +196,123 @@ CSSTransition::QueueEvents()
     return;
   }
 
-  ComputedTiming computedTiming = mEffect->GetComputedTiming();
-  const StickyTimeDuration zeroDuration;
-  StickyTimeDuration intervalStartTime =
-    std::max(std::min(StickyTimeDuration(-mEffect->SpecifiedTiming().mDelay),
-                      computedTiming.mActiveDuration), zeroDuration);
-  StickyTimeDuration intervalEndTime =
-    std::max(std::min((EffectEnd() - mEffect->SpecifiedTiming().mDelay),
-                      computedTiming.mActiveDuration), zeroDuration);
+  const StickyTimeDuration zeroDuration = StickyTimeDuration();
+
+  TransitionPhase currentPhase;
+  StickyTimeDuration intervalStartTime;
+  StickyTimeDuration intervalEndTime;
+
+  if (!mEffect) {
+    currentPhase      = GetTransitionPhaseWithoutEffect();
+    intervalStartTime = zeroDuration;
+    intervalEndTime   = zeroDuration;
+  } else {
+    ComputedTiming computedTiming = mEffect->GetComputedTiming();
+
+    currentPhase = static_cast<TransitionPhase>(computedTiming.mPhase);
+    intervalStartTime =
+      std::max(std::min(StickyTimeDuration(-mEffect->SpecifiedTiming().mDelay),
+                        computedTiming.mActiveDuration), zeroDuration);
+    intervalEndTime =
+      std::max(std::min((EffectEnd() - mEffect->SpecifiedTiming().mDelay),
+                        computedTiming.mActiveDuration), zeroDuration);
+  }
 
   // TimeStamps to use for ordering the events when they are dispatched. We
   // use a TimeStamp so we can compare events produced by different elements,
   // perhaps even with different timelines.
   // The zero timestamp is for transitionrun events where we ignore the delay
   // for the purpose of ordering events.
-  TimeStamp startTimeStamp = ElapsedTimeToTimeStamp(intervalStartTime);
-  TimeStamp endTimeStamp   = ElapsedTimeToTimeStamp(intervalEndTime);
+  TimeStamp zeroTimeStamp   = AnimationTimeToTimeStamp(zeroDuration);
+  TimeStamp startTimeStamp  = ElapsedTimeToTimeStamp(intervalStartTime);
+  TimeStamp endTimeStamp    = ElapsedTimeToTimeStamp(intervalEndTime);
 
-  TransitionPhase currentPhase;
   if (mPendingState != PendingState::NotPending &&
       (mPreviousTransitionPhase == TransitionPhase::Idle ||
        mPreviousTransitionPhase == TransitionPhase::Pending))
   {
     currentPhase = TransitionPhase::Pending;
-  } else {
-    currentPhase = static_cast<TransitionPhase>(computedTiming.mPhase);
   }
 
   AutoTArray<TransitionEventParams, 3> events;
+
+  // Handle cancel events firts
+  if (mPreviousTransitionPhase != TransitionPhase::Idle &&
+      currentPhase == TransitionPhase::Idle) {
+    TimeStamp activeTimeStamp = ElapsedTimeToTimeStamp(aActiveTime);
+    events.AppendElement(TransitionEventParams{ eTransitionCancel,
+                                                aActiveTime,
+                                                activeTimeStamp });
+  }
+
+  // All other events
   switch (mPreviousTransitionPhase) {
     case TransitionPhase::Idle:
-      if (currentPhase == TransitionPhase::After) {
+      if (currentPhase == TransitionPhase::Pending ||
+          currentPhase == TransitionPhase::Before) {
+        events.AppendElement(TransitionEventParams{ eTransitionRun,
+                                                    intervalStartTime,
+                                                    zeroTimeStamp });
+      } else if (currentPhase == TransitionPhase::Active) {
+        events.AppendElement(TransitionEventParams{ eTransitionRun,
+                                                    intervalStartTime,
+                                                    zeroTimeStamp });
+        events.AppendElement(TransitionEventParams{ eTransitionStart,
+                                                    intervalStartTime,
+                                                    startTimeStamp });
+      } else if (currentPhase == TransitionPhase::After) {
+        events.AppendElement(TransitionEventParams{ eTransitionRun,
+                                                    intervalStartTime,
+                                                    zeroTimeStamp });
+        events.AppendElement(TransitionEventParams{ eTransitionStart,
+                                                    intervalStartTime,
+                                                    startTimeStamp });
         events.AppendElement(TransitionEventParams{ eTransitionEnd,
-                                                   intervalEndTime,
-                                                   endTimeStamp });
+                                                    intervalEndTime,
+                                                    endTimeStamp });
       }
       break;
 
     case TransitionPhase::Pending:
     case TransitionPhase::Before:
-      if (currentPhase == TransitionPhase::After) {
+      if (currentPhase == TransitionPhase::Active) {
+        events.AppendElement(TransitionEventParams{ eTransitionStart,
+                                                    intervalStartTime,
+                                                    startTimeStamp });
+      } else if (currentPhase == TransitionPhase::After) {
+        events.AppendElement(TransitionEventParams{ eTransitionStart,
+                                                    intervalStartTime,
+                                                    startTimeStamp });
         events.AppendElement(TransitionEventParams{ eTransitionEnd,
-                                                   intervalEndTime,
-                                                   endTimeStamp });
+                                                    intervalEndTime,
+                                                    endTimeStamp });
       }
       break;
 
     case TransitionPhase::Active:
       if (currentPhase == TransitionPhase::After) {
         events.AppendElement(TransitionEventParams{ eTransitionEnd,
-                                                   intervalEndTime,
-                                                   endTimeStamp });
+                                                    intervalEndTime,
+                                                    endTimeStamp });
       } else if (currentPhase == TransitionPhase::Before) {
         events.AppendElement(TransitionEventParams{ eTransitionEnd,
-                                                   intervalStartTime,
-                                                   startTimeStamp });
+                                                    intervalStartTime,
+                                                    startTimeStamp });
       }
       break;
 
     case TransitionPhase::After:
-      if (currentPhase == TransitionPhase::Before) {
+      if (currentPhase == TransitionPhase::Active) {
+        events.AppendElement(TransitionEventParams{ eTransitionStart,
+                                                    intervalEndTime,
+                                                    startTimeStamp });
+      } else if (currentPhase == TransitionPhase::Before) {
+        events.AppendElement(TransitionEventParams{ eTransitionStart,
+                                                    intervalEndTime,
+                                                    startTimeStamp });
         events.AppendElement(TransitionEventParams{ eTransitionEnd,
-                                                   intervalStartTime,
-                                                   endTimeStamp });
+                                                    intervalStartTime,
+                                                    endTimeStamp });
       }
       break;
   }
@@ -274,6 +327,23 @@ CSSTransition::QueueEvents()
                                             evt.mTimeStamp,
                                             this));
   }
+}
+
+CSSTransition::TransitionPhase
+CSSTransition::GetTransitionPhaseWithoutEffect() const
+{
+  MOZ_ASSERT(!mEffect, "Should only be called when we do not have an effect");
+
+  Nullable<TimeDuration> currentTime = GetCurrentTime();
+  if (currentTime.IsNull()) {
+    return TransitionPhase::Idle;
+  }
+
+  // If we don't have a target effect, the duration will be zero so the phase is
+  // 'before' if the current time is less than zero.
+  return currentTime.Value() < TimeDuration()
+         ? TransitionPhase::Before
+         : TransitionPhase::After;
 }
 
 void
@@ -327,7 +397,7 @@ CSSTransition::HasLowerCompositeOrderThan(const CSSTransition& aOther) const
 }
 
 /* static */ Nullable<TimeDuration>
-CSSTransition::GetCurrentTimeAt(const DocumentTimeline& aTimeline,
+CSSTransition::GetCurrentTimeAt(const dom::DocumentTimeline& aTimeline,
                                 const TimeStamp& aBaseTime,
                                 const TimeDuration& aStartTime,
                                 double aPlaybackRate)
@@ -344,7 +414,7 @@ CSSTransition::GetCurrentTimeAt(const DocumentTimeline& aTimeline,
 }
 
 void
-CSSTransition::SetEffectFromStyle(AnimationEffectReadOnly* aEffect)
+CSSTransition::SetEffectFromStyle(dom::AnimationEffectReadOnly* aEffect)
 {
   Animation::SetEffectNoUpdate(aEffect);
 
@@ -451,12 +521,12 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
     return;
   }
 
-  MOZ_ASSERT(mPresContext->RestyleManager()->IsGecko(),
+  MOZ_ASSERT(mPresContext->RestyleManager()->IsGoanna(),
              "ServoRestyleManager should not use nsTransitionManager "
              "for transitions");
   if (collection &&
       collection->mCheckGeneration ==
-        mPresContext->RestyleManager()->AsGecko()->GetAnimationGeneration()) {
+        mPresContext->RestyleManager()->AsGoanna()->GetAnimationGeneration()) {
     // When we start a new transition, we immediately post a restyle.
     // If the animation generation on the collection is current, that
     // means *this* is that restyle, since we bump the animation
@@ -483,13 +553,13 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
   // not stopping or starting right now.
   RefPtr<nsStyleContext> afterChangeStyle;
   if (collection) {
-    MOZ_ASSERT(mPresContext->StyleSet()->IsGecko(),
+    MOZ_ASSERT(mPresContext->StyleSet()->IsGoanna(),
                "ServoStyleSets should not use nsTransitionManager "
                "for transitions");
-    nsStyleSet* styleSet = mPresContext->StyleSet()->AsGecko();
+    nsStyleSet* styleSet = mPresContext->StyleSet()->AsGoanna();
     afterChangeStyle =
-      styleSet->ResolveStyleWithoutAnimation(aElement, newStyleContext,
-                                             eRestyle_CSSTransitions);
+      styleSet->ResolveStyleByRemovingAnimation(aElement, newStyleContext,
+                                                eRestyle_CSSTransitions);
   } else {
     afterChangeStyle = newStyleContext;
   }
@@ -864,7 +934,7 @@ nsTransitionManager::ConsiderInitiatingTransition(
                                           Move(startValue), Move(endValue), tf),
                    aNewStyleContext);
 
-  MOZ_ASSERT(mPresContext->RestyleManager()->IsGecko(),
+  MOZ_ASSERT(mPresContext->RestyleManager()->IsGoanna(),
              "ServoRestyleManager should not use nsTransitionManager "
              "for transitions");
 
@@ -874,7 +944,7 @@ nsTransitionManager::ConsiderInitiatingTransition(
     OwningElementRef(*aElement, aNewStyleContext->GetPseudoType()));
   animation->SetTimelineNoUpdate(timeline);
   animation->SetCreationSequence(
-    mPresContext->RestyleManager()->AsGecko()->GetAnimationGeneration());
+    mPresContext->RestyleManager()->AsGoanna()->GetAnimationGeneration());
   animation->SetEffectFromStyle(pt);
   animation->PlayFromStyle();
 

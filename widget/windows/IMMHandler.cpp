@@ -54,7 +54,7 @@ HandleSeparator(nsACString& aDesc)
 class GetIMEGeneralPropertyName : public nsAutoCString
 {
 public:
-  GetIMEGeneralPropertyName(DWORD aFlags)
+  explicit GetIMEGeneralPropertyName(DWORD aFlags)
   {
     if (!aFlags) {
       AppendLiteral("no flags");
@@ -90,7 +90,7 @@ public:
 class GetIMEUIPropertyName : public nsAutoCString
 {
 public:
-  GetIMEUIPropertyName(DWORD aFlags)
+  explicit GetIMEUIPropertyName(DWORD aFlags)
   {
     if (!aFlags) {
       AppendLiteral("no flags");
@@ -114,7 +114,7 @@ public:
 class GetWritingModeName : public nsAutoCString
 {
 public:
-  GetWritingModeName(const WritingMode& aWritingMode)
+  explicit GetWritingModeName(const WritingMode& aWritingMode)
   {
     if (!aWritingMode.IsVertical()) {
       Assign("Horizontal");
@@ -132,7 +132,7 @@ public:
 class GetReconvertStringLog : public nsAutoCString
 {
 public:
-  GetReconvertStringLog(RECONVERTSTRING* aReconv)
+  explicit GetReconvertStringLog(RECONVERTSTRING* aReconv)
   {
     AssignLiteral("{ dwSize=");
     AppendInt(static_cast<uint32_t>(aReconv->dwSize));
@@ -715,7 +715,7 @@ IMMHandler::ProcessMessageForPlugin(nsWindow* aWindow,
       return true;
     case WM_IME_REQUEST:
        // Our plugin implementation is alwasy OOP.  So WM_IME_REQUEST doesn't
-       // allow that parameter is pointer and shouldn't handle into Gecko.
+       // allow that parameter is pointer and shouldn't handle into Goanna.
        aRet = false;
        return true;
   }
@@ -2042,7 +2042,7 @@ IMMHandler::DispatchCompositionChangeEvent(nsWindow* aWindow,
     if (targetClause &&
         cursor >= targetClause->mStartOffset &&
         cursor <= targetClause->mEndOffset) {
-      // Forget the caret position specified by IME since Gecko's caret position
+      // Forget the caret position specified by IME since Goanna's caret position
       // will be at the end of composition string.
       mCursorPosition = NO_IME_CARET;
       MOZ_LOG(gIMMLog, LogLevel::Info,

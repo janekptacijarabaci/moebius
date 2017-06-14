@@ -95,8 +95,7 @@ public:
   virtual void Init(PromiseId aPromiseId,
                     const nsAString& aOrigin,
                     const nsAString& aTopLevelOrigin,
-                    const nsAString& aName,
-                    bool aInPrivateBrowsing) = 0;
+                    const nsAString& aName) = 0;
 
   virtual void OnSetDecryptorId(uint32_t aId) {}
 
@@ -261,7 +260,7 @@ protected:
 
   const nsString mKeySystem;
 
-  // Onwer specified thread. e.g. Gecko Media Plugin thread.
+  // Onwer specified thread. e.g. Goanna Media Plugin thread.
   // All interactions with the out-of-process EME plugin must come from this thread.
   RefPtr<nsIThread> mOwnerThread;
 

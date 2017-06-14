@@ -678,9 +678,9 @@ getRoleCB(AtkObject *aAtkObj)
   }
 #endif
 
-#define ROLE(geckoRole, stringRole, atkRole, macRole, \
+#define ROLE(goannaRole, stringRole, atkRole, macRole, \
              msaaRole, ia2Role, nameRule) \
-  case roles::geckoRole: \
+  case roles::goannaRole: \
     aAtkObj->role = atkRole; \
     break;
 
@@ -1008,7 +1008,7 @@ refRelationSetCB(AtkObject *aAtkObj)
     ATK_OBJECT_CLASS(parent_class)->ref_relation_set(aAtkObj);
 
   const AtkRelationType typeMap[] = {
-#define RELATIONTYPE(gecko, s, atk, m, i) atk,
+#define RELATIONTYPE(goanna, s, atk, m, i) atk,
 #include "RelationTypeMap.h"
 #undef RELATIONTYPE
   };
@@ -1045,8 +1045,8 @@ refRelationSetCB(AtkObject *aAtkObj)
   if (!accWrap)
     return relation_set;
 
-#define RELATIONTYPE(geckoType, geckoTypeName, atkType, msaaType, ia2Type) \
-  UpdateAtkRelation(RelationType::geckoType, accWrap, atkType, relation_set);
+#define RELATIONTYPE(goannaType, goannaTypeName, atkType, msaaType, ia2Type) \
+  UpdateAtkRelation(RelationType::goannaType, accWrap, atkType, relation_set);
 
 #include "RelationTypeMap.h"
 

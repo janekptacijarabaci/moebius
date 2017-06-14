@@ -64,6 +64,10 @@
 #include "nsICrashReporter.h"
 #endif
 
+#ifdef ENABLE_TESTS
+#include "xpctest_private.h"
+#endif
+
 using namespace mozilla;
 using namespace JS;
 using mozilla::dom::AutoJSAPI;
@@ -319,7 +323,7 @@ Dump(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
 #ifdef ANDROID
-    __android_log_print(ANDROID_LOG_INFO, "Gecko", "%s", utf8str.ptr());
+    __android_log_print(ANDROID_LOG_INFO, "Goanna", "%s", utf8str.ptr());
 #endif
 #ifdef XP_WIN
     if (IsDebuggerPresent()) {
@@ -643,6 +647,24 @@ RegisterAppManifest(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
+#ifdef ENABLE_TESTS
+static bool
+RegisterXPCTestComponents(JSContext* cx, unsigned argc, Value* vp)
+{
+    JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
+    if (args.length() != 0) {
+        JS_ReportErrorASCII(cx, "Wrong number of arguments");
+        return false;
+    }
+    nsresult rv = XRE_AddStaticComponent(&kXPCTestModule);
+    if (NS_FAILED(rv)) {
+        XPCThrower::Throw(rv, cx);
+        return false;
+    }
+    return true;
+}
+#endif
+
 static const JSFunctionSpec glob_functions[] = {
     JS_FS("print",           Print,          0,0),
     JS_FS("readline",        ReadLine,       1,0),
@@ -662,6 +684,9 @@ static const JSFunctionSpec glob_functions[] = {
     JS_FS("setInterruptCallback", SetInterruptCallback, 1,0),
     JS_FS("simulateActivityCallback", SimulateActivityCallback, 1,0),
     JS_FS("registerAppManifest", RegisterAppManifest, 1, 0),
+#ifdef ENABLE_TESTS
+    JS_FS("registerXPCTestComponents", RegisterXPCTestComponents, 0, 0),
+#endif
     JS_FS_END
 };
 
@@ -1167,11 +1192,11 @@ public:
 NS_IMPL_ISUPPORTS(TestGlobal, nsIXPCTestNoisy, nsIXPCScriptable)
 
 // The nsIXPCScriptable map declaration that will generate stubs for us...
-#define XPC_MAP_CLASSNAME           TestGlobal
-#define XPC_MAP_QUOTED_CLASSNAME   "TestGlobal"
-#define XPC_MAP_FLAGS               nsIXPCScriptable::USE_JSSTUB_FOR_ADDPROPERTY |\
-                                    nsIXPCScriptable::USE_JSSTUB_FOR_DELPROPERTY |\
-                                    nsIXPCScriptable::USE_JSSTUB_FOR_SETPROPERTY
+#define XPC_MAP_CLASSNAME         TestGlobal
+#define XPC_MAP_QUOTED_CLASSNAME "TestGlobal"
+#define XPC_MAP_FLAGS (XPC_SCRIPTABLE_USE_JSSTUB_FOR_ADDPROPERTY |\
+                       XPC_SCRIPTABLE_USE_JSSTUB_FOR_DELPROPERTY |\
+                       XPC_SCRIPTABLE_USE_JSSTUB_FOR_SETPROPERTY)
 #include "xpc_map_end.h" /* This will #undef the above */
 
 NS_IMETHODIMP TestGlobal::Squawk() {return NS_OK;}
@@ -1574,7 +1599,7 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
 
             {
                 // We are almost certainly going to run script here, so we need an
-                // AutoEntryScript. This is Gecko-specific and not in any spec.
+                // AutoEntryScript. This is Goanna-specific and not in any spec.
                 AutoEntryScript aes(backstagePass, "xpcshell argument processing");
 
                 // If an exception is thrown, we'll set our return code
