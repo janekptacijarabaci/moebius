@@ -3330,30 +3330,38 @@ fi # COMPILE_ENVIRONMENT
 dnl ========================================================
 dnl Gamepad support
 dnl ========================================================
+MOZ_GAMEPAD=
 MOZ_GAMEPAD_BACKEND=stub
 
-case "$OS_TARGET" in
-Darwin)
-    if test -z "$MOZ_IOS"; then
-        MOZ_GAMEPAD_BACKEND=cocoa
-    fi
-    ;;
-WINNT)
-    MOZ_GAMEPAD_BACKEND=windows
-    ;;
-Linux)
-    MOZ_CHECK_HEADER([linux/joystick.h])
-    if test "$ac_cv_header_linux_joystick_h" != "yes"; then
-      AC_MSG_ERROR([Can't find header linux/joystick.h, needed for gamepad support. Please install Linux kernel headers.])
-    fi
-    MOZ_GAMEPAD_BACKEND=linux
-    ;;
-Android)
-    MOZ_GAMEPAD_BACKEND=android
-    ;;
-*)
-    ;;
-esac
+MOZ_ARG_ENABLE_BOOL(gamepad,
+[  --enable-gamepad   Enable use of gamepad API devices],
+    MOZ_GAMEPAD=1,
+    MOZ_GAMEPAD=)
+
+if test "$MOZ_GAMEPAD"; then
+  case "$OS_TARGET" in
+  Darwin)
+      if test -z "$MOZ_IOS"; then
+          MOZ_GAMEPAD_BACKEND=cocoa
+      fi
+      ;;
+  WINNT)
+      MOZ_GAMEPAD_BACKEND=windows
+      ;;
+  Linux)
+      MOZ_CHECK_HEADER([linux/joystick.h])
+      if test "$ac_cv_header_linux_joystick_h" != "yes"; then
+        AC_MSG_ERROR([Can't find header linux/joystick.h, needed for gamepad support. Please install Linux kernel headers.])
+      fi
+      MOZ_GAMEPAD_BACKEND=linux
+      ;;
+  Android)
+      MOZ_GAMEPAD_BACKEND=android
+      ;;
+  *)
+      ;;
+  esac
+fi
 
 AC_SUBST(MOZ_GAMEPAD_BACKEND)
 
