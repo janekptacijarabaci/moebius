@@ -2135,7 +2135,7 @@ imgLoader::LoadImage(nsIURI* aURI,
           "Proxyless entry's request has cache entry!");
         request->SetCacheEntry(entry);
 
-        if (mCacheTracker) {
+        if (mCacheTracker && entry->GetExpirationState()->IsTracked()) {
           mCacheTracker->MarkUsed(entry);
         }
       }
@@ -2397,7 +2397,7 @@ imgLoader::LoadImageWithChannel(nsIChannel* channel,
             "Proxyless entry's request has cache entry!");
           request->SetCacheEntry(entry);
 
-          if (mCacheTracker) {
+          if (mCacheTracker && entry->GetExpirationState()->IsTracked()) {
             mCacheTracker->MarkUsed(entry);
           }
         }
