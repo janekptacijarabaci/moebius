@@ -10,6 +10,8 @@ ID
 .DS_Store*
 *.pdb
 *.egg-info
+*.orig
+*.rej
 
 # Vim swap files.
 .*.sw[a-z]
