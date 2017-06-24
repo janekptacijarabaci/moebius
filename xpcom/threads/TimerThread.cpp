@@ -29,7 +29,6 @@ using namespace mozilla::tasktracer;
 NS_IMPL_ISUPPORTS(TimerThread, nsIRunnable, nsIObserver)
 
 TimerThread::TimerThread() :
-  mInitInProgress(false),
   mInitialized(false),
   mMonitor("TimerThread.mMonitor"),
   mShutdown(false),
@@ -304,20 +303,12 @@ nsTimerEvent::Run()
 nsresult
 TimerThread::Init()
 {
+  mMonitor.AssertCurrentThreadOwns();
   MOZ_LOG(GetTimerLog(), LogLevel::Debug,
          ("TimerThread::Init [%d]\n", mInitialized));
 
-  if (mInitialized) {
-    if (!mThread) {
-      return NS_ERROR_FAILURE;
-    }
-
-    return NS_OK;
-  }
-
-  nsTimerEvent::Init();
-
-  if (mInitInProgress.exchange(true) == false) {
+  if (!mInitialized) {
+    nsTimerEvent::Init();
     // We hold on to mThread to keep the thread alive.
     nsresult rv =
       NS_NewNamedThread("Timer Thread", getter_AddRefs(mThread), this);
@@ -332,16 +323,7 @@ TimerThread::Init()
       }
     }
 
-    {
-      MonitorAutoLock lock(mMonitor);
-      mInitialized = true;
-      mMonitor.NotifyAll();
-    }
-  } else {
-    MonitorAutoLock lock(mMonitor);
-    while (!mInitialized) {
-      mMonitor.Wait();
-    }
+    mInitialized = true;
   }
 
   if (!mThread) {
@@ -581,6 +563,11 @@ TimerThread::AddTimer(nsTimerImpl* aTimer)
 
   if (!aTimer->mEventTarget) {
     return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  nsresult rv = Init();
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
   // Add the timer to our list.
