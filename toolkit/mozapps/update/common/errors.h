@@ -85,8 +85,6 @@
 #define INVALID_APPLYTO_DIR_STAGED_ERROR 72
 #define LOCK_ERROR_PATCH_FILE 73
 #define INVALID_APPLYTO_DIR_ERROR 74
-#define INVALID_CALLBACK_PATH_ERROR 77
-#define INVALID_CALLBACK_DIR_ERROR 78
 
 // Error codes 80 through 99 are reserved for nsUpdateService.js
 
