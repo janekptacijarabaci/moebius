@@ -186,7 +186,7 @@ nsTimerImpl::Shutdown()
 
 
 nsresult
-nsTimerImpl::InitCommon(uint32_t aDelay, uint32_t aType)
+nsTimerImpl::InitCommon(uint32_t aDelay, uint32_t aType, Callback&& newCallback)
 {
   mMutex.AssertCurrentThreadOwns();
 
@@ -200,6 +200,7 @@ nsTimerImpl::InitCommon(uint32_t aDelay, uint32_t aType)
   }
 
   gThread->RemoveTimer(this);
+  mCallback.swap(newCallback);
   ++mGeneration;
 
   mType = (uint8_t)aType;
@@ -227,9 +228,7 @@ nsTimerImpl::InitWithFuncCallbackCommon(nsTimerCallbackFunc aFunc,
   cb.mName = aName;
 
   MutexAutoLock lock(mMutex);
-  cb.swap(mCallback);
-
-  return InitCommon(aDelay, aType);
+  return InitCommon(aDelay, aType, mozilla::Move(cb));
 }
 
 nsresult
@@ -279,9 +278,7 @@ nsTimerImpl::InitWithCallback(nsITimerCallback* aCallback,
   NS_ADDREF(cb.mCallback.i);
 
   MutexAutoLock lock(mMutex);
-  cb.swap(mCallback);
-
-  return InitCommon(aDelay, aType);
+  return InitCommon(aDelay, aType, mozilla::Move(cb));
 }
 
 nsresult
@@ -297,9 +294,7 @@ nsTimerImpl::Init(nsIObserver* aObserver, uint32_t aDelay, uint32_t aType)
   NS_ADDREF(cb.mCallback.o);
 
   MutexAutoLock lock(mMutex);
-  cb.swap(mCallback);
-
-  return InitCommon(aDelay, aType);
+  return InitCommon(aDelay, aType, mozilla::Move(cb));
 }
 
 nsresult

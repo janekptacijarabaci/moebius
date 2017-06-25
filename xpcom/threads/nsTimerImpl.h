@@ -63,8 +63,6 @@ public:
     return mGeneration;
   }
 
-  nsresult InitCommon(uint32_t aDelay, uint32_t aType);
-
   struct Callback {
     Callback() :
       mType(Type::Unknown),
@@ -123,6 +121,8 @@ public:
 
     void*                 mClosure;
   };
+
+  nsresult InitCommon(uint32_t aDelay, uint32_t aType, Callback&& newCallback);
 
   Callback& GetCallback()
   {
