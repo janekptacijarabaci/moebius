@@ -1152,7 +1152,6 @@ GCRuntime::setMarkStackLimit(size_t limit, AutoLockGC& lock)
 {
     MOZ_ASSERT(!rt->isHeapBusy());
     AutoUnlockGC unlock(lock);
-    AutoStopVerifyingBarriers pauseVerification(rt, false);
     marker.setMaxCapacity(limit);
 }
 
@@ -5848,7 +5847,6 @@ GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::R
         return;
 
     AutoTraceLog logGC(TraceLoggerForMainThread(rt), TraceLogger_GC);
-    AutoStopVerifyingBarriers av(rt, IsShutdownGC(reason));
     AutoEnqueuePendingParseTasksAfterGC aept(*this);
     AutoScheduleZonesForGC asz(rt);
 
@@ -5957,7 +5955,6 @@ GCRuntime::abortGC()
     checkCanCallAPI();
     MOZ_ASSERT(!rt->mainThread.suppressGC);
 
-    AutoStopVerifyingBarriers av(rt, false);
     AutoEnqueuePendingParseTasksAfterGC aept(*this);
 
     gcstats::AutoGCSlice agc(stats, scanZonesBeforeGC(), invocationKind,
