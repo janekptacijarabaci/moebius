@@ -600,7 +600,6 @@ class GCRuntime
     void finishRoots();
     void finish();
 
-    inline bool upcomingZealousGC();
     inline bool needZealousGC();
 
     MOZ_MUST_USE bool addRoot(Value* vp, const char* name);
@@ -1335,7 +1334,6 @@ class MOZ_RAII AutoMaybeStartBackgroundAllocation
     }
 };
 
-inline bool GCRuntime::upcomingZealousGC() { return false; }
 inline bool GCRuntime::needZealousGC() { return false; }
 
 } /* namespace gc */
