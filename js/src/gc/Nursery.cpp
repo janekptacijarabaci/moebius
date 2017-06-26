@@ -75,14 +75,6 @@ struct js::Nursery::SweepAction
 #endif
 };
 
-#ifdef JS_GC_ZEAL
-struct js::Nursery::Canary
-{
-    uintptr_t magicValue;
-    Canary* next;
-};
-#endif
-
 inline void
 js::Nursery::NurseryChunk::poisonAndInit(JSRuntime* rt, uint8_t poison)
 {
@@ -125,9 +117,6 @@ js::Nursery::Nursery(JSRuntime* rt)
   , minorGcCount_(0)
   , freeMallocedBuffersTask(nullptr)
   , sweepActions_(nullptr)
-#ifdef JS_GC_ZEAL
-  , lastCanary_(nullptr)
-#endif
 {}
 
 bool
@@ -206,10 +195,6 @@ js::Nursery::enable()
 
     setCurrentChunk(0);
     setStartPosition();
-#ifdef JS_GC_ZEAL
-    if (runtime()->hasZealMode(ZealMode::GenerationalGC))
-        enterZealMode();
-#endif
 
     MOZ_ALWAYS_TRUE(runtime()->gc.storeBuffer.enable());
     return;
@@ -239,23 +224,6 @@ js::Nursery::isEmpty() const
     }
     return position() == currentStartPosition_;
 }
-
-#ifdef JS_GC_ZEAL
-void
-js::Nursery::enterZealMode() {
-    if (isEnabled())
-        updateNumChunks(maxNurseryChunks_);
-}
-
-void
-js::Nursery::leaveZealMode() {
-    if (isEnabled()) {
-        MOZ_ASSERT(isEmpty());
-        setCurrentChunk(0);
-        setStartPosition();
-    }
-}
-#endif // JS_GC_ZEAL
 
 JSObject*
 js::Nursery::allocateObject(JSContext* cx, size_t size, size_t numDynamic, const js::Class* clasp)
@@ -302,12 +270,6 @@ js::Nursery::allocate(size_t size)
     MOZ_ASSERT(position() % gc::CellSize == 0);
     MOZ_ASSERT(size % gc::CellSize == 0);
 
-#ifdef JS_GC_ZEAL
-    static const size_t CanarySize = (sizeof(Nursery::Canary) + CellSize - 1) & ~CellMask;
-    if (runtime()->gc.hasZealMode(ZealMode::CheckNursery))
-        size += CanarySize;
-#endif
-
     if (currentEnd() < position() + size) {
         if (currentChunk_ + 1 == numChunks())
             return nullptr;
@@ -318,19 +280,6 @@ js::Nursery::allocate(size_t size)
     position_ = position() + size;
 
     JS_EXTRA_POISON(thing, JS_ALLOCATED_NURSERY_PATTERN, size);
-
-#ifdef JS_GC_ZEAL
-    if (runtime()->gc.hasZealMode(ZealMode::CheckNursery)) {
-        auto canary = reinterpret_cast<Canary*>(position() - CanarySize);
-        canary->magicValue = CanaryMagicValue;
-        canary->next = nullptr;
-        if (lastCanary_) {
-            MOZ_ASSERT(!lastCanary_->next);
-            lastCanary_->next = canary;
-        }
-        lastCanary_ = canary;
-    }
-#endif
 
     MemProfiler::SampleNursery(reinterpret_cast<void*>(thing), size);
     return thing;
@@ -562,14 +511,6 @@ js::Nursery::collect(JSRuntime* rt, JS::gcreason::Reason reason)
 
     rt->gc.incMinorGcNumber();
 
-#ifdef JS_GC_ZEAL
-    if (rt->gc.hasZealMode(ZealMode::CheckNursery)) {
-        for (auto canary = lastCanary_; canary; canary = canary->next)
-            MOZ_ASSERT(canary->magicValue == CanaryMagicValue);
-    }
-    lastCanary_ = nullptr;
-#endif
-
     rt->gc.stats.beginNurseryCollection(reason);
     TraceMinorGCStart();
 
@@ -749,10 +690,6 @@ js::Nursery::doCollection(JSRuntime* rt, JS::gcreason::Reason reason,
 
     // Make sure hashtables have been updated after the collection.
     maybeStartProfile(ProfileKey::CheckHashTables);
-#ifdef JS_GC_ZEAL
-    if (rt->hasZealMode(ZealMode::CheckHashTablesOnMinorGC))
-        CheckHashTablesAfterMovingGC(rt);
-#endif
     maybeEndProfile(ProfileKey::CheckHashTables);
 
     // Calculate and return the promotion rate.
@@ -825,17 +762,6 @@ js::Nursery::sweep()
     runSweepActions();
     sweepDictionaryModeObjects();
 
-#ifdef JS_GC_ZEAL
-    /* Poison the nursery contents so touching a freed object will crash. */
-    for (unsigned i = 0; i < numChunks(); i++)
-        chunk(i).poisonAndInit(runtime(), JS_SWEPT_NURSERY_PATTERN);
-
-    if (runtime()->hasZealMode(ZealMode::GenerationalGC)) {
-        /* Only reset the alloc point when we are close to the end. */
-        if (currentChunk_ + 1 == numChunks())
-            setCurrentChunk(0);
-    } else
-#endif
     {
 #ifdef JS_CRASH_DIAGNOSTICS
         for (unsigned i = 0; i < numChunks(); ++i)
@@ -913,20 +839,12 @@ js::Nursery::growAllocableSpace()
 void
 js::Nursery::shrinkAllocableSpace()
 {
-#ifdef JS_GC_ZEAL
-    if (runtime()->hasZealMode(ZealMode::GenerationalGC))
-        return;
-#endif
     updateNumChunks(Max(numChunks() - 1, 1u));
 }
 
 void
 js::Nursery::minimizeAllocableSpace()
 {
-#ifdef JS_GC_ZEAL
-    if (runtime()->hasZealMode(ZealMode::GenerationalGC))
-        return;
-#endif
     updateNumChunks(1);
 }
 
