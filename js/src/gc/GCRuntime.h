@@ -976,7 +976,6 @@ class GCRuntime
     void releaseRelocatedArenasWithoutUnlocking(Arena* arenaList, const AutoLockGC& lock);
     void finishCollection(JS::gcreason::Reason reason);
 
-    void computeNonIncrementalMarkingForValidation(AutoLockForExclusiveAccess& lock);
     void validateIncrementalMarking();
     void finishMarkingValidation();
 
