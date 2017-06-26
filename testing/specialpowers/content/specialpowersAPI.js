@@ -1477,10 +1477,6 @@ SpecialPowersAPI.prototype = {
     Cu.schedulePreciseGC(genGCCallback(callback));
   },
 
-  setGCZeal: function(zeal) {
-    Cu.setGCZeal(zeal);
-  },
-
   isMainProcess: function() {
     try {
       return Cc["@mozilla.org/xre/app-info;1"].
