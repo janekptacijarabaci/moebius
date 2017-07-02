@@ -122,3 +122,4 @@ config = {
         ('/usr/local/lib/hgext', '/usr/local/lib/hgext'),
     ],
 }
+
