@@ -354,7 +354,7 @@ nsHttpHandler::Init()
     mRequestContextService =
         do_GetService("@mozilla.org/network/request-context-service;1");
 
-#if defined(ANDROID) || defined(MOZ_MULET)
+#if defined(ANDROID)
     mProductSub.AssignLiteral(MOZILLA_UAVERSION);
 #else
     mProductSub.AssignLiteral("20100101");
@@ -804,20 +804,6 @@ nsHttpHandler::InitUserAgentComponents()
         mDeviceModelId = mozilla::net::GetDeviceModelId();
     }
 #endif // ANDROID
-
-#ifdef MOZ_MULET
-    {
-        // Add the `Mobile` or `Tablet` or `TV` token when running in the b2g
-        // desktop simulator via preference.
-        nsCString deviceType;
-        nsresult rv = Preferences::GetCString("devtools.useragent.device_type", &deviceType);
-        if (NS_SUCCEEDED(rv)) {
-            mCompatDevice.Assign(deviceType);
-        } else {
-            mCompatDevice.AssignLiteral("Mobile");
-        }
-    }
-#endif // MOZ_MULET
 
 #if defined(MOZ_WIDGET_GONK)
     // Device model identifier should be a simple token, which can be composed
