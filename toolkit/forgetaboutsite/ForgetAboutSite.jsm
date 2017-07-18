@@ -120,9 +120,10 @@ this.ForgetAboutSite = {
         if (hasRootDomain(logins[i].hostname, aDomain))
           lm.removeLogin(logins[i]);
     } catch (ex) {
-      // XXXehsan: is there a better way to do this rather than this
-      // hacky comparison?
-      if (ex.message.indexOf("User canceled Master Password entry") == -1) {
+      // XXX:
+      // Is there a better way to do this rather than this hacky comparison?
+      // Copied this from toolkit/components/passwordmgr/crypto-SDR.js
+      if (!ex.message.includes("User canceled master password entry")) {
         throw ex;
       }
     }
