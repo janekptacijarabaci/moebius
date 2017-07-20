@@ -409,31 +409,22 @@
       }
 
       #titlebar-min {
-        list-style-image: url(chrome://browser/skin/caption-buttons.svg#minimize-highcontrast);
-      }
-      #titlebar-min:hover {
-        list-style-image: url(chrome://browser/skin/caption-buttons.svg#minimize-highcontrast-hover);
+        list-style-image: url(chrome://browser/skin/caption-buttons.svg#minimize-outline-inverted);
       }
 
       #titlebar-max {
-        list-style-image: url(chrome://browser/skin/caption-buttons.svg#maximize-highcontrast);
-      }
-      #titlebar-max:hover {
-        list-style-image: url(chrome://browser/skin/caption-buttons.svg#maximize-highcontrast-hover);
+        list-style-image: url(chrome://browser/skin/caption-buttons.svg#maximize-outline-inverted);
       }
 
       #main-window[sizemode="maximized"] #titlebar-max {
-        list-style-image: url(chrome://browser/skin/caption-buttons.svg#restore-highcontrast);
-      }
-      #main-window[sizemode="maximized"] #titlebar-max:hover {
-        list-style-image: url(chrome://browser/skin/caption-buttons.svg#restore-highcontrast-hover);
+        list-style-image: url(chrome://browser/skin/caption-buttons.svg#restore-outline-inverted);
       }
 
       #titlebar-close {
-        list-style-image: url(chrome://browser/skin/caption-buttons.svg#close-highcontrast);
+        list-style-image: url(chrome://browser/skin/caption-buttons.svg#close-outline-inverted);
       }
       #titlebar-close:hover {
-        list-style-image: url(chrome://browser/skin/caption-buttons.svg#close-highcontrast-hover);
+        list-style-image: url(chrome://browser/skin/caption-buttons.svg#close-outline-inverted);
       }
     }
   }
