@@ -3503,6 +3503,9 @@ pref("plugin.scan.WindowsMediaPlayer", "7.0");
 // Which is currently HKLM\Software\MozillaPlugins\xxxPLIDxxx\Path
 pref("plugin.scan.plid.all", true);
 
+// Allow more than flash to load
+pref("plugin.load_flash_only", false);
+
 // Whether sending WM_MOUSEWHEEL and WM_MOUSEHWHEEL to plugins on Windows.
 pref("plugin.mousewheel.enabled", true);
 
