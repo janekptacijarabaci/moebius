@@ -2696,7 +2696,9 @@ PluginInstanceChild::AnswerSetPluginFocus()
     // when a button click brings up a full screen window. Since we send
     // this in response to a WM_SETFOCUS event on our parent, the parent
     // should have focus when we receive this. If not, ignore the call.
-    if (::GetFocus() == mPluginWindowHWND)
+    if (::GetFocus() == mPluginWindowHWND ||
+        ((GetQuirks() & QUIRK_SILVERLIGHT_FOCUS_CHECK_PARENT) &&
+         (::GetFocus() != mPluginParentHWND)))
         return IPC_OK();
     ::SetFocus(mPluginWindowHWND);
     return IPC_OK();
@@ -3367,6 +3369,9 @@ PluginInstanceChild::DoAsyncSetWindow(const gfxSurfaceType& aSurfaceType,
 #if defined(XP_MACOSX) || defined(XP_WIN)
     mContentsScaleFactor = aWindow.contentsScaleFactor;
 #endif
+
+    if (GetQuirks() & QUIRK_SILVERLIGHT_DEFAULT_TRANSPARENT)
+        mIsTransparent = true;
 
     mLayersRendering = true;
     mSurfaceType = aSurfaceType;
