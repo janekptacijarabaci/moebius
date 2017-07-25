@@ -4,7 +4,9 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-[LegacyUnenumerableNamedProperties]
+// [LegacyUnenumerableNamedProperties]
+// Named properties are enumerable for now.
+// Uncomment to make unenumerable.
 interface PluginArray {
   [NeedsCallerType]
   readonly attribute unsigned long length;
