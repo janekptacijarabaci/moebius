@@ -953,12 +953,12 @@ function safeModeRestart() {
  * Set up event listeners for buttons.
  */
 function setupEventListeners() {
-#ifdef MOZ_UPDATER
-  $("show-update-history-button").addEventListener("click", function(event) {
-    var prompter = Cc["@mozilla.org/updates/update-prompt;1"].createInstance(Ci.nsIUpdatePrompt);
-      prompter.showUpdateHistory(window);
-  });
-#endif
+  if (AppConstants.MOZ_UPDATER) {
+    $("show-update-history-button").addEventListener("click", function(event) {
+      var prompter = Cc["@mozilla.org/updates/update-prompt;1"].createInstance(Ci.nsIUpdatePrompt);
+        prompter.showUpdateHistory(window);
+    });
+  }
   $("reset-box-button").addEventListener("click", function(event) {
     ResetProfile.openConfirmationDialog(window);
   });
