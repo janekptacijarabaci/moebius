@@ -1002,18 +1002,6 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
     if (PREF_CHANGED(UA_PREF("appVersionIsBuildID"))) {
         rv = prefs->GetBoolPref(UA_PREF("appVersionIsBuildID"), &cVar);
         mAppVersionIsBuildID = (NS_SUCCEEDED(rv) && cVar);
-        
-        // Rebuild appVersion
-        if (mAppVersionIsBuildID) {
-          mAppVersion.AssignLiteral(MOZ_UA_BUILDID);
-          if (mAppVersion.IsEmpty())
-            mAppVersion.Assign(dynamicBuildID);
-        } else if (appInfo) {
-          appInfo->GetVersion(mAppVersion);
-        } else {
-          mAppVersion.AssignLiteral(MOZILLA_UAVERSION);
-        }
-      
         mUserAgentIsDirty = true;
     }
 
