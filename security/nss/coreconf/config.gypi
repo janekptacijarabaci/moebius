@@ -102,11 +102,13 @@
     'no_zdefs%': 0,
     'fuzz%': 0,
     'fuzz_tls%': 0,
+    'fuzz_oss%': 0,
     'sign_libs%': 1,
     'use_pprof%': 0,
     'ct_verif%': 0,
     'nss_public_dist_dir%': '<(nss_dist_dir)/public',
     'nss_private_dist_dir%': '<(nss_dist_dir)/private',
+    'only_dev_random%': 1,
   },
   'target_defaults': {
     # Settings specific to targets should go here.
@@ -139,6 +141,52 @@
           'debug_optimization_level%': '1',
         },
       }],
+      [ 'target_arch=="ia32" or target_arch=="x64"', {
+        'defines': [
+          'NSS_X86_OR_X64',
+        ],
+        # For Windows.
+        'msvs_settings': {
+          'VCCLCompilerTool': {
+            'PreprocessorDefinitions': [
+              'NSS_X86_OR_X64',
+            ],
+          },
+        },
+      }],
+      [ 'target_arch=="ia32"', {
+        'defines': [
+          'NSS_X86',
+        ],
+        # For Windows.
+        'msvs_settings': {
+          'VCCLCompilerTool': {
+            'PreprocessorDefinitions': [
+              'NSS_X86',
+            ],
+          },
+        },
+      }],
+      [ 'target_arch=="arm64" or target_arch=="aarch64"', {
+        'defines': [
+          'NSS_USE_64',
+        ],
+      }],
+      [ 'target_arch=="x64"', {
+        'defines': [
+          'NSS_X64',
+          'NSS_USE_64',
+        ],
+        # For Windows.
+        'msvs_settings': {
+          'VCCLCompilerTool': {
+            'PreprocessorDefinitions': [
+              'NSS_X64',
+              'NSS_USE_64',
+            ],
+          },
+        },
+      }],
     ],
     'target_conditions': [
       # If we want to properly export a static library, and copy it to lib,
@@ -152,7 +200,7 @@
         'product_dir': '<(nss_dist_obj_dir)/lib'
       }],
       # mapfile handling
-      [ 'test_build==0 and mapfile!=""', {
+      [ 'mapfile!=""', {
         # Work around a gyp bug. Fixed upstream but not in Ubuntu packages:
         # https://chromium.googlesource.com/external/gyp/+/b85ad3e578da830377dbc1843aa4fbc5af17a192%5E%21/
         'sources': [
@@ -170,7 +218,7 @@
               '-Wl,--version-script,<(INTERMEDIATE_DIR)/out.>(mapfile)',
             ],
           }],
-          [ 'OS=="win"', {
+          [ 'cc_use_gnu_ld!=1 and OS=="win"', {
             # On Windows, .def files are used directly as sources.
             'sources': [
               '>(mapfile)',
@@ -217,12 +265,6 @@
               '-Wl,--gc-sections',
             ],
             'conditions': [
-              ['OS=="dragonfly" or OS=="freebsd" or OS=="netbsd" or OS=="openbsd"', {
-                # Bug 1321317 - unix_rand.c:880: undefined reference to `environ'
-                'ldflags': [
-                  '-Wl,--warn-unresolved-symbols',
-                ],
-              }],
               ['no_zdefs==0', {
                 'ldflags': [
                   '-Wl,-z,defs',
@@ -319,6 +361,9 @@
             'cflags_cc': [
               '-std=c++0x',
             ],
+            'ldflags': [
+              '-z', 'noexecstack',
+            ],
             'conditions': [
               [ 'target_arch=="ia32"', {
                 'cflags': ['-m32'],
@@ -350,11 +395,23 @@
             'cflags': [
               '<!@(<(python) <(DEPTH)/coreconf/werror.py)',
             ],
+            'xcode_settings': {
+              'OTHER_CFLAGS': [
+                '<!@(<(python) <(DEPTH)/coreconf/werror.py)',
+              ],
+            },
           }],
           [ 'fuzz_tls==1', {
             'cflags': [
               '-Wno-unused-function',
+              '-Wno-unused-variable',
             ],
+            'xcode_settings': {
+              'OTHER_CFLAGS': [
+                '-Wno-unused-function',
+                '-Wno-unused-variable',
+              ],
+            },
           }],
           [ 'sanitizer_flags!=0', {
             'cflags': ['<@(sanitizer_flags)'],
@@ -423,6 +480,7 @@
                     'PreprocessorDefinitions': [
                       'WIN32',
                     ],
+                    'AdditionalOptions': [ '/EHsc' ],
                   },
                 },
               }],
@@ -437,6 +495,7 @@
                       'WIN64',
                       '_AMD64_',
                     ],
+                    'AdditionalOptions': [ '/EHsc' ],
                   },
                 },
               }],
