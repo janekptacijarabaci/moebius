@@ -474,7 +474,7 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
 
             if (NS_FAILED(rv) ||
                 NS_FAILED(mTransaction->Finish0RTT(!earlyDataAccepted, negotiatedNPN != mEarlyNegotiatedALPN))) {
-                LOG(("nsHttpConection::EnsureNPNComplete [this=%p] closing transaction %p", this,
+                LOG(("nsHttpConection::EnsureNPNComplete [this=%p] closing transaction %p", this, mTransaction.get()));
                 mTransaction->Close(NS_ERROR_NET_RESET);
                 goto npnComplete;
             }
