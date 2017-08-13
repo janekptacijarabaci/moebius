@@ -793,7 +793,7 @@ private:
     AbstractThread* mResponseThread;
     const char* mCallSite;
     RefPtr<ThenValueBase> mThenValue;
-    MozPromise* mReceiver;
+    RefPtr<MozPromise> mReceiver;
   };
 
 public:
