@@ -418,8 +418,8 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
                  "early selected alpn: %s", this, mEarlyNegotiatedALPN.get()));
             uint32_t infoIndex;
             const SpdyInformation *info = gHttpHandler->SpdyInfo();
-            // We are doing 0RTT only with Http/1 right now!
-            if (NS_FAILED(info->GetNPNIndex(earlyNegotiatedNPN, &infoIndex))) {
+            if (NS_FAILED(info->GetNPNIndex(mEarlyNegotiatedALPN, &infoIndex))) {
+                // This is the HTTP/1 case.
                 // Check if early-data is allowed for this transaction.
                 if (mTransaction->Do0RTT()) {
                     LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] - We "
