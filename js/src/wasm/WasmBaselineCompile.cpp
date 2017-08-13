@@ -2210,6 +2210,11 @@ class BaseCompiler
         // Patch the add in the prologue so that it checks against the correct
         // frame size.
         MOZ_ASSERT(maxFramePushed_ >= localSize_);
+        masm.flush();
+        
+        // Precondition for patching.
+        if (masm.oom())
+          return false;
         masm.patchAdd32ToPtr(stackAddOffset_, Imm32(-int32_t(maxFramePushed_ - localSize_)));
 
         // Since we just overflowed the stack, to be on the safe side, pop the
