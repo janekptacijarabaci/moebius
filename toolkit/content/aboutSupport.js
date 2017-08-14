@@ -920,7 +920,7 @@ Serializer.prototype = {
     return elem.classList.contains("no-copy");
   },
 
-  _nodeText: function (node, endline) {
+  _nodeText(node, endline) {
     let whiteChars = /\s+/g
     let whiteCharsButNoEndline = /(?!\n)[\s]+/g;
     let _node = node.cloneNode(true);
