@@ -1843,6 +1843,20 @@ nsPluginHost::GetSpecialType(const nsACString & aMIMEType)
     return eSpecialType_Flash;
   }
 
+  if (aMIMEType.LowerCaseEqualsASCII("application/x-silverlight") ||
+      aMIMEType.LowerCaseEqualsASCII("application/x-silverlight-2") ||
+      aMIMEType.LowerCaseEqualsASCII("application/x-silverlight-test")) {
+    return eSpecialType_Silverlight;
+  }
+
+  if (aMIMEType.LowerCaseEqualsASCII("application/pdf")) {
+    return eSpecialType_PDF;
+  }
+
+  if (aMIMEType.LowerCaseEqualsASCII("application/vnd.unity")) {
+    return eSpecialType_Unity;
+  }
+
   // Java registers variants of its MIME with parameters, e.g.
   // application/x-java-vm;version=1.3
   const nsACString &noParam = Substring(aMIMEType, 0, aMIMEType.FindChar(';'));
@@ -2007,14 +2021,19 @@ bool
 nsPluginHost::ShouldAddPlugin(nsPluginTag* aPluginTag)
 {
 #if defined(XP_WIN) && (defined(__x86_64__) || defined(_M_X64))
-  // On 64-bit Windows, the only plugin we should load is Flash. Use library
-  // filename and MIME type to check.
+  // On 64-bit windows, the only plugins we should load are flash and
+  // silverlight. Use library filename and MIME type to check.
   if (StringBeginsWith(aPluginTag->FileName(), NS_LITERAL_CSTRING("NPSWF"), nsCaseInsensitiveCStringComparator()) &&
       (aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-shockwave-flash")) ||
        aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-shockwave-flash-test")))) {
     return true;
   }
-
+  if (StringBeginsWith(aPluginTag->FileName(), NS_LITERAL_CSTRING("npctrl"), nsCaseInsensitiveCStringComparator()) &&
+      (aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-silverlight-test")) ||
+       aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-silverlight-2")) ||
+       aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-silverlight")))) {
+    return true;
+  }
   // Accept the test plugin MIME types, so mochitests still work.
   if (aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-test")) ||
       aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-Second-Test")) ||
@@ -2052,22 +2071,6 @@ nsPluginHost::AddPluginTag(nsPluginTag* aPluginTag)
   }
 }
 
-static bool
-PluginInfoIsFlash(const nsPluginInfo& info)
-{
-  if (!info.fName || strcmp(info.fName, "Shockwave Flash") != 0) {
-    return false;
-  }
-  for (uint32_t i = 0; i < info.fVariantCount; ++i) {
-    if (info.fMimeTypeArray[i] &&
-        (!strcmp(info.fMimeTypeArray[i], "application/x-shockwave-flash") ||
-         !strcmp(info.fMimeTypeArray[i], "application/x-shockwave-flash-test"))) {
-      return true;
-    }
-  }
-  return false;
-}
-
 typedef NS_NPAPIPLUGIN_CALLBACK(char *, NP_GETMIMEDESCRIPTION)(void);
 
 nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
@@ -2087,8 +2090,6 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
   PLUGIN_LOG(PLUGIN_LOG_BASIC,
   ("nsPluginHost::ScanPluginsDirectory dir=%s\n", dirPath.get()));
 #endif
-
-  bool flashOnly = Preferences::GetBool("plugin.load_flash_only", true);
 
   nsCOMPtr<nsISimpleEnumerator> iter;
   rv = pluginsDir->GetDirectoryEntries(getter_AddRefs(iter));
@@ -2192,8 +2193,7 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
         res = pluginFile.GetPluginInfo(info, &library);
       }
       // if we don't have mime type don't proceed, this is not a plugin
-      if (NS_FAILED(res) || !info.fMimeTypeArray ||
-          (flashOnly && !PluginInfoIsFlash(info))) {
+      if (NS_FAILED(res) || !info.fMimeTypeArray) {
         RefPtr<nsInvalidPluginTag> invalidTag = new nsInvalidPluginTag(filePath.get(),
                                                                          fileModTime);
         pluginFile.FreePluginInfo(info);
@@ -2515,6 +2515,39 @@ nsresult nsPluginHost::FindPlugins(bool aCreatePluginList, bool * aPluginsChange
     rv = mPrivateDirServiceProvider->GetPLIDDirectories(getter_AddRefs(dirList));
     if (NS_SUCCEEDED(rv)) {
       ScanPluginsDirectoryList(dirList, aCreatePluginList, &pluginschanged);
+
+      if (pluginschanged)
+        *aPluginsChanged = true;
+
+      // if we are just looking for possible changes,
+      // no need to proceed if changes are detected
+      if (!aCreatePluginList && *aPluginsChanged) {
+        NS_ITERATIVE_UNREF_LIST(RefPtr<nsPluginTag>, mCachedPlugins, mNext);
+        NS_ITERATIVE_UNREF_LIST(RefPtr<nsInvalidPluginTag>, mInvalidPlugins, mNext);
+        return NS_OK;
+      }
+    }
+  }
+
+
+  // Scan the installation paths of our popular plugins if the prefs are enabled
+
+  // This table controls the order of scanning
+  const char* const prefs[] = {NS_WIN_ACROBAT_SCAN_KEY,
+                               NS_WIN_QUICKTIME_SCAN_KEY,
+                               NS_WIN_WMP_SCAN_KEY};
+
+  uint32_t size = sizeof(prefs) / sizeof(prefs[0]);
+
+  for (uint32_t i = 0; i < size; i+=1) {
+    nsCOMPtr<nsIFile> dirToScan;
+    bool bExists;
+    if (NS_SUCCEEDED(dirService->Get(prefs[i], NS_GET_IID(nsIFile), getter_AddRefs(dirToScan))) &&
+        dirToScan &&
+        NS_SUCCEEDED(dirToScan->Exists(&bExists)) &&
+        bExists) {
+
+      ScanPluginsDirectory(dirToScan, aCreatePluginList, &pluginschanged);
 
       if (pluginschanged)
         *aPluginsChanged = true;

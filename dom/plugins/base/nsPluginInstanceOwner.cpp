@@ -610,7 +610,7 @@ NS_IMETHODIMP nsPluginInstanceOwner::InvalidateRect(NPRect *invalidRect)
 #endif
 
 #ifndef XP_MACOSX
-  // Invalidate for windowed plugins needs to work.
+  // Silverlight calls invalidate for windowed plugins so this needs to work.
   if (mWidget) {
     mWidget->Invalidate(
       LayoutDeviceIntRect(invalidRect->left, invalidRect->top,

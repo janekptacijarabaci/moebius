@@ -15,16 +15,19 @@ if [ -z "$CC" ]; then
     export CXX=clang++
 fi
 
-gyp_params+=(-Dtest_build=1 -Dfuzz=1)
+gyp_params+=(-Dtest_build=1 -Dfuzz=1 -Dsign_libs=0)
 
 # Add debug symbols even for opt builds.
 nspr_params+=(--enable-debug-symbols)
 
 if [ "$fuzz_oss" = 1 ]; then
-  gyp_params+=(-Dno_zdefs=1)
+  gyp_params+=(-Dno_zdefs=1 -Dfuzz_oss=1)
 else
   enable_sanitizer asan
-  enable_ubsan
+  # Ubsan doesn't build on 32-bit at the moment. Disable it.
+  if [ "$build_64" = 1 ]; then
+    enable_ubsan
+  fi
   enable_sancov
 fi
 
@@ -34,5 +37,5 @@ fi
 
 if [ ! -f "/usr/lib/libFuzzingEngine.a" ]; then
   echo "Cloning libFuzzer files ..."
-  run_verbose "$cwd"/fuzz/clone_libfuzzer.sh
+  run_verbose "$cwd"/fuzz/config/clone_libfuzzer.sh
 fi

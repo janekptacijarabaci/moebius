@@ -21,7 +21,10 @@
 
 pref("keyword.enabled", false);
 pref("general.useragent.locale", "chrome://global/locale/intl.properties");
+pref("general.useragent.compatMode.gecko", true);
 pref("general.useragent.compatMode.firefox", false);
+pref("general.useragent.compatMode.version", "55.0");
+pref("general.useragent.appVersionIsBuildID", true);
 
 // This pref exists only for testing purposes. In order to disable all
 // overrides by default, don't initialize UserAgentOverrides.jsm.
@@ -395,7 +398,7 @@ pref("media.gmp.storage.version.expected", 1);
 
 // Filter what triggers user notifications.
 // See DecoderDoctorDocumentWatcher::ReportAnalysis for details.
-pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMF,MediaCannotInitializePulseAudio,MediaCannotPlayNoDecoders,MediaUnsupportedLibavcodec");
+pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMFNoSilverlight,MediaCannotInitializePulseAudio,MediaCannotPlayNoDecoders,MediaUnsupportedLibavcodec");
 // Whether we report partial failures.
 pref("media.decoder-doctor.verbose", false);
 // Whether DD should consider WMF-disabled a WMF failure, useful for testing.
@@ -1124,6 +1127,9 @@ pref("print.print_via_parent", false);
 // in a document.
 pref("extensions.spellcheck.inline.max-misspellings", 500);
 
+// Predefined convenience pref for overriding the dictionary
+pref("spellchecker.dictionary.override", "");
+
 // Prefs used by libeditor. Prefs specific to seamonkey composer
 // belong in comm-central/editor/ui/composer.js
 
@@ -1278,6 +1284,7 @@ pref("javascript.options.mem.max", -1);
 pref("javascript.options.mem.gc_per_zone", true);
 pref("javascript.options.mem.gc_incremental", true);
 pref("javascript.options.mem.gc_incremental_slice_ms", 10);
+pref("javascript.options.mem.gc_generational", true);
 pref("javascript.options.mem.gc_compacting", true);
 pref("javascript.options.mem.log", false);
 pref("javascript.options.mem.notify", false);
@@ -1304,12 +1311,7 @@ pref("javascript.options.mem.gc_max_empty_chunk_count", 30);
 
 pref("javascript.options.showInConsole", false);
 
-#ifdef RELEASE_OR_BETA
-// Disabled in Beta and Release for now, see bug 1225406
-pref("javascript.options.shared_memory", false);
-#else
 pref("javascript.options.shared_memory", true);
-#endif
 
 pref("javascript.options.throw_on_debuggee_would_run", false);
 pref("javascript.options.dump_stack_on_debuggee_would_run", false);
@@ -3494,6 +3496,15 @@ pref("print.print_extra_margin", 90); // twips (90 twips is an eigth of an inch)
 // Whether to extend the native dialog with information on printing frames.
 pref("print.extend_native_print_dialog", true);
 
+// Locate plugins by scanning the Adobe Acrobat installation directory with a minimum version
+pref("plugin.scan.Acrobat", "5.0");
+
+// Locate plugins by scanning the Quicktime installation directory with a minimum version
+pref("plugin.scan.Quicktime", "5.0");
+
+// Locate and scan the Window Media Player installation directory for plugins with a minimum version
+pref("plugin.scan.WindowsMediaPlayer", "7.0");
+
 // Locate plugins by the directories specified in the Windows registry for PLIDs
 // Which is currently HKLM\Software\MozillaPlugins\xxxPLIDxxx\Path
 pref("plugin.scan.plid.all", true);
@@ -4467,7 +4478,7 @@ pref("image.decode-immediately.enabled", false);
 pref("image.downscale-during-decode.enabled", true);
 
 // The default Accept header sent for images loaded over HTTP(S)
-pref("image.http.accept", "*/*");
+pref("image.http.accept", "image/webp,image/png,image/*;q=0.8,*/*;q=0.5");
 
 // The threshold for inferring that changes to an <img> element's |src|
 // attribute by JavaScript represent an animation, in milliseconds. If the |src|
@@ -4514,6 +4525,9 @@ pref("image.mem.surfacecache.discard_factor", 1);
 // How many threads we'll use for multithreaded decoding. If < 0, will be
 // automatically determined based on the system's number of cores.
 pref("image.multithreaded_decoding.limit", -1);
+
+// Whether we attempt to decode WebP images or not.
+pref("image.webp.enabled", true);
 
 // Limit for the canvas image cache. 0 means we don't limit the size of the
 // cache.

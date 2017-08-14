@@ -204,6 +204,7 @@ nsHttpHandler::nsHttpHandler()
     , mLegacyAppVersion("5.0")
     , mProduct("Goanna")
     , mCompatFirefoxEnabled(false)
+    , mCompatFirefoxVersion("55.0")
     , mUserAgentIsDirty(true)
     , mPromptTempRedirect(true)
     , mEnablePersistentHttpsCaching(false)
@@ -319,9 +320,13 @@ nsHttpHandler::Init()
 
     nsHttpChannelAuthProvider::InitializePrefs();
 
-    mMisc.AssignLiteral("rv:" MOZILLA_UAVERSION);
+    // rv: should have the Firefox/Gecko compatversion for web compatibility
+    mMisc.AssignLiteral("rv:");
+    mMisc += mCompatFirefoxVersion;
 
-    mCompatFirefox.AssignLiteral("Firefox/" MOZILLA_UAVERSION);
+    mCompatGecko.AssignLiteral("Gecko/20100101");
+    mCompatFirefox.AssignLiteral("Firefox/");
+    mCompatFirefox += mCompatFirefoxVersion;
 
     nsCOMPtr<nsIXULAppInfo> appInfo =
         do_GetService("@mozilla.org/xre/app-info;1");
@@ -333,12 +338,30 @@ nsHttpHandler::Init()
         if (mAppName.Length() == 0) {
           appInfo->GetName(mAppName);
         }
-        appInfo->GetVersion(mAppVersion);
         mAppName.StripChars(R"( ()<>@,;:\"/[]?={})");
-    } else {
-        mAppVersion.AssignLiteral(MOZ_APP_UA_VERSION);
+    }
+    
+    nsCString dynamicBuildID;
+    if (appInfo) {
+      appInfo->GetPlatformBuildID(dynamicBuildID);
+      if (dynamicBuildID.Length() > 8 )
+        dynamicBuildID.Left(dynamicBuildID, 8);
     }
 
+    if (mAppVersionIsBuildID) {
+      // Override BuildID
+      mAppVersion.AssignLiteral(MOZ_UA_BUILDID);
+    } else if (appInfo) {
+      appInfo->GetVersion(mAppVersion);
+    } else {
+      // Fall back to platform if appInfo is unavailable
+      mAppVersion.AssignLiteral(MOZILLA_UAVERSION);
+    }
+
+    // If there's no override set, set it to the dynamic BuildID
+    if (mAppVersion.IsEmpty())
+      mAppVersion.Assign(dynamicBuildID);
+        
     mSessionStartTime = NowInSeconds();
     mHandlerActive = true;
 
@@ -354,11 +377,11 @@ nsHttpHandler::Init()
     mRequestContextService =
         do_GetService("@mozilla.org/network/request-context-service;1");
 
-#if defined(ANDROID)
+    // Goanna slice version
     mProductSub.AssignLiteral(MOZILLA_UAVERSION);
-#else
-    mProductSub.AssignLiteral("20100101");
-#endif
+    
+    if (mProductSub.IsEmpty())
+        mProductSub.Assign(dynamicBuildID);
 
 #if DEBUG
     // dump user agent prefs
@@ -372,6 +395,7 @@ nsHttpHandler::Init()
     LOG(("> app-name = %s\n", mAppName.get()));
     LOG(("> app-version = %s\n", mAppVersion.get()));
     LOG(("> compat-firefox = %s\n", mCompatFirefox.get()));
+    LOG(("> compat-gecko = %s\n", mCompatGecko.get()));
     LOG(("> user-agent = %s\n", UserAgent().get()));
 #endif
 
@@ -680,9 +704,10 @@ nsHttpHandler::BuildUserAgent()
                            mAppName.Length() +
                            mAppVersion.Length() +
                            mCompatFirefox.Length() +
+                           mCompatGecko.Length() +
                            mCompatDevice.Length() +
                            mDeviceModelId.Length() +
-                           13);
+                           14);
 
     // Application portion
     mUserAgent.Assign(mLegacyAppName);
@@ -712,6 +737,12 @@ nsHttpHandler::BuildUserAgent()
     }
     mUserAgent += mMisc;
     mUserAgent += ')';
+    
+    if(mCompatGeckoEnabled) {
+      // Provide frozen Gecko/20100101 slice
+      mUserAgent += ' ';
+      mUserAgent += mCompatGecko;
+    }
 
     // Product portion
     mUserAgent += ' ';
@@ -721,7 +752,7 @@ nsHttpHandler::BuildUserAgent()
 
     bool isFirefox = mAppName.EqualsLiteral("Firefox");
     if (isFirefox || mCompatFirefoxEnabled) {
-        // "Firefox/x.y" (compatibility) app token
+        // Provide "Firefox/x.y" (compatibility) app token
         mUserAgent += ' ';
         mUserAgent += mCompatFirefox;
     }
@@ -804,6 +835,20 @@ nsHttpHandler::InitUserAgentComponents()
         mDeviceModelId = mozilla::net::GetDeviceModelId();
     }
 #endif // ANDROID
+
+#ifdef MOZ_MULET
+    {
+        // Add the `Mobile` or `Tablet` or `TV` token when running in the b2g
+        // desktop simulator via preference.
+        nsCString deviceType;
+        nsresult rv = Preferences::GetCString("devtools.useragent.device_type", &deviceType);
+        if (NS_SUCCEEDED(rv)) {
+            mCompatDevice.Assign(deviceType);
+        } else {
+            mCompatDevice.AssignLiteral("Mobile");
+        }
+    }
+#endif // MOZ_MULET
 
 #if defined(MOZ_WIDGET_GONK)
     // Device model identifier should be a simple token, which can be composed
@@ -954,16 +999,44 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
 
     bool cVar = false;
 
+    if (PREF_CHANGED(UA_PREF("appVersionIsBuildID"))) {
+        rv = prefs->GetBoolPref(UA_PREF("appVersionIsBuildID"), &cVar);
+        mAppVersionIsBuildID = (NS_SUCCEEDED(rv) && cVar);
+        mUserAgentIsDirty = true;
+    }
+
+    if (PREF_CHANGED(UA_PREF("compatMode.gecko"))) {
+        rv = prefs->GetBoolPref(UA_PREF("compatMode.gecko"), &cVar);
+        mCompatGeckoEnabled = (NS_SUCCEEDED(rv) && cVar);
+        mUserAgentIsDirty = true;
+    }
+
     if (PREF_CHANGED(UA_PREF("compatMode.firefox"))) {
         rv = prefs->GetBoolPref(UA_PREF("compatMode.firefox"), &cVar);
         mCompatFirefoxEnabled = (NS_SUCCEEDED(rv) && cVar);
         mUserAgentIsDirty = true;
     }
 
+    // general.useragent.compatMode.version
+    // This is the version number used in rv: for Gecko compatibility
+    // and in the Firefox/nn.nn slice when compatMode.firefox is enabled.
+    if (PREF_CHANGED(UA_PREF("compatMode.version"))) {
+        prefs->GetCharPref(UA_PREF("compatMode.version"),
+                           getter_Copies(mCompatFirefoxVersion));
+        
+        // rebuild mMisc and compatMode slice
+        mMisc.AssignLiteral("rv:");
+        mMisc += mCompatFirefoxVersion;
+        mCompatFirefox.AssignLiteral("Firefox/");
+        mCompatFirefox += mCompatFirefoxVersion;
+        
+        mUserAgentIsDirty = true;
+    }
+
     // general.useragent.override
     if (PREF_CHANGED(UA_PREF("override"))) {
         prefs->GetCharPref(UA_PREF("override"),
-                            getter_Copies(mUserAgentOverride));
+                           getter_Copies(mUserAgentOverride));
         mUserAgentIsDirty = true;
     }
 

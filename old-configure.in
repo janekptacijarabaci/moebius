@@ -48,7 +48,7 @@ dnl ========================================================
 MOZJPEG=62
 MOZPNG=10628
 NSPR_VERSION=4
-NSPR_MINVER=4.13.1
+NSPR_MINVER=4.15
 NSS_VERSION=3
 
 dnl Set the minimum version of toolkit libs used by mozilla
@@ -883,6 +883,21 @@ case "$target" in
 
         LDFLAGS=$_SAVE_LDFLAGS
     fi
+
+    dnl With newer linkers we need to pass -allow_heap_execute because of
+    dnl Microsoft Silverlight (5.1.10411.0 at least).
+    AC_MSG_CHECKING([for -allow_heap_execute option to ld])
+    _SAVE_LDFLAGS=$LDFLAGS
+    LDFLAGS="$LDFLAGS -Wl,-allow_heap_execute"
+    AC_TRY_LINK(,[return 0;],_HAVE_ALLOW_HEAP_EXECUTE=1,
+                _HAVE_ALLOW_HEAP_EXECUTE=)
+    if test -n "$_HAVE_ALLOW_HEAP_EXECUTE" ; then
+        AC_MSG_RESULT([yes])
+        MOZ_ALLOW_HEAP_EXECUTE_FLAGS="-Wl,-allow_heap_execute"
+    else
+        AC_MSG_RESULT([no])
+    fi
+    LDFLAGS=$_SAVE_LDFLAGS
 
     MOZ_FIX_LINK_PATHS="-Wl,-executable_path,${DIST}/bin"
     ;;
@@ -2040,7 +2055,7 @@ MOZ_ARG_WITH_BOOL(system-nss,
     _USE_SYSTEM_NSS=1 )
 
 if test -n "$_USE_SYSTEM_NSS"; then
-    AM_PATH_NSS(3.29.5, [MOZ_SYSTEM_NSS=1], [AC_MSG_ERROR([you don't have NSS installed or your version is too old])])
+    AM_PATH_NSS(3.31.1, [MOZ_SYSTEM_NSS=1], [AC_MSG_ERROR([you don't have NSS installed or your version is too old])])
 fi
 
 if test -n "$MOZ_SYSTEM_NSS"; then
@@ -4151,6 +4166,7 @@ AC_SUBST(MOZ_OPTIMIZE)
 AC_SUBST(MOZ_FRAMEPTR_FLAGS)
 AC_SUBST(MOZ_OPTIMIZE_FLAGS)
 AC_SUBST(MOZ_OPTIMIZE_LDFLAGS)
+AC_SUBST_LIST(MOZ_ALLOW_HEAP_EXECUTE_FLAGS)
 AC_SUBST(MOZ_PGO_OPTIMIZE_FLAGS)
 
 dnl ========================================================
@@ -5315,6 +5331,8 @@ if test -n "$MOZ_UA_OS_AGNOSTIC"; then
   AC_DEFINE(MOZ_UA_OS_AGNOSTIC)
 fi
 
+AC_DEFINE_UNQUOTED(MOZ_UA_BUILDID, "$MOZ_UA_BUILDID")
+AC_SUBST(MOZ_UA_BUILDID)
 AC_SUBST(MOZ_PKG_SPECIAL)
 AC_SUBST(MOZ_SIMPLE_PACKAGE_NAME)
 

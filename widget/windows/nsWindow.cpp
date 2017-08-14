@@ -5105,12 +5105,19 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
     case WM_SETTINGCHANGE:
     {
-      if (IsWin10OrLater() && mWindowType == eWindowType_invisible && lParam) {
+      if (lParam) {
         auto lParamString = reinterpret_cast<const wchar_t*>(lParam);
-        if (!wcscmp(lParamString, L"UserInteractionMode")) {
-          nsCOMPtr<nsIWindowsUIUtils> uiUtils(do_GetService("@mozilla.org/windows-ui-utils;1"));
-          if (uiUtils) {
-            uiUtils->UpdateTabletModeState();
+        if (!wcscmp(lParamString, L"ImmersiveColorSet")) {
+          // WM_SYSCOLORCHANGE is not dispatched for accent color changes
+          OnSysColorChanged();
+          break;
+        }
+        if (IsWin10OrLater() && mWindowType == eWindowType_invisible) {
+          if (!wcscmp(lParamString, L"UserInteractionMode")) {
+            nsCOMPtr<nsIWindowsUIUtils> uiUtils(do_GetService("@mozilla.org/windows-ui-utils;1"));
+            if (uiUtils) {
+              uiUtils->UpdateTabletModeState();
+            }
           }
         }
       }
@@ -7136,6 +7143,13 @@ nsWindow::OnSysColorChanged()
     // so all presentations get notified properly.
     // See nsWindow::GlobalMsgWindowProc.
     NotifySysColorChanged();
+    // On Windows 10 only, we trigger a theme change to pick up changed media
+    // queries that are needed for accent color changes.
+    // We also set a temp pref to notify the FE that the colors have changed.
+    if (IsWin10OrLater()) {
+      NotifyThemeChanged();
+      Preferences::SetBool("ui.colorChanged", true);
+    }
   }
 }
 

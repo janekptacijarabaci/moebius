@@ -493,7 +493,19 @@ WindowIsDeferredWindow(HWND hWnd)
 
   // Plugin windows that can trigger ipc calls in child:
   // 'ShockwaveFlashFullScreen' - flash fullscreen window
-  if (className.EqualsLiteral("ShockwaveFlashFullScreen")) {
+  // 'QTNSHIDDEN' - QuickTime
+  // 'AGFullScreenWinClass' - silverlight fullscreen window
+  if (className.EqualsLiteral("ShockwaveFlashFullScreen") ||
+      className.EqualsLiteral("QTNSHIDDEN") ||
+      className.EqualsLiteral("AGFullScreenWinClass")) {
+    SetPropW(hWnd, k3rdPartyWindowProp, (HANDLE)1);
+    return true;
+  }
+
+  // Google Earth bridging msg window between the plugin instance and a separate
+  // earth process. The earth process can trigger a plugin incall on the browser
+  // at any time, which is badness if the instance is already making an incall.
+  if (className.EqualsLiteral("__geplugin_bridge_window__")) {
     SetPropW(hWnd, k3rdPartyWindowProp, (HANDLE)1);
     return true;
   }

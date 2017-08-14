@@ -41,7 +41,8 @@ static RedirEntry kRedirMap[] = {
   },
   {
     "buildconfig", "chrome://global/content/buildconfig.html",
-    nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT
+    nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+      nsIAboutModule::MAKE_LINKABLE
   },
   {
     "checkerboard", "chrome://global/content/aboutCheckerboard.xhtml",
@@ -53,8 +54,9 @@ static RedirEntry kRedirMap[] = {
   { "crashes", "chrome://global/content/crashes.xhtml", 0 },
 #endif
   {
-    "credits", "https://www.mozilla.org/credits/",
-    nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT
+    "credits", "http://www.palemoon.org/Contributors.shtml",
+    nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+    nsIAboutModule::MAKE_LINKABLE
   },
 #ifdef MOZ_DEVTOOLS_ALL
   {

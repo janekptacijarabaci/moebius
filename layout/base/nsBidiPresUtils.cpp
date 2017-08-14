@@ -1648,9 +1648,7 @@ void
 nsBidiPresUtils::InitContinuationStates(nsIFrame*              aFrame,
                                         nsContinuationStates*  aContinuationStates)
 {
-  nsFrameContinuationState* state = aContinuationStates->PutEntry(aFrame);
-  state->mFirstVisualFrame = nullptr;
-  state->mFrameCount = 0;
+  aContinuationStates->PutEntry(aFrame);
 
   if (!IsBidiLeaf(aFrame) || RubyUtils::IsRubyBox(aFrame->GetType())) {
     // Continue for child frames

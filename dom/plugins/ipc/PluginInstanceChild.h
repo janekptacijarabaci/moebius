@@ -318,6 +318,8 @@ private:
     void SetupFlashMsgThrottle();
     void UnhookWinlessFlashThrottle();
     void HookSetWindowLongPtr();
+    void SetUnityHooks();
+    void ClearUnityHooks();
     void InitImm32Hook();
     static inline bool SetWindowLongHookCheck(HWND hWnd,
                                                 int nIndex,
@@ -338,6 +340,9 @@ private:
                                           int nReserved,
                                           HWND hWnd,
                                           CONST RECT *prcRect);
+    static HWND WINAPI SetCaptureHook(HWND aHwnd);
+    static LRESULT CALLBACK UnityGetMessageHookProc(int aCode, WPARAM aWparam, LPARAM aLParam);
+    static LRESULT CALLBACK UnitySendMessageHookProc(int aCode, WPARAM aWparam, LPARAM aLParam);
     static BOOL CALLBACK EnumThreadWindowsCallback(HWND hWnd,
                                                    LPARAM aParam);
     static LRESULT CALLBACK WinlessHiddenFlashWndProc(HWND hWnd,
@@ -470,6 +475,8 @@ private:
     nsIntPoint mPluginSize;
     WNDPROC mWinlessThrottleOldWndProc;
     HWND mWinlessHiddenMsgHWND;
+    HHOOK mUnityGetMessageHook;
+    HHOOK mUnitySendMessageHook;
 #endif
 
     friend class ChildAsyncCall;

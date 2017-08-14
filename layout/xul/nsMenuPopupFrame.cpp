@@ -95,6 +95,8 @@ nsMenuPopupFrame::nsMenuPopupFrame(nsStyleContext* aContext)
   :nsBoxFrame(aContext),
   mCurrentMenu(nullptr),
   mPrefSize(-1, -1),
+  mXPos(0),
+  mYPos(0),
   mLastClientOffset(0, 0),
   mPopupType(ePopupTypePanel),
   mPopupState(ePopupClosed),

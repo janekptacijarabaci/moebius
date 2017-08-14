@@ -7,6 +7,7 @@
 #include "jit/IonBuilder.h"
 
 #include "mozilla/DebugOnly.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/SizePrintfMacros.h"
 
 #include "builtin/Eval.h"
@@ -841,10 +842,12 @@ IonBuilder::build()
 
     insertRecompileCheck();
 
-    MOZ_TRY(traverseBytecode());
+    auto clearLastPriorResumePoint = mozilla::MakeScopeExit([&] {
+        // Discard unreferenced & pre-allocated resume points.
+        replaceMaybeFallbackFunctionGetter(nullptr);
+    });
 
-    // Discard unreferenced & pre-allocated resume points.
-    replaceMaybeFallbackFunctionGetter(nullptr);
+    MOZ_TRY(traverseBytecode());
 
     if (script_->hasBaselineScript() &&
         inlinedBytecodeLength_ > script_->baselineScript()->inlinedBytecodeLength())
@@ -1003,10 +1006,13 @@ IonBuilder::buildInline(IonBuilder* callerBuilder, MResumePoint* callerResumePoi
     // initialized.
     MOZ_TRY(initEnvironmentChain(callInfo.fun()));
 
+    auto clearLastPriorResumePoint = mozilla::MakeScopeExit([&] {
+        // Discard unreferenced & pre-allocated resume points.
+        replaceMaybeFallbackFunctionGetter(nullptr);
+    });
+
     MOZ_TRY(traverseBytecode());
 
-    // Discard unreferenced & pre-allocated resume points.
-    replaceMaybeFallbackFunctionGetter(nullptr);
 
     MOZ_ASSERT(iterators_.empty(), "Iterators should be added to outer builder");
 
@@ -1211,6 +1217,11 @@ IonBuilder::addOsrValueTypeBarrier(uint32_t slot, MInstruction** def_,
         osrBlock->insertBefore(osrBlock->lastIns(), barrier);
         osrBlock->rewriteSlot(slot, barrier);
         def = barrier;
+
+        // If the TypeSet is more precise than |type|, adjust |type| for the
+        // code below.
+        if (type == MIRType::Value)
+            type = barrier->type();
     } else if (type == MIRType::Null ||
                type == MIRType::Undefined ||
                type == MIRType::MagicOptimizedArguments)

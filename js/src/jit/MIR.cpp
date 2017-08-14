@@ -6014,7 +6014,7 @@ bool
 jit::ElementAccessMightBeFrozen(CompilerConstraintList* constraints, MDefinition* obj)
 {
     TemporaryTypeSet* types = obj->resultTypeSet();
-    return !types || types->hasObjectFlags(constraints, OBJECT_FLAG_FROZEN);
+    return !types || types->hasObjectFlags(constraints, OBJECT_FLAG_FROZEN_ELEMENTS);
 }
 
 AbortReasonOr<bool>

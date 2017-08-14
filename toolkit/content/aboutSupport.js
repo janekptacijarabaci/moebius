@@ -779,7 +779,8 @@ Serializer.prototype = {
     let hasText = false;
     for (let child of elem.childNodes) {
       if (child.nodeType == Node.TEXT_NODE) {
-        let text = this._nodeText(child);
+        let text = this._nodeText(
+            child, (child.classList && child.classList.contains("endline")));
         this._appendText(text);
         hasText = hasText || !!text.trim();
       } else if (child.nodeType == Node.ELEMENT_NODE)
@@ -805,7 +806,7 @@ Serializer.prototype = {
     }
   },
 
-  _startNewLine(lines) {
+  _startNewLine() {
     let currLine = this._currentLine;
     if (currLine) {
       // The current line is not empty.  Trim it.
@@ -817,7 +818,7 @@ Serializer.prototype = {
     this._lines.push("");
   },
 
-  _appendText(text, lines) {
+  _appendText(text) {
     this._currentLine += text;
   },
 
@@ -840,7 +841,8 @@ Serializer.prototype = {
         let col = tableHeadingCols[i];
         if (col.localName != "th" || col.classList.contains("title-column"))
           break;
-        colHeadings[i] = this._nodeText(col).trim();
+        colHeadings[i] = this._nodeText(
+            col, (col.classList && col.classList.contains("endline"))).trim();
       }
     }
     let hasColHeadings = Object.keys(colHeadings).length > 0;
@@ -867,7 +869,10 @@ Serializer.prototype = {
           let text = "";
           if (colHeadings[j])
             text += colHeadings[j] + ": ";
-          text += this._nodeText(children[j]).trim();
+          text += this._nodeText(
+              children[j],
+              (children[j].classList &&
+               children[j].classList.contains("endline"))).trim();
           this._appendText(text);
           this._startNewLine();
         }
@@ -883,7 +888,10 @@ Serializer.prototype = {
       if (this._ignoreElement(trs[i]))
         continue;
       let children = trs[i].querySelectorAll("th,td");
-      let rowHeading = this._nodeText(children[0]).trim();
+      let rowHeading = this._nodeText(
+          children[0],
+          (children[0].classList &&
+           children[0].classList.contains("endline"))).trim();
       if (children[0].classList.contains("title-column")) {
         if (!this._isHiddenSubHeading(children[0]))
           this._appendText(rowHeading);
@@ -897,7 +905,10 @@ Serializer.prototype = {
           // queued up from querySelectorAll earlier.
           this._appendText(rowHeading + ": ");
         } else {
-          this._appendText(rowHeading + ": " + this._nodeText(children[1]).trim());
+          this._appendText(rowHeading + ": " + this._nodeText(
+              children[1],
+              (children[1].classList &&
+               children[1].classList.contains("endline"))).trim());
         }
       }
       this._startNewLine();
@@ -909,8 +920,16 @@ Serializer.prototype = {
     return elem.classList.contains("no-copy");
   },
 
-  _nodeText(node) {
-    return node.textContent.replace(/\s+/g, " ");
+  _nodeText(node, endline) {
+    let whiteChars = /\s+/g
+    let whiteCharsButNoEndline = /(?!\n)[\s]+/g;
+    let _node = node.cloneNode(true);
+    if (_node.firstElementChild &&
+        (_node.firstElementChild.nodeName.toLowerCase() == "button")) {
+      _node.removeChild(_node.firstElementChild);
+    }
+    return _node.textContent.replace(
+        endline ? whiteCharsButNoEndline : whiteChars, " ");
   },
 };
 
@@ -953,10 +972,12 @@ function safeModeRestart() {
  * Set up event listeners for buttons.
  */
 function setupEventListeners() {
-  $("show-update-history-button").addEventListener("click", function(event) {
-    var prompter = Cc["@mozilla.org/updates/update-prompt;1"].createInstance(Ci.nsIUpdatePrompt);
-      prompter.showUpdateHistory(window);
-  });
+  if (AppConstants.MOZ_UPDATER) {
+    $("show-update-history-button").addEventListener("click", function(event) {
+      var prompter = Cc["@mozilla.org/updates/update-prompt;1"].createInstance(Ci.nsIUpdatePrompt);
+        prompter.showUpdateHistory(window);
+    });
+  }
   $("reset-box-button").addEventListener("click", function(event) {
     ResetProfile.openConfirmationDialog(window);
   });
@@ -980,7 +1001,7 @@ function setupEventListeners() {
     PlacesDBUtils.checkAndFixDatabase(function(aLog) {
       let msg = aLog.join("\n");
       $("verify-place-result").style.display = "block";
-      $("verify-place-result").classList.remove("no-copy");
+      $("verify-place-result-parent").classList.remove("no-copy");
       $("verify-place-result").textContent = msg;
     });
   });

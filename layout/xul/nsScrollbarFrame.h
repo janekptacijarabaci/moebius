@@ -20,8 +20,12 @@ nsIFrame* NS_NewScrollbarFrame(nsIPresShell* aPresShell, nsStyleContext* aContex
 class nsScrollbarFrame : public nsBoxFrame
 {
 public:
-    explicit nsScrollbarFrame(nsStyleContext* aContext):
-      nsBoxFrame(aContext), mScrollbarMediator(nullptr) {}
+    explicit nsScrollbarFrame(nsStyleContext* aContext)
+      : nsBoxFrame(aContext)
+      , mIncrement(0)
+      , mSmoothScroll(false)
+      , mScrollbarMediator(nullptr)
+    {}
 
   NS_DECL_QUERYFRAME_TARGET(nsScrollbarFrame)
 
