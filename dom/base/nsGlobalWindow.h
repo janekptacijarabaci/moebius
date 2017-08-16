@@ -1795,6 +1795,8 @@ public:
                           DOMHighResTimeStamp aDeadline, bool aDidTimeout);
   nsresult ExecuteIdleRequest(TimeStamp aDeadline);
   void ScheduleIdleRequestDispatch();
+  void SuspendIdleRequests();
+  void ResumeIdleRequests();
 
   typedef mozilla::LinkedList<mozilla::dom::IdleRequest> IdleRequests;
   void InsertIdleCallback(mozilla::dom::IdleRequest* aRequest);
