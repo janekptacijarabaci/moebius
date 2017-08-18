@@ -246,7 +246,7 @@ CSSAnimation::QueueEvents(StickyTimeDuration aActiveTime)
   }
 
   switch (mPreviousPhase) {
-    case AnimationPhase::Null:
+    case AnimationPhase::Idle:
     case AnimationPhase::Before:
       if (currentPhase == AnimationPhase::Active) {
         events.AppendElement(AnimationEventParams{ eAnimationStart,
