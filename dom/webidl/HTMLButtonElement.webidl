@@ -45,6 +45,5 @@ interface HTMLButtonElement : HTMLElement {
   boolean reportValidity();
   void setCustomValidity(DOMString error);
 
-// Not yet implemented:
-//  readonly attribute NodeList labels;
+  readonly attribute NodeList labels;
 };
