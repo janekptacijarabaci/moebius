@@ -183,7 +183,8 @@ var RemoteTabViewer = {
       }
     }
 
-    if (CloudSync && CloudSync.ready && CloudSync().tabsReady && CloudSync().tabs.hasRemoteTabs()) {
+    if (AppConstants.MOZ_SERVICES_CLOUDSYNC && CloudSync && CloudSync.ready &&
+        CloudSync().tabsReady && CloudSync().tabs.hasRemoteTabs()) {
       this._generateCloudSyncTabList()
           .then(complete, complete);
     } else {
