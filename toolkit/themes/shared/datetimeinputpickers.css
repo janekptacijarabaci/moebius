@@ -243,6 +243,10 @@ button.month-year.active::after {
   color: var(--weekend-disabled-font-color);
 }
 
+.days-view > .today {
+  font-weight: bold;
+}
+
 .days-view > .out-of-range::before {
   display: none;
 }
@@ -324,6 +328,11 @@ button.month-year.active::after {
   content: "";
   position: absolute;
   z-index: -10;
+}
+
+.calendar-container .days-view > div.today::before {
+  background: var(--today-fill-color);
+  content: "";
 }
 
 .spinner-container > .spinner:not(.scrolling) > div.selection,
