@@ -51,30 +51,36 @@ function DatePicker(context) {
         dateKeeper,
         locale,
         isMonthPickerVisible: false,
-        isYearSet: false,
-        isMonthSet: false,
-        isDateSet: false,
         getDayString: new Intl.NumberFormat(locale).format,
         getWeekHeaderString: weekday => weekdayStrings[weekday],
         getMonthString: month => monthStrings[month],
-        setSelection: ({ selection }) => {
-          dateKeeper.setSelection(selection);
-          this.state.isYearSet = true;
-          this.state.isMonthSet = true;
-          this.state.isDateSet = true;
+        setSelection: date => {
+          dateKeeper.setSelection({
+            year: date.getUTCFullYear(),
+            month: date.getUTCMonth(),
+            day: date.getUTCDate(),
+          });
           this._update();
           this._dispatchState();
           this._closePopup();
         },
         setYear: year => {
           dateKeeper.setYear(year);
-          this.state.isYearSet = true;
+          dateKeeper.setSelection({
+            year,
+            month: dateKeeper.selection.month,
+            day: dateKeeper.selection.day,
+          });
           this._update();
           this._dispatchState();
         },
         setMonth: month => {
           dateKeeper.setMonth(month);
-          this.state.isMonthSet = true;
+          dateKeeper.setSelection({
+            year: dateKeeper.selection.year,
+            month,
+            day: dateKeeper.selection.day,
+          });
           this._update();
           this._dispatchState();
         },
@@ -156,8 +162,7 @@ function DatePicker(context) {
      * Use postMessage to pass the state of picker to the panel.
      */
     _dispatchState() {
-      const { year, month, day } = this.state.dateKeeper;
-      const { isYearSet, isMonthSet, isDaySet } = this.state;
+      const { year, month, day } = this.state.dateKeeper.selection;
       // The panel is listening to window for postMessage event, so we
       // do postMessage to itself to send data to input boxes.
       window.postMessage({
@@ -166,9 +171,6 @@ function DatePicker(context) {
           year,
           month,
           day,
-          isYearSet,
-          isMonthSet,
-          isDaySet
         }
       }, "*");
     },
@@ -249,17 +251,10 @@ function DatePicker(context) {
     set({ year, month, day }) {
       const { dateKeeper } = this.state;
 
-      if (year != undefined) {
-        this.state.isYearSet = true;
-      }
-      if (month != undefined) {
-        this.state.isMonthSet = true;
-      }
-      if (day != undefined) {
-        this.state.isDaySet = true;
-      }
-
       dateKeeper.set({
+        year, month, day
+      });
+      dateKeeper.setSelection({
         year, month, day
       });
       this._update();
