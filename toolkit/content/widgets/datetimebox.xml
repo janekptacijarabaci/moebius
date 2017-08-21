@@ -30,6 +30,7 @@
         this.mYearPlaceHolder = ]]>"&date.year.placeholder;"<![CDATA[;
         this.mMonthPlaceHolder = ]]>"&date.month.placeholder;"<![CDATA[;
         this.mDayPlaceHolder = ]]>"&date.day.placeholder;"<![CDATA[;
+        this.mSeparatorText = "/";
         /* eslint-enable no-multi-spaces */
 
         this.mMinMonth = 1;
