@@ -65,7 +65,6 @@ Calendar.prototype = {
       // Transform the days and weekHeaders array for rendering
       const days = props.days.map(({ dateObj, classNames, enabled }) => {
         return {
-          dateValue,
           textContent: props.getDayString(dateObj.getUTCDate()),
           className: classNames.join(" "),
           enabled
