@@ -67,6 +67,9 @@ this.DateTimePickerHelper = {
         break;
       }
       case "FormDateTime:UpdatePicker": {
+        if (!this.picker) {
+          return;
+        }
         this.picker.setPopupValue(aMessage.data);
         break;
       }

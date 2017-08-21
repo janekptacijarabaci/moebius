@@ -34,6 +34,7 @@ function DatePicker(context) {
       this._setDefaultState();
       this._createComponents();
       this._update();
+      document.dispatchEvent(new CustomEvent("PickerReady"));
     },
 
     /*
