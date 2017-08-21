@@ -166,7 +166,9 @@
                   weekends,
                   monthStrings,
                   weekdayStrings,
-                  locale
+                  locale,
+                  min: detail.min,
+                  max: detail.max,
                 }
               });
               break;
