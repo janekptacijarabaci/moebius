@@ -166,6 +166,7 @@
            hidden="true"
            orient="vertical"
            noautofocus="true"
+           noautohide="true"
            consumeoutsideclicks="false"
            level="parent">
       <iframe id="dateTimePopupFrame"/>
