@@ -4,6 +4,11 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
+<!DOCTYPE bindings [
+<!ENTITY % datetimeboxDTD SYSTEM "chrome://global/locale/datetimebox.dtd">
+%datetimeboxDTD;
+]>
+
 <bindings id="datetimeboxBindings"
    xmlns="http://www.mozilla.org/xbl"
    xmlns:html="http://www.w3.org/1999/xhtml"
@@ -21,12 +26,12 @@
     <implementation>
       <constructor>
       <![CDATA[
-        // TODO: Bug 1320227 - [DateTimeInput] localization for
-        // <input type=date> input box
-        this.mMonthPlaceHolder = "mm";
-        this.mDayPlaceHolder = "dd";
-        this.mYearPlaceHolder = "yyyy";
-        this.mSeparatorText = "/";
+        /* eslint-disable no-multi-spaces */
+        this.mYearPlaceHolder = ]]>"&date.year.placeholder;"<![CDATA[;
+        this.mMonthPlaceHolder = ]]>"&date.month.placeholder;"<![CDATA[;
+        this.mDayPlaceHolder = ]]>"&date.day.placeholder;"<![CDATA[;
+        /* eslint-enable no-multi-spaces */
+
         this.mMinMonth = 1;
         this.mMaxMonth = 12;
         this.mMinDay = 1;
