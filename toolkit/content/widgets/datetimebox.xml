@@ -1026,7 +1026,8 @@
     <content>
       <html:div class="datetime-input-box-wrapper"
                 xbl:inherits="context,disabled,readonly">
-        <html:span>
+        <html:span class="datetime-input-edit-wrapper"
+                   anonid="edit-wrapper">
           <html:input anonid="input-one"
                       class="textbox-input datetime-input numeric"
                       size="2" maxlength="2"
