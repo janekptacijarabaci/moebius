@@ -79,6 +79,7 @@
 #include "PermissionMessageUtils.h"
 #include "StructuredCloneData.h"
 #include "ColorPickerParent.h"
+#include "DatePickerParent.h"
 #include "FilePickerParent.h"
 #include "TabChild.h"
 #include "LoadContext.h"
@@ -2437,6 +2438,20 @@ TabParent::AllocPColorPickerParent(const nsString& aTitle,
 
 bool
 TabParent::DeallocPColorPickerParent(PColorPickerParent* actor)
+{
+  delete actor;
+  return true;
+}
+
+PDatePickerParent*
+TabParent::AllocPDatePickerParent(const nsString& aTitle,
+                                  const nsString& aInitialDate)
+{
+  return new DatePickerParent(aTitle, aInitialDate);
+}
+
+bool
+TabParent::DeallocPDatePickerParent(PDatePickerParent* actor)
 {
   delete actor;
   return true;

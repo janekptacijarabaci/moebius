@@ -1463,6 +1463,7 @@ protected:
   };
   nsresult InitFilePicker(FilePickerType aType);
   nsresult InitColorPicker();
+  nsresult InitDatePicker();
 
   /**
    * Use this function before trying to open a picker.
@@ -1658,7 +1659,7 @@ private:
 
   /**
    * Checks if aDateTimeInputType should be supported based on "dom.forms.datetime",
-   * and "dom.experimental_forms".
+   * "dom.forms.datepicker" and "dom.experimental_forms".
    */
   static bool
   IsDateTimeTypeSupported(uint8_t aDateTimeInputType);
@@ -1683,6 +1684,13 @@ private:
    */
   static bool
   IsDirPickerEnabled();
+
+  /**
+   * Checks preference "dom.forms.datepicker" to determine if date picker should
+   * be supported.
+   */
+  static bool
+  IsDatePickerEnabled();
 
   /**
    * Checks preference "dom.experimental_forms" to determine if experimental
