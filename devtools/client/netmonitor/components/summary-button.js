@@ -21,12 +21,13 @@ function SummaryButton({
   summary,
   triggerSummary,
 }) {
-  let { count, bytes, millis } = summary;
+  let { count, contentSize, transferredSize, millis } = summary;
   const text = (count === 0) ? L10N.getStr("networkMenu.empty") :
-    PluralForm.get(count, L10N.getStr("networkMenu.summary"))
+    PluralForm.get(count, L10N.getStr("networkMenu.summary2"))
     .replace("#1", count)
-    .replace("#2", getSizeWithDecimals(bytes / 1024))
-    .replace("#3", getTimeWithDecimals(millis / 1000));
+    .replace("#2", getSizeWithDecimals(contentSize / 1024))
+    .replace("#3", getSizeWithDecimals(transferredSize / 1024))
+    .replace("#4", getTimeWithDecimals(millis / 1000));
 
   return button({
     id: "requests-menu-network-summary-button",
