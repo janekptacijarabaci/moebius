@@ -118,27 +118,35 @@ StatisticsView.prototype = {
       let string = getSizeWithDecimals(value / 1024);
       return L10N.getFormatStr("charts.sizeKB", string);
     },
+    transferredSize: value => {
+      let string = getSizeWithDecimals(value / 1024);
+      return L10N.getFormatStr("charts.transferredSizeKB", string);
+    },
     time: value => {
       let string = getTimeWithDecimals(value / 1000);
       return L10N.getFormatStr("charts.totalS", string);
     }
   },
   _commonChartTotals: {
+    cached: total => {
+      return L10N.getFormatStr("charts.totalCached", total);
+    },
+    count: total => {
+      return L10N.getFormatStr("charts.totalCount", total);
+    },
     size: total => {
       let string = getSizeWithDecimals(total / 1024);
       return L10N.getFormatStr("charts.totalSize", string);
+    },
+    transferredSize: total => {
+      let string = getSizeWithDecimals(total / 1024);
+      return L10N.getFormatStr("charts.totalTransferredSize", string);
     },
     time: total => {
       let seconds = total / 1000;
       let string = getTimeWithDecimals(seconds);
       return PluralForm.get(seconds,
         L10N.getStr("charts.totalSeconds")).replace("#1", string);
-    },
-    cached: total => {
-      return L10N.getFormatStr("charts.totalCached", total);
-    },
-    count: total => {
-      return L10N.getFormatStr("charts.totalCount", total);
     }
   },
 
@@ -162,6 +170,14 @@ StatisticsView.prototype = {
     let chart = this.Chart.PieTable(document, {
       diameter: NETWORK_ANALYSIS_PIE_CHART_DIAMETER,
       title: L10N.getStr(title),
+      header: {
+        cached: "",
+        count: "",
+        label: L10N.getStr("charts.type"),
+        size: L10N.getStr("charts.size"),
+        transferredSize: L10N.getStr("charts.transferred"),
+        time: L10N.getStr("charts.time")
+      },
       data: data,
       strings: strings,
       totals: totals,
@@ -187,13 +203,14 @@ StatisticsView.prototype = {
    *        True if the cache is considered enabled, false for disabled.
    */
   _sanitizeChartDataSource: function (items, emptyCache) {
-    let data = [
+    const data = [
       "html", "css", "js", "xhr", "fonts", "images", "media", "flash", "ws", "other"
     ].map(e => ({
       cached: 0,
       count: 0,
       label: e,
       size: 0,
+      transferredSize: 0,
       time: 0
     }));
 
@@ -237,6 +254,7 @@ StatisticsView.prototype = {
       if (emptyCache || !responseIsFresh(details)) {
         data[type].time += details.totalTime || 0;
         data[type].size += details.contentSize || 0;
+        data[type].transferredSize += details.transferredSize || 0;
       } else {
         data[type].cached++;
       }
