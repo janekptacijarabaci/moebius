@@ -41,7 +41,6 @@ MAR_CHANNEL_ID=basilisk-release
 MOZ_PROFILE_MIGRATOR=1
 MOZ_WEBGL_CONFORMANT=1
 MOZ_JSDOWNLOADS=1
-MOZ_RUST_MP4PARSE=
 
 # Enable checking that add-ons are signed by the trusted root
 MOZ_ADDON_SIGNING=
