@@ -666,6 +666,10 @@ DOCUMENT_ONLY_EVENT(selectionchange,
                     eSelectionChange,
                     EventNameType_HTMLXUL,
                     eBasicEventClass)
+DOCUMENT_ONLY_EVENT(visibilitychange,
+                    eVisibilityChange,
+                    EventNameType_HTMLXUL,
+                    eBasicEventClass)
 
 NON_IDL_EVENT(MozMouseHittest,
               eMouseHitTest,
@@ -998,6 +1002,10 @@ EVENT(animationend,
       eAnimationEventClass)
 EVENT(animationiteration,
       eAnimationIteration,
+      EventNameType_All,
+      eAnimationEventClass)
+EVENT(animationcancel,
+      eAnimationCancel,
       EventNameType_All,
       eAnimationEventClass)
 
