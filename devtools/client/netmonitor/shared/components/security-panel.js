@@ -41,6 +41,10 @@ function SecurityPanel({
           securityInfo.protocolVersion || notAvailable,
         [L10N.getStr("netmonitor.security.cipherSuite")]:
           securityInfo.cipherSuite || notAvailable,
+        [L10N.getStr("netmonitor.security.keaGroup")]:
+          securityInfo.keaGroupName || notAvailable,
+        [L10N.getStr("netmonitor.security.signatureScheme")]:
+          securityInfo.signatureSchemeName || notAvailable,
       },
       [L10N.getFormatStr("netmonitor.security.hostHeader", getUrlHost(url))]: {
         [L10N.getStr("netmonitor.security.hsts")]:
