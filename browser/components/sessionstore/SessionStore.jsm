@@ -189,6 +189,15 @@ XPCOMUtils.defineLazyModuleGetter(this, "ViewSourceBrowser",
 XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
   "resource://gre/modules/AsyncShutdown.jsm");
 
+Object.defineProperty(this, "HUDService", {
+  get: function HUDService_getter() {
+    let devtools = Cu.import("resource://devtools/shared/Loader.jsm", {}).devtools;
+    return devtools.require("devtools/client/webconsole/hudservice").HUDService;
+  },
+  configurable: true,
+  enumerable: true
+});
+
 /**
  * |true| if we are in debug mode, |false| otherwise.
  * Debug mode is controlled by preference browser.sessionstore.debug
@@ -2675,8 +2684,14 @@ var SessionStoreInternal = {
       this._closedObjectsChanged = true;
     }
 
+    // Scratchpad
     if (lastSessionState.scratchpads) {
       ScratchpadManager.restoreSession(lastSessionState.scratchpads);
+    }
+
+    // The Browser Console
+    if (lastSessionState.browserConsole) {
+      HUDService.restoreBrowserConsoleSession();
     }
 
     // Set data that persists between sessions
@@ -3044,6 +3059,7 @@ var SessionStoreInternal = {
       global: this._globalState.getState()
     };
 
+    // Scratchpad
     if (Cu.isModuleLoaded("resource://devtools/client/scratchpad/scratchpad-manager.jsm")) {
       // get open Scratchpad window states too
       let scratchpads = ScratchpadManager.getSessionState();
@@ -3051,6 +3067,9 @@ var SessionStoreInternal = {
         state.scratchpads = scratchpads;
       }
     }
+
+    // The Browser Console
+    state.browserConsole = HUDService.getBrowserConsoleSessionState();
 
     // Persist the last session if we deferred restoring it
     if (LastSession.canRestore) {
@@ -3404,8 +3423,14 @@ var SessionStoreInternal = {
 
     this.restoreWindow(aWindow, root.windows[0], aOptions);
 
+    // Scratchpad
     if (aState.scratchpads) {
       ScratchpadManager.restoreSession(aState.scratchpads);
+    }
+
+    // The Browser Console
+    if (aState.browserConsole) {
+      HUDService.restoreBrowserConsoleSession();
     }
   },
 

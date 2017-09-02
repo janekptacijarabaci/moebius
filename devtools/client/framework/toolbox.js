@@ -63,7 +63,7 @@ loader.lazyRequireGetter(this, "ToolboxButtons",
 loader.lazyRequireGetter(this, "SourceMapService",
   "devtools/client/framework/source-map-service", true);
 loader.lazyRequireGetter(this, "HUDService",
-  "devtools/client/webconsole/hudservice");
+  "devtools/client/webconsole/hudservice", true);
 loader.lazyRequireGetter(this, "viewSource",
   "devtools/client/shared/view-source");
 
