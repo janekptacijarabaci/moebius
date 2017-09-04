@@ -407,7 +407,7 @@ const WaterfallColumn = createFactory(createClass({
 }));
 
 // List of properties of the timing info we want to create boxes for
-const TIMING_KEYS = ["blocked", "dns", "connect", "send", "wait", "receive"];
+const TIMING_KEYS = ["blocked", "dns", "connect", "ssl", "send", "wait", "receive"];
 
 function timingBoxes(item) {
   const { eventTimings, totalTime, fromCache, fromServiceWorker } = item;
