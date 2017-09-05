@@ -10,7 +10,7 @@ const { L10N } = require("../../l10n");
 const { getSelectedRequest } = require("../../selectors/index");
 
 const { div, span } = DOM;
-const types = ["blocked", "dns", "connect", "send", "wait", "receive"];
+const types = ["blocked", "dns", "connect", "ssl", "send", "wait", "receive"];
 const TIMINGS_END_PADDING = "80px";
 
 /*
