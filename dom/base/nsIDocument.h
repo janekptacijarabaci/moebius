@@ -153,6 +153,7 @@ class NodeIterator;
 enum class OrientationType : uint8_t;
 class ProcessingInstruction;
 class Promise;
+class Selection;
 class StyleSheetList;
 class SVGDocument;
 class SVGSVGElement;
@@ -910,6 +911,8 @@ public:
    * Return the root element for this document.
    */
   Element* GetRootElement() const;
+
+  mozilla::dom::Selection* GetSelection(mozilla::ErrorResult& aRv);
 
   /**
    * Retrieve information about the viewport as a data structure.

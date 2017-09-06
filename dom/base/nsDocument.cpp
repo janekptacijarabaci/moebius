@@ -13169,3 +13169,19 @@ nsDocument::IsThirdParty()
   mIsThirdParty.emplace(false);
   return mIsThirdParty.value();
 }
+
+Selection*
+nsIDocument::GetSelection(ErrorResult& aRv)
+{
+  nsCOMPtr<nsPIDOMWindowInner> window = GetInnerWindow();
+  if (!window) {
+    return nullptr;
+  }
+
+  NS_ASSERTION(window->IsInnerWindow(), "Should have inner window here!");
+  if (!window->IsCurrentInnerWindow()) {
+    return nullptr;
+  }
+
+  return nsGlobalWindow::Cast(window)->GetSelection(aRv);
+}
