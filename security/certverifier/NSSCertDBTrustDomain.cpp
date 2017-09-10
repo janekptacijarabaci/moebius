@@ -246,7 +246,7 @@ NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
     // Goanna implemented nsICertOverrideService.
     // Of course, for this to work as expected, we need to make sure we're
     // inquiring about the trust of a CA and not an end-entity. If an end-entity
-    // has the CERTDB_TRUSTED_CA bit set, Gecko does not consider it to be a
+    // has the CERTDB_TRUSTED_CA bit set, Goanna does not consider it to be a
     // trust anchor; it must inherit its trust.
     if (flags & CERTDB_TRUSTED_CA && endEntityOrCA == EndEntityOrCA::MustBeCA) {
       if (policy.IsAnyPolicy()) {
