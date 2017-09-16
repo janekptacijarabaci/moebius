@@ -1237,7 +1237,7 @@ Search.prototype = {
     //  * If the protocol differs we should not match. For example if the user
     //    searched https we should not return http.
     try {
-      let prefixURI = NetUtil.newURI(this._strippedPrefix + match.token);
+      let prefixURI = NetUtil.newURI(this._strippedPrefix);
       let finalURI = NetUtil.newURI(match.url);
       if (prefixURI.scheme != finalURI.scheme)
         return false;
