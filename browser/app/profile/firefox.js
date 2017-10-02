@@ -176,11 +176,8 @@ pref("lightweightThemes.update.enabled", true);
 pref("lightweightThemes.getMoreURL", "https://addons.mozilla.org/%LOCALE%/firefox/themes");
 pref("lightweightThemes.recommendedThemes", "");
 
-#if defined(MOZ_WIDEVINE_EME)
+// Enable the UI for Encrypted Media Extensions (EME)
 pref("browser.eme.ui.enabled", true);
-#else
-pref("browser.eme.ui.enabled", false);
-#endif
 
 // UI tour experience.
 pref("browser.uitour.enabled", false);
@@ -1358,18 +1355,14 @@ pref("ui.key.menuAccessKeyFocuses", true);
 #endif
 
 // Encrypted media extensions.
-#ifdef XP_LINUX
-// On Linux EME is visible but disabled by default. This is so that the
+// EME is visible but disabled by default. This is so that the
 // "Play DRM content" checkbox in the Firefox UI is unchecked by default.
 // DRM requires downloading and installing proprietary binaries, which
-// users on an open source operating systems didn't opt into. The first
-// time a site using EME is encountered, the user will be prompted to
-// enable DRM, whereupon the EME plugin binaries will be downloaded if
-// permission is granted.
+// users didn't necessarily opt-in to by installing the browser.
+// The first time a site using EME is encountered, the user will be
+// prompted to enable DRM, whereupon the EME plugin binaries will be
+// downloaded if permission is granted.
 pref("media.eme.enabled", false);
-#else
-pref("media.eme.enabled", true);
-#endif
 pref("media.eme.apiVisible", true);
 
 // Whether we should run a test-pattern through EME GMPs before assuming they'll
@@ -1383,11 +1376,8 @@ pref("media.gmp.trial-create.enabled", true);
 // and script requests EME. If *.visible is false, we won't show the UI
 // to enable the CDM if its disabled; it's as if the keysystem is completely
 // unsupported.
-
-#ifdef MOZ_WIDEVINE_EME
 pref("media.gmp-widevinecdm.visible", true);
-pref("media.gmp-widevinecdm.enabled", true);
-#endif
+pref("media.gmp-widevinecdm.enabled", false);
 
 // Play with different values of the decay time and get telemetry,
 // 0 means to randomize (and persist) the experiment value in users' profiles,
