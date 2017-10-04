@@ -195,6 +195,9 @@ pref("keyword.enabled", true);
 pref("browser.fixup.domainwhitelist.localhost", true);
 
 pref("general.useragent.locale", "@AB_CD@");
+// We need Firefox compatibility mode enabled by default for Basilisk
+pref("general.useragent.compatMode.firefox", true);
+
 pref("general.skins.selectedSkin", "classic/1.0");
 
 pref("general.smoothScroll", true);
