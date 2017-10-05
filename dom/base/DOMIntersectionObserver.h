@@ -101,12 +101,14 @@ protected:
 class DOMIntersectionObserver final : public nsISupports,
                                       public nsWrapperCache
 {
-  virtual ~DOMIntersectionObserver() { }
+  virtual ~DOMIntersectionObserver() { 
+    Disconnect();
+  }
 
 public:
   DOMIntersectionObserver(already_AddRefed<nsPIDOMWindowInner>&& aOwner,
                           mozilla::dom::IntersectionCallback& aCb)
-  : mOwner(aOwner), mCallback(&aCb), mConnected(false)
+  : mOwner(aOwner), mDocument(mOwner->GetExtantDoc()), mCallback(&aCb), mConnected(false)
   {
   }
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -164,6 +166,7 @@ protected:
                                       double aIntersectionRatio);
 
   nsCOMPtr<nsPIDOMWindowInner>                    mOwner;
+  RefPtr<nsIDocument>                             mDocument;
   RefPtr<mozilla::dom::IntersectionCallback>      mCallback;
   RefPtr<Element>                                 mRoot;
   nsCSSRect                                       mRootMargin;

@@ -1447,7 +1447,8 @@ protected:
   nsDOMTokenList* GetTokenList(nsIAtom* aAtom,
                                const DOMTokenListSupportedTokenArray aSupportedTokens = nullptr);
 
-  nsDataHashtable<nsPtrHashKey<DOMIntersectionObserver>, int32_t>* RegisteredIntersectionObservers();
+  nsDataHashtable<nsRefPtrHashKey<DOMIntersectionObserver>, int32_t>*
+    RegisteredIntersectionObservers();
 
 private:
   /**
