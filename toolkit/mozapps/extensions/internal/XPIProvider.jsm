@@ -6981,10 +6981,15 @@ AddonInternal.prototype = {
       aPlatformVersion = Services.appinfo.platformVersion;
 
     let version;
-    if (app.id == Services.appinfo.ID)
+    if (app.id == Services.appinfo.ID) {
       version = aAppVersion;
-    else if (app.id == TOOLKIT_ID)
-      version = aPlatformVersion
+    } else if (app.id == TOOLKIT_ID) {
+      if (this.type == "webextension")
+        // For WebExtensions, don't use the GRE version
+        version = aAppVersion;
+      else
+        version = aPlatformVersion;
+    }
 
     // Only extensions and dictionaries can be compatible by default; themes
     // and language packs always use strict compatibility checking.
