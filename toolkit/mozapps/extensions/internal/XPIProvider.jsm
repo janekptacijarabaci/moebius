@@ -942,8 +942,8 @@ var loadManifestFromWebManifest = Task.async(function*(aUri) {
   if (extension.errors.length)
     throw new Error("Extension is invalid");
 
-  let bss = (manifest.browser_specific_settings && manifest.browser_specific_settings.goanna)
-      || (manifest.applications && manifest.applications.goanna) || {};
+  let bss = (manifest.browser_specific_settings && manifest.browser_specific_settings.gecko)
+      || (manifest.applications && manifest.applications.gecko) || {};
   if (manifest.browser_specific_settings && manifest.applications) {
     logger.warn("Ignoring applications property in manifest");
   }
@@ -6981,10 +6981,15 @@ AddonInternal.prototype = {
       aPlatformVersion = Services.appinfo.platformVersion;
 
     let version;
-    if (app.id == Services.appinfo.ID)
+    if (app.id == Services.appinfo.ID) {
       version = aAppVersion;
-    else if (app.id == TOOLKIT_ID)
-      version = aPlatformVersion
+    } else if (app.id == TOOLKIT_ID) {
+      if (this.type == "webextension")
+        // For WebExtensions, don't use the GRE version
+        version = aAppVersion;
+      else
+        version = aPlatformVersion;
+    }
 
     // Only extensions and dictionaries can be compatible by default; themes
     // and language packs always use strict compatibility checking.

@@ -34,16 +34,16 @@ add_task(function* test_contentscript_create_iframe() {
       browser.test.assertFalse(hasExtTabsAPI, "the created iframe should not be able to use privileged APIs (tabs)");
       browser.test.assertFalse(hasExtWindowsAPI, "the created iframe should not be able to use privileged APIs (windows)");
 
-      let {applications: {goanna: {id: expectedManifestGoannaId}}} = chrome.runtime.getManifest();
-      let {applications: {goanna: {id: actualManifestGoannaId}}} = manifest;
+      let {applications: {gecko: {id: expectedManifestGeckoId}}} = chrome.runtime.getManifest();
+      let {applications: {gecko: {id: actualManifestGeckoId}}} = manifest;
 
-      browser.test.assertEq(actualManifestGoannaId, expectedManifestGoannaId,
+      browser.test.assertEq(actualManifestGeckoId, expectedManifestGeckoId,
                             "the add-on manifest should be accessible from the created iframe"
       );
 
-      let {applications: {goanna: {id: testGetManifestGoannaId}}} = testGetManifest;
+      let {applications: {gecko: {id: testGetManifestGeckoId}}} = testGetManifest;
 
-      browser.test.assertEq(testGetManifestGoannaId, expectedManifestGoannaId,
+      browser.test.assertEq(testGetManifestGeckoId, expectedManifestGeckoId,
                               "GET_MANIFEST() returns manifest data before extension unload"
       );
 
@@ -84,7 +84,7 @@ add_task(function* test_contentscript_create_iframe() {
   const ID = "contentscript@tests.mozilla.org";
   let extensionData = {
     manifest: {
-      applications: {goanna: {id: ID}},
+      applications: {gecko: {id: ID}},
       content_scripts: [
         {
           "matches": ["http://mochi.test/*/file_sample.html"],
