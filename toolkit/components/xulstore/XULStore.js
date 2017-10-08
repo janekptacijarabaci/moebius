@@ -100,7 +100,7 @@ XULStore.prototype = {
     Services.console.logStringMessage("XULStore: " + message);
   },
 
-  import: function(profileType) {
+  import(profileType) {
     let localStoreFile = Services.dirsvc.get(profileType || "ProfD", Ci.nsIFile);
 
     localStoreFile.append("localstore.rdf");
