@@ -133,9 +133,9 @@ static void Output(const char *fmt, ... )
     decltype(MessageBoxW)* messageBoxW =
       (decltype(MessageBoxW)*) GetProcAddress(user32, "MessageBoxW");
     if (messageBoxW) {
-      messageBoxW(nullptr, wide_msg, L"Firefox", MB_OK
-                                               | MB_ICONERROR
-                                               | MB_SETFOREGROUND);
+      messageBoxW(nullptr, wide_msg, L"Basilisk", MB_OK
+                                                | MB_ICONERROR
+                                                | MB_SETFOREGROUND);
     }
     FreeLibrary(user32);
   }
