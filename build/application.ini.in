@@ -16,6 +16,11 @@
 #include @TOPOBJDIR@/buildid.h
 #include @TOPOBJDIR@/source-repo.h
 [App]
+#ifdef MC_OFFICIAL
+Vendor=Moonchild Productions
+#else
+Vendor=@MOZ_APP_VENDOR@
+#endif
 Vendor=@MOZ_APP_VENDOR@
 Name=@MOZ_APP_BASENAME@
 RemotingName=@MOZ_APP_REMOTINGNAME@
