@@ -64,6 +64,9 @@ if CONFIG['MOZ_APP_BASENAME']:
     if CONFIG['MOZ_APP_PROFILE']:
         appini_defines['MOZ_APP_PROFILE'] = CONFIG['MOZ_APP_PROFILE']
 
+    if CONFIG['MC_OFFICIAL']:
+        appini_defines['MC_OFFICIAL'] = CONFIG['MC_OFFICIAL']
+
     for var in ('MOZ_CRASHREPORTER', 'MOZ_PROFILE_MIGRATOR'):
         if CONFIG[var]:
             appini_defines[var] = True
