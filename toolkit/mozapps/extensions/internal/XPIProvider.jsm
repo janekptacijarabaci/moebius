@@ -139,10 +139,6 @@ const PREF_EM_MIN_COMPAT_PLATFORM_VERSION = "extensions.minCompatiblePlatformVer
 
 const PREF_CHECKCOMAT_THEMEOVERRIDE   = "extensions.checkCompatibility.temporaryThemeOverride_minAppVersion";
 
-const PREF_EM_HOTFIX_ID               = "extensions.hotfix.id";
-const PREF_EM_CERT_CHECKATTRIBUTES    = "extensions.hotfix.cert.checkAttributes";
-const PREF_EM_HOTFIX_CERTS            = "extensions.hotfix.certs.";
-
 const URI_EXTENSION_UPDATE_DIALOG     = "chrome://mozapps/content/extensions/update.xul";
 const URI_EXTENSION_STRINGS           = "chrome://mozapps/locale/extensions/extensions.properties";
 
@@ -1731,19 +1727,6 @@ function getSignedStatus(aRv, aCert, aAddonID) {
       if (expectedCommonName && expectedCommonName != aCert.commonName)
         return AddonManager.SIGNEDSTATE_BROKEN;
 
-      let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
-      if (hotfixID && hotfixID == aAddonID && Preferences.get(PREF_EM_CERT_CHECKATTRIBUTES, false)) {
-        // The hotfix add-on has some more rigorous certificate checks
-        try {
-          CertUtils.validateCert(aCert,
-                                 CertUtils.readCertPrefs(PREF_EM_HOTFIX_CERTS));
-        } catch (e) {
-          logger.warn("The hotfix add-on was not signed by the expected " +
-                      "certificate and so will not be installed.", e);
-          return AddonManager.SIGNEDSTATE_BROKEN;
-        }
-      }
-
       if (aCert.organizationalUnit == "Mozilla Components")
         return AddonManager.SIGNEDSTATE_SYSTEM;
 
@@ -1774,11 +1757,6 @@ function shouldVerifySignedState(aAddon) {
   // We don't care about signatures for default system add-ons
   if (aAddon._installLocation.name == KEY_APP_SYSTEM_DEFAULTS)
     return false;
-
-  // Hotfixes should always have their signature checked
-  let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
-  if (hotfixID && aAddon.id == hotfixID)
-    return true;
 
   // Otherwise only check signatures if signing is enabled and the add-on is one
   // of the signed types.
@@ -4440,11 +4418,6 @@ this.XPIProvider = {
     if (aAddon.type != "extension" &&
         aAddon.type != "webextension" &&
         aAddon.type != "theme")
-      return false;
-
-    // The hotfix is exempt
-    let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
-    if (hotfixID && hotfixID == aAddon.id)
       return false;
 
     // The default theme is exempt
@@ -7541,10 +7514,6 @@ AddonWrapper.prototype = {
   // directly in the profile are considered syncable.
   get isSyncable() {
     let addon = addonFor(this);
-    let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
-    if (hotfixID && hotfixID == addon.id) {
-      return false;
-    }
     return (addon._installLocation.name == KEY_APP_PROFILE);
   },
 

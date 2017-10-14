@@ -258,9 +258,6 @@ var AddonTestUtils = {
     // By default ignore bundled add-ons
     Services.prefs.setBoolPref("extensions.installDistroAddons", false);
 
-    // By default don't check for hotfixes
-    Services.prefs.setCharPref("extensions.hotfix.id", "");
-
     // Ensure signature checks are enabled by default
     Services.prefs.setBoolPref("xpinstall.signatures.required", true);
 

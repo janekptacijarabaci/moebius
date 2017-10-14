@@ -7,9 +7,6 @@
  * same across all languages.  This information is defined outside of the actual
  * search engine definition files, so that localizers don't need to update them
  * when a change is made.
- *
- * This separate module is also easily overridable, in case a hotfix is needed.
- * No high-level processing logic is applied here.
  */
 
 "use strict";
