@@ -288,16 +288,16 @@
 
   /* Force white caption buttons for the dark theme on Windows 10 */
   #titlebar-min:-moz-lwtheme-brighttext {
-    list-style-image: url(chrome://browser/skin/caption-buttons.svg#minimize-white);
+    list-style-image: url(chrome://browser/skin/caption-buttons.svg#minimize-highlight);
   }
   #titlebar-max:-moz-lwtheme-brighttext {
-    list-style-image: url(chrome://browser/skin/caption-buttons.svg#maximize-white);
+    list-style-image: url(chrome://browser/skin/caption-buttons.svg#maximize-highlight);
   }
   #main-window[sizemode="maximized"] #titlebar-max:-moz-lwtheme-brighttext {
-    list-style-image: url(chrome://browser/skin/caption-buttons.svg#restore-white);
+    list-style-image: url(chrome://browser/skin/caption-buttons.svg#restore-highlight);
   }
   #titlebar-close:-moz-lwtheme-brighttext {
-    list-style-image: url(chrome://browser/skin/caption-buttons.svg#close-white);
+    list-style-image: url(chrome://browser/skin/caption-buttons.svg#close-highlight);
   }
 
   /* ... and normal ones for the light theme on Windows 10 */
@@ -314,7 +314,7 @@
     list-style-image: url(chrome://browser/skin/caption-buttons.svg#close);
   }
   #titlebar-close:-moz-lwtheme-darktext:hover {
-    list-style-image: url(chrome://browser/skin/caption-buttons.svg#close-white);
+    list-style-image: url(chrome://browser/skin/caption-buttons.svg#close-highlight);
   }
 }
 
