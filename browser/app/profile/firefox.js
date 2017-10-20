@@ -532,6 +532,9 @@ pref("privacy.firstparty.isolate",          false);
 // Time until temporary permissions expire, in ms
 pref("privacy.temporary_permission_expire_time_ms",  3600000);
 
+// Show the SafeBrowsing UI controls or not.
+pref("browser.safebrowsing.UI.enabled", true);
+
 pref("network.proxy.share_proxy_settings",  false); // use the same proxy settings for all protocols
 
 // simple gestures support
