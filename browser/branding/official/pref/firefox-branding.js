@@ -6,7 +6,7 @@ pref("startup.homepage_override_url", "");
 pref("startup.homepage_welcome_url", "http://www.basilisk-browser.org/firstrun/");
 pref("startup.homepage_welcome_url.additional", "");
 
-pref("app.update.url", "https://aus.basilisk-browser.org/update/?version=%VERSION%&arch=%BUILD_TARGET%");
+pref("app.update.url", "https://aus.basilisk-browser.org/?application=%PRODUCT%&version=%VERSION%&arch=%BUILD_TARGET%&buildid=%BUILD_ID%&channel=%CHANNEL%");
 // Interval: Time between checks for a new version (in seconds)
 pref("app.update.interval", 86400); // 1 day
 // The time interval between the downloading of mar file chunks in the
