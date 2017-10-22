@@ -86,11 +86,6 @@ GPUParent::Init(base::ProcessId aParentPid,
 
   nsDebugImpl::SetMultiprocessMode("GPU");
 
-#ifdef MOZ_CRASHREPORTER
-  // Init crash reporter support.
-  CrashReporterClient::InitSingleton(this);
-#endif
-
   // Ensure gfxPrefs are initialized.
   gfxPrefs::GetSingleton();
   gfxConfig::Init();
@@ -405,9 +400,6 @@ GPUParent::ActorDestroy(ActorDestroyReason aWhy)
   gfxVars::Shutdown();
   gfxConfig::Shutdown();
   gfxPrefs::DestroySingleton();
-#ifdef MOZ_CRASHREPORTER
-  CrashReporterClient::DestroySingleton();
-#endif
   XRE_ShutdownChildProcess();
 }
 

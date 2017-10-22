@@ -63,9 +63,6 @@ var gPluginHandler = {
                                            msg.data.pluginID);
         break;
       case "PluginContent:SubmitReport":
-        if (AppConstants.MOZ_CRASHREPORTER) {
-          this.submitReport(msg.data.runID, msg.data.keyVals, msg.data.submitURLOptIn);
-        }
         break;
       case "PluginContent:LinkClickCallback":
         switch (msg.data.name) {
@@ -98,11 +95,7 @@ var gPluginHandler = {
   },
 
   submitReport: function submitReport(runID, keyVals, submitURLOptIn) {
-    if (!AppConstants.MOZ_CRASHREPORTER) {
-      return;
-    }
-    Services.prefs.setBoolPref("dom.ipc.plugins.reportCrashURL", submitURLOptIn);
-    PluginCrashReporter.submitCrashReport(runID, keyVals);
+    return;
   },
 
   // Callback for user clicking a "reload page" link
@@ -461,17 +454,7 @@ var gPluginHandler = {
     // If we don't have a minidumpID, we can't (or didn't) submit anything.
     // This can happen if the plugin is killed from the task manager.
     let state;
-    if (!AppConstants.MOZ_CRASHREPORTER || !gCrashReporter.enabled) {
-      // This state tells the user that crash reporting is disabled, so we
-      // cannot send a report.
-      state = "noSubmit";
-    } else if (!pluginDumpID) {
-      // This state tells the user that there is no crash report available.
-      state = "noReport";
-    } else {
-      // This state asks the user to submit a crash report.
-      state = "please";
-    }
+    state = "noSubmit";
 
     let mm = window.getGroupMessageManager("browsers");
     mm.broadcastAsyncMessage("BrowserPlugins:NPAPIPluginProcessCrashed",
@@ -511,22 +494,6 @@ var gPluginHandler = {
       popup: null,
       callback() { browser.reload(); },
     }];
-
-    if (AppConstants.MOZ_CRASHREPORTER &&
-        PluginCrashReporter.hasCrashReport(pluginID)) {
-      let submitLabel = gNavigatorBundle.getString("crashedpluginsMessage.submitButton.label");
-      let submitKey   = gNavigatorBundle.getString("crashedpluginsMessage.submitButton.accesskey");
-      let submitButton = {
-        label: submitLabel,
-        accessKey: submitKey,
-        popup: null,
-        callback: () => {
-          PluginCrashReporter.submitCrashReport(pluginID);
-        },
-      };
-
-      buttons.push(submitButton);
-    }
 
     notification = notificationBox.appendNotification(messageString, "plugin-crashed",
                                                       iconURL, priority, buttons);

@@ -23,10 +23,6 @@
 #include "nsXULAppAPI.h"
 #include "GoannaProfiler.h"
 
-#ifdef MOZ_CRASHREPORTER
-#include "nsExceptionHandler.h"
-#endif
-
 #ifdef XP_WIN
 #include <windows.h>
 #endif
@@ -109,15 +105,6 @@ Crash()
 #ifdef XP_WIN
   if (::IsDebuggerPresent()) {
     return;
-  }
-#endif
-
-#ifdef MOZ_CRASHREPORTER
-  // If you change this, you must also deal with the threadsafety of AnnotateCrashReport in
-  // non-chrome processes!
-  if (GoannaProcessType_Default == XRE_GetProcessType()) {
-    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("Hang"),
-                                       NS_LITERAL_CSTRING("1"));
   }
 #endif
 

@@ -59,11 +59,6 @@
 #include "mozilla/Logging.h"
 #endif
 
-#ifdef MOZ_CRASHREPORTER
-#include "nsICrashReporter.h"
-#include "nsExceptionHandler.h"
-#endif
-
 #include "AndroidAlerts.h"
 #include "AndroidUiThread.h"
 #include "ANRReporter.h"

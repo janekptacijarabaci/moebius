@@ -125,9 +125,6 @@ GPUChild::RecvGraphicsError(const nsCString& aError)
 mozilla::ipc::IPCResult
 GPUChild::RecvInitCrashReporter(Shmem&& aShmem)
 {
-#ifdef MOZ_CRASHREPORTER
-  mCrashReporter = MakeUnique<ipc::CrashReporterHost>(GoannaProcessType_GPU, aShmem);
-#endif
   return IPC_OK();
 }
 
@@ -181,12 +178,6 @@ void
 GPUChild::ActorDestroy(ActorDestroyReason aWhy)
 {
   if (aWhy == AbnormalShutdown) {
-#ifdef MOZ_CRASHREPORTER
-    if (mCrashReporter) {
-      mCrashReporter->GenerateCrashReport(OtherPid());
-      mCrashReporter = nullptr;
-    }
-#endif
     Telemetry::Accumulate(Telemetry::SUBPROCESS_ABNORMAL_ABORT,
         nsDependentCString(XRE_ChildProcessTypeToString(GoannaProcessType_GPU), 1));
 

@@ -184,11 +184,7 @@ this.AppConstants = Object.freeze({
   },
 
   MOZ_CRASHREPORTER:
-#ifdef MOZ_CRASHREPORTER
-  true,
-#else
   false,
-#endif
 
   MOZ_VERIFY_MAR_SIGNATURE:
 #ifdef MOZ_VERIFY_MAR_SIGNATURE

@@ -113,9 +113,7 @@ android {
                     srcDir "${topsrcdir}/mobile/android/stumbler/java"
                 }
 
-                if (!mozconfig.substs.MOZ_CRASHREPORTER) {
-                    exclude 'org/mozilla/goanna/CrashReporter.java'
-                }
+                exclude 'org/mozilla/goanna/CrashReporter.java'
 
                 if (!mozconfig.substs.MOZ_NATIVE_DEVICES) {
                     exclude 'org/mozilla/goanna/ChromeCastDisplay.java'
@@ -150,9 +148,6 @@ android {
                 srcDir "${project.buildDir}/generated/source/preprocessed_resources" // See syncPreprocessedResources.
                 srcDir "${topsrcdir}/mobile/android/base/resources"
                 srcDir "${topsrcdir}/mobile/android/services/src/main/res"
-                if (mozconfig.substs.MOZ_CRASHREPORTER) {
-                    srcDir "${topsrcdir}/mobile/android/base/crashreporter/res"
-                }
             }
 
             assets {

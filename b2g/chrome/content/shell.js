@@ -113,13 +113,8 @@ var shell = {
 
   get CrashSubmit() {
     delete this.CrashSubmit;
-    if (AppConstants.MOZ_CRASHREPORTER) {
-      Cu.import("resource://gre/modules/CrashSubmit.jsm", this);
-      return this.CrashSubmit;
-    } else {
-      dump('Crash reporter : disabled at build time.');
-      return this.CrashSubmit = null;
-    }
+    dump('Crash reporter : disabled at build time.');
+    return this.CrashSubmit = null;
   },
 
   onlineForCrashReport: function shell_onlineForCrashReport() {

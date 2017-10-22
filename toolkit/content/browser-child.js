@@ -20,12 +20,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PageThumbUtils",
 XPCOMUtils.defineLazyModuleGetter(this, "Utils",
   "resource://gre/modules/sessionstore/Utils.jsm");
 
-if (AppConstants.MOZ_CRASHREPORTER) {
-  XPCOMUtils.defineLazyServiceGetter(this, "CrashReporter",
-                                     "@mozilla.org/xre/app-info;1",
-                                     "nsICrashReporter");
-}
-
 var WebProgressListener = {
   init() {
     this._filter = Cc["@mozilla.org/appshell/component/browser-status-filter;1"]
@@ -171,14 +165,6 @@ var WebProgressListener = {
       json.synthetic = content.document.mozSyntheticDocument;
       json.inLoadURI = WebNavigation.inLoadURI;
 
-      if (AppConstants.MOZ_CRASHREPORTER && CrashReporter.enabled) {
-        let uri = aLocationURI.clone();
-        try {
-          // If the current URI contains a username/password, remove it.
-          uri.userPass = "";
-        } catch (ex) { /* Ignore failures on about: URIs. */ }
-        CrashReporter.annotateCrashReport("URL", uri.spec);
-      }
     }
 
     this._send("Content:LocationChange", json, objects);
@@ -306,17 +292,6 @@ var WebNavigation =  {
   },
 
   loadURI(uri, flags, referrer, referrerPolicy, postData, headers, baseURI, triggeringPrincipal) {
-    if (AppConstants.MOZ_CRASHREPORTER && CrashReporter.enabled) {
-      let annotation = uri;
-      try {
-        let url = Services.io.newURI(uri);
-        // If the current URI contains a username/password, remove it.
-        url.userPass = "";
-        annotation = url.spec;
-      } catch (ex) { /* Ignore failures to parse and failures
-                      on about: URIs. */ }
-      CrashReporter.annotateCrashReport("URL", annotation);
-    }
     if (referrer)
       referrer = Services.io.newURI(referrer);
     if (postData)
