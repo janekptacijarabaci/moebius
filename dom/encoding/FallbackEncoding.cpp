@@ -55,8 +55,7 @@ FallbackEncoding::Get(nsACString& aFallback)
   // Don't let the user break things by setting the override to unreasonable
   // values via about:config
   if (!EncodingUtils::FindEncodingForLabel(override, mFallback) ||
-      !EncodingUtils::IsAsciiCompatible(mFallback) ||
-      mFallback.EqualsLiteral("UTF-8")) {
+      !EncodingUtils::IsAsciiCompatible(mFallback)) {
     mFallback.Truncate();
   }
 
@@ -97,7 +96,7 @@ FallbackEncoding::Get(nsACString& aFallback)
 
   if (NS_FAILED(nsUConvPropertySearch::SearchPropertyValue(
       localesFallbacks, ArrayLength(localesFallbacks), locale, mFallback))) {
-    mFallback.AssignLiteral("windows-1252");
+    mFallback.AssignLiteral("UTF-8");
   }
 
   aFallback = mFallback;
