@@ -29,11 +29,12 @@ MOZ_ENABLE_SIGNMAR=
 # When not exported we fall back the value in the version.txt file.
 if test -n "$BASILISK_VERSION" ; then
     MOZ_APP_VERSION=55.0.`date --utc '+%Y.%m.%d'`
+    MOZ_APP_VERSION_DISPLAY=`date --utc '+%Y.%m.%d'`
 else
     MOZ_APP_VERSION=$FIREFOX_VERSION
+    MOZ_APP_VERSION_DISPLAY=$FIREFOX_VERSION_DISPLAY
 fi
 
-MOZ_APP_VERSION_DISPLAY=$FIREFOX_VERSION_DISPLAY
 MOZ_EXTENSIONS_DEFAULT=" gio"
 
 # MOZ_APP_DISPLAYNAME will be set by branding/configure.sh
