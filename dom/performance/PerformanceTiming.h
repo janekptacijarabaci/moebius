@@ -154,7 +154,12 @@ public:
   // the timing-allow-origin check in HttpBaseChannel::TimingAllowCheck
   bool ShouldReportCrossOriginRedirect() const;
 
+  // The last channel's AsyncOpen time.  This may occur before the FetchStart
+  // in some cases.
+  DOMHighResTimeStamp AsyncOpenHighRes();
+
   // High resolution (used by resource timing)
+  DOMHighResTimeStamp WorkerStartHighRes();
   DOMHighResTimeStamp FetchStartHighRes();
   DOMHighResTimeStamp RedirectStartHighRes();
   DOMHighResTimeStamp RedirectEndHighRes();
@@ -252,6 +257,7 @@ private:
   DOMHighResTimeStamp mZeroTime;
 
   TimeStamp mAsyncOpen;
+  TimeStamp mWorkerStart;
   TimeStamp mRedirectStart;
   TimeStamp mRedirectEnd;
   TimeStamp mDomainLookupStart;
