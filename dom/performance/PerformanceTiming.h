@@ -138,7 +138,7 @@ public:
     return GetDOMTiming()->GetUnloadEventEnd();
   }
 
-  uint16_t GetRedirectCount() const;
+  uint8_t GetRedirectCount() const;
 
   // Checks if the resource is either same origin as the page that started
   // the load, or if the response contains the Timing-Allow-Origin header
@@ -264,7 +264,7 @@ private:
   TimeStamp mCacheReadStart;
   TimeStamp mResponseEnd;
   TimeStamp mCacheReadEnd;
-  uint16_t mRedirectCount;
+  uint8_t mRedirectCount;
   bool mTimingAllowed;
   bool mAllRedirectsSameOrigin;
   bool mInitialized;
