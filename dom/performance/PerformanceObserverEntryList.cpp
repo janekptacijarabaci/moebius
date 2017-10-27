@@ -102,7 +102,6 @@ PerformanceObserverEntryList::GetEntriesByName(
     }
 
     aRetval.AppendElement(entry);
-    }
   }
   aRetval.Sort(PerformanceEntryComparator());
 }
