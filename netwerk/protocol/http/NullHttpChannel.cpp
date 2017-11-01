@@ -545,13 +545,25 @@ NullHttpChannel::SetTimingEnabled(bool aTimingEnabled)
 }
 
 NS_IMETHODIMP
-NullHttpChannel::GetRedirectCount(uint16_t *aRedirectCount)
+NullHttpChannel::GetRedirectCount(uint8_t *aRedirectCount)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-NullHttpChannel::SetRedirectCount(uint16_t aRedirectCount)
+NullHttpChannel::SetRedirectCount(uint8_t aRedirectCount)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::GetInternalRedirectCount(uint8_t *aRedirectCount)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::SetInternalRedirectCount(uint8_t aRedirectCount)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -567,6 +579,90 @@ NS_IMETHODIMP
 NullHttpChannel::GetAsyncOpen(mozilla::TimeStamp *aAsyncOpen)
 {
   *aAsyncOpen = mAsyncOpenTime;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::GetLaunchServiceWorkerStart(mozilla::TimeStamp *_retval)
+{
+  MOZ_ASSERT(_retval);
+  *_retval = mAsyncOpenTime;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::SetLaunchServiceWorkerStart(mozilla::TimeStamp aTimeStamp)
+{
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::GetLaunchServiceWorkerEnd(mozilla::TimeStamp *_retval)
+{
+  MOZ_ASSERT(_retval);
+  *_retval = mAsyncOpenTime;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::SetLaunchServiceWorkerEnd(mozilla::TimeStamp aTimeStamp)
+{
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::GetDispatchFetchEventStart(mozilla::TimeStamp *_retval)
+{
+  MOZ_ASSERT(_retval);
+  *_retval = mAsyncOpenTime;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::SetDispatchFetchEventStart(mozilla::TimeStamp aTimeStamp)
+{
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::GetDispatchFetchEventEnd(mozilla::TimeStamp *_retval)
+{
+  MOZ_ASSERT(_retval);
+  *_retval = mAsyncOpenTime;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::SetDispatchFetchEventEnd(mozilla::TimeStamp aTimeStamp)
+{
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::GetHandleFetchEventStart(mozilla::TimeStamp *_retval)
+{
+  MOZ_ASSERT(_retval);
+  *_retval = mAsyncOpenTime;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::SetHandleFetchEventStart(mozilla::TimeStamp aTimeStamp)
+{
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::GetHandleFetchEventEnd(mozilla::TimeStamp *_retval)
+{
+  MOZ_ASSERT(_retval);
+  *_retval = mAsyncOpenTime;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::SetHandleFetchEventEnd(mozilla::TimeStamp aTimeStamp)
+{
   return NS_OK;
 }
 
@@ -767,6 +863,12 @@ NullHttpChannel::Get##name##Time(PRTime* _retval) {            \
 
 IMPL_TIMING_ATTR(ChannelCreation)
 IMPL_TIMING_ATTR(AsyncOpen)
+IMPL_TIMING_ATTR(LaunchServiceWorkerStart)
+IMPL_TIMING_ATTR(LaunchServiceWorkerEnd)
+IMPL_TIMING_ATTR(DispatchFetchEventStart)
+IMPL_TIMING_ATTR(DispatchFetchEventEnd)
+IMPL_TIMING_ATTR(HandleFetchEventStart)
+IMPL_TIMING_ATTR(HandleFetchEventEnd)
 IMPL_TIMING_ATTR(DomainLookupStart)
 IMPL_TIMING_ATTR(DomainLookupEnd)
 IMPL_TIMING_ATTR(ConnectStart)

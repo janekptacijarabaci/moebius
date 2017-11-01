@@ -138,7 +138,7 @@ public:
     return GetDOMTiming()->GetUnloadEventEnd();
   }
 
-  uint16_t GetRedirectCount() const;
+  uint8_t GetRedirectCount() const;
 
   // Checks if the resource is either same origin as the page that started
   // the load, or if the response contains the Timing-Allow-Origin header
@@ -154,7 +154,12 @@ public:
   // the timing-allow-origin check in HttpBaseChannel::TimingAllowCheck
   bool ShouldReportCrossOriginRedirect() const;
 
+  // The last channel's AsyncOpen time.  This may occur before the FetchStart
+  // in some cases.
+  DOMHighResTimeStamp AsyncOpenHighRes();
+
   // High resolution (used by resource timing)
+  DOMHighResTimeStamp WorkerStartHighRes();
   DOMHighResTimeStamp FetchStartHighRes();
   DOMHighResTimeStamp RedirectStartHighRes();
   DOMHighResTimeStamp RedirectEndHighRes();
@@ -252,6 +257,7 @@ private:
   DOMHighResTimeStamp mZeroTime;
 
   TimeStamp mAsyncOpen;
+  TimeStamp mWorkerStart;
   TimeStamp mRedirectStart;
   TimeStamp mRedirectEnd;
   TimeStamp mDomainLookupStart;
@@ -264,7 +270,7 @@ private:
   TimeStamp mCacheReadStart;
   TimeStamp mResponseEnd;
   TimeStamp mCacheReadEnd;
-  uint16_t mRedirectCount;
+  uint8_t mRedirectCount;
   bool mTimingAllowed;
   bool mAllRedirectsSameOrigin;
   bool mInitialized;
