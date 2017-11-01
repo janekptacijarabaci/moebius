@@ -248,6 +248,9 @@ var AllPages = {
    * Returns whether the history tiles are enhanced.
    */
   get enhanced() {
+    // Hard-block the use of sponsored tiles.
+    return false;
+    
     if (this._enhanced === null)
       this._enhanced = Services.prefs.getBoolPref(PREF_NEWTAB_ENHANCED);
 
