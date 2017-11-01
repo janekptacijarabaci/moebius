@@ -241,6 +241,14 @@ public:
     return GetDOMTiming()->GetLoadEventEnd();
   }
 
+  DOMTimeMilliSec TimeToNonBlankPaint() const
+  {
+    if (!nsContentUtils::IsPerformanceTimingEnabled()) {
+      return 0;
+    }
+    return GetDOMTiming()->GetTimeToNonBlankPaint();
+  }
+
 private:
   ~PerformanceTiming();
 
