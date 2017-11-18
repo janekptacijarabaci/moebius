@@ -4276,7 +4276,8 @@ XREMain::XRE_mainRun()
         if (gDoProfileReset) {
           // Automatically migrate from the current application if we just
           // reset the profile.
-          aKey = MOZ_APP_NAME;
+          //Hard-code MOZ_APP_NAME to firefox because of hard-coded type in migrator.
+          aKey = (MOZ_APP_NAME == "basilisk") ? "firefox" : MOZ_APP_NAME;
         }
         pm->Migrate(&mDirProvider, aKey, gResetOldProfileName);
       }
@@ -4290,6 +4291,7 @@ XREMain::XRE_mainRun()
       rv = GetCurrentProfile(mProfileSvc, mProfD, getter_AddRefs(newProfile));
       if (NS_SUCCEEDED(rv)) {
         newProfile->SetName(gResetOldProfileName);
+        mProfileName.Assign(gResetOldProfileName);
         // Set the new profile as the default after we're done cleaning up the old profile,
         // iff that profile was already the default
         if (profileWasSelected) {
