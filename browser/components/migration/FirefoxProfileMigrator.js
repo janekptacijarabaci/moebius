@@ -7,7 +7,7 @@
 "use strict";
 
 /*
- * Migrates from a Firefox profile in a lossy manner in order to clean up a
+ * Migrates from a Basilisk profile in a lossy manner in order to clean up a
  * user's profile.  Data is only migrated where the benefits outweigh the
  * potential problems caused by importing undesired/invalid configurations
  * from the source profile.
@@ -127,8 +127,8 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
   }.bind(this);
 
   let types = MigrationUtils.resourceTypes;
-  let places = getFileResource(types.HISTORY, ["places.sqlite"]);
-  let cookies = getFileResource(types.COOKIES, ["cookies.sqlite"]);
+  let places = getFileResource(types.HISTORY, ["places.sqlite", "places.sqlite-wal"]);
+  let cookies = getFileResource(types.COOKIES, ["cookies.sqlite", "cookies.sqlite-wal"]);
   let passwords = getFileResource(types.PASSWORDS,
     ["signons.sqlite", "logins.json", "key3.db",
      "signedInUser.json"]);
