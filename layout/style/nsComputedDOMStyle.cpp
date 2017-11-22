@@ -826,10 +826,6 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
     return;
   }
 
-  nsCOMPtr<nsIPresShell> presShellForContent = GetPresShellForContent(mContent);
-  if (presShellForContent && presShellForContent != mPresShell) {
-    presShellForContent->FlushPendingNotifications(Flush_Style);
-  }
   uint64_t currentGeneration =
     mPresShell->GetPresContext()->GetRestyleGeneration();
 
