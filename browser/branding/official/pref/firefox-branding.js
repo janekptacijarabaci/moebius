@@ -22,6 +22,11 @@ pref("app.update.url.manual", "https://www.basilisk-browser.org/");
 // supplied in the "An update is available" page of the update wizard.
 pref("app.update.url.details", "https://www.basilisk-browser.org/releasenotes.shtml");
 
+// Version release notes
+pref("app.releaseNotesURL", "http://www.basilisk-browser.org/releasenotes.shtml");
+// Vendor home page
+pref("app.vendorURL", "http://www.basilisk-browser.org/");
+
 // The number of days a binary is permitted to be old
 // without checking for an update.  This assumes that
 // app.update.checkInstallTime is true.
