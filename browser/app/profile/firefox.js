@@ -171,8 +171,11 @@ pref("lightweightThemes.update.enabled", true);
 pref("lightweightThemes.getMoreURL", "https://addons.mozilla.org/%LOCALE%/firefox/themes");
 pref("lightweightThemes.recommendedThemes", "");
 
-// Enable the UI for Encrypted Media Extensions (EME)
+#if defined(MOZ_WIDEVINE_EME)
 pref("browser.eme.ui.enabled", true);
+#else
+pref("browser.eme.ui.enabled", false);
+#endif
 
 // UI tour experience.
 pref("browser.uitour.enabled", false);
@@ -1376,8 +1379,11 @@ pref("media.gmp.trial-create.enabled", true);
 // and script requests EME. If *.visible is false, we won't show the UI
 // to enable the CDM if its disabled; it's as if the keysystem is completely
 // unsupported.
+
+#ifdef MOZ_WIDEVINE_EME
 pref("media.gmp-widevinecdm.visible", true);
-pref("media.gmp-widevinecdm.enabled", false);
+pref("media.gmp-widevinecdm.enabled", true);
+#endif
 
 // Play with different values of the decay time and get telemetry,
 // 0 means to randomize (and persist) the experiment value in users' profiles,
