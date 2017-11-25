@@ -171,6 +171,7 @@ pref("lightweightThemes.update.enabled", true);
 pref("lightweightThemes.getMoreURL", "https://addons.mozilla.org/%LOCALE%/firefox/themes");
 pref("lightweightThemes.recommendedThemes", "");
 
+// Enable the UI for Encrypted Media Extensions (EME)
 #if defined(MOZ_WIDEVINE_EME)
 pref("browser.eme.ui.enabled", true);
 #else
