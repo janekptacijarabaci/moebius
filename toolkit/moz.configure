@@ -406,22 +406,15 @@ add_old_configure_assignment('MOZ_FMP4', fmp4)
 
 # EME Support
 # ==============================================================
-# Widevine is enabled by default in desktop browser builds.
-@depends(build_project, '--help')
-def eme_default(build_project, help):
-    if build_project == 'browser':
-        return 'widevine'
-
 option('--enable-eme',
        nargs='*',
        choices=('widevine',),
-       default=eme_default,
        help='Enable support for Encrypted Media Extensions')
 
 @depends('--enable-eme', target)
 def enable_eme(value, target):
-    # Widevine EME by default enabled on desktop Windows, MacOS and Linux,
-    # x86 and x64 builds.
+    # Widevine EME can only be enabled on Windows, MacOS and Linux,
+    # x86 and x64 builds. (Tier-1 whitelist)
     if (target.kernel in ('Darwin', 'WINNT', 'Linux') and
         target.os not in ('Android', 'iOS') and
         target.cpu in ('x86', 'x86_64')):
@@ -447,6 +440,8 @@ def eme_modules(value):
     return value
 
 set_config('MOZ_EME_MODULES', eme_modules)
+set_config('MOZ_EME', eme)
+set_define('MOZ_EME', eme)
 
 option(name='--enable-chrome-format',
        help='Select FORMAT of chrome files during packaging.',

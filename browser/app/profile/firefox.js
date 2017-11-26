@@ -1367,7 +1367,11 @@ pref("ui.key.menuAccessKeyFocuses", true);
 // prompted to enable DRM, whereupon the EME plugin binaries will be
 // downloaded if permission is granted.
 pref("media.eme.enabled", false);
+#ifdef MOZ_EME
 pref("media.eme.apiVisible", true);
+#else
+pref("media.eme.apiVisible", false);
+#endif
 
 // Whether we should run a test-pattern through EME GMPs before assuming they'll
 // decode H.264.
