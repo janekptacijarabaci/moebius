@@ -170,7 +170,8 @@ var gSyncUI = {
       document.getElementById("sync-setup-state").hidden = true;
       document.getElementById("sync-syncnow-state").hidden = true;
 
-      if (AppConstants.MOZ_SERVICES_CLOUDSYNC && CloudSync.ready && CloudSync().adapters.count) {
+      if (AppConstants.MOZ_SERVICES_CLOUDSYNC && CloudSync && CloudSync.ready &&
+          CloudSync().adapters.count) {
         document.getElementById("sync-syncnow-state").hidden = false;
       } else if (loginFailed) {
         // unhiding this element makes the menubar show the login failure state.
