@@ -106,7 +106,7 @@ function restart() {
 }
 
 function debugCrashReport(aStr) {
-  AppConstants.MOZ_CRASHREPORTER && dump('Crash reporter : ' + aStr);
+  // STUB
 }
 
 var shell = {
@@ -155,32 +155,6 @@ var shell = {
       appStartup.quit(Ci.nsIAppStartup.eForceQuit);
     }
 
-    let noReport = env.get("MOZ_CRASHREPORTER_NO_REPORT");
-    if (noReport) {
-      return;
-    }
-
-    try {
-      // Check if we should automatically submit this crash.
-      if (Services.prefs.getBoolPref('app.reportCrashes')) {
-        this.submitCrash(crashID);
-      } else {
-        this.deleteCrash(crashID);
-      }
-    } catch (e) {
-      debugCrashReport('Can\'t fetch app.reportCrashes. Exception: ' + e);
-    }
-
-    // We can get here if we're just submitting old pending crashes.
-    // Check that there's a valid crashID so that we only notify the
-    // user if a crash just happened and not when we OOM. Bug 829477
-    if (crashID) {
-      this.sendChromeEvent({
-        type: "handle-crash",
-        crashID: crashID,
-        chrome: isChrome
-      });
-    }
   },
 
   deleteCrash: function shell_deleteCrash(aCrashID) {
