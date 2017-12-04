@@ -36,6 +36,7 @@
 namespace JS {
 template<class T>
 class Heap;
+class ObjectPtr;
 } /* namespace JS */
 
 class nsRegion;
@@ -825,7 +826,7 @@ struct nsTArray_CopyWithConstructors
 template<class E>
 struct MOZ_NEEDS_MEMMOVABLE_TYPE nsTArray_CopyChooser
 {
-  typedef nsTArray_CopyWithMemutils Type;
+  using Type = nsTArray_CopyWithMemutils;
 };
 
 //
@@ -836,14 +837,17 @@ struct MOZ_NEEDS_MEMMOVABLE_TYPE nsTArray_CopyChooser
   template<>                                            \
   struct nsTArray_CopyChooser<T>                        \
   {                                                     \
-    typedef nsTArray_CopyWithConstructors<T> Type;      \
+    using Type = nsTArray_CopyWithConstructors<T>;      \
   };
 
-template<class E>
-struct nsTArray_CopyChooser<JS::Heap<E>>
-{
-  typedef nsTArray_CopyWithConstructors<JS::Heap<E>> Type;
-};
+#define DECLARE_USE_COPY_CONSTRUCTORS_FOR_TEMPLATE(T)   \
+  template<typename S>                                  \
+  struct nsTArray_CopyChooser<T<S>>                     \
+  {                                                     \
+    using Type = nsTArray_CopyWithConstructors<T<S>>;   \
+  };
+
+DECLARE_USE_COPY_CONSTRUCTORS_FOR_TEMPLATE(JS::Heap)
 
 DECLARE_USE_COPY_CONSTRUCTORS(nsRegion)
 DECLARE_USE_COPY_CONSTRUCTORS(nsIntRegion)
@@ -857,6 +861,7 @@ DECLARE_USE_COPY_CONSTRUCTORS(mozilla::dom::indexedDB::SerializedStructuredClone
 DECLARE_USE_COPY_CONSTRUCTORS(JSStructuredCloneData)
 DECLARE_USE_COPY_CONSTRUCTORS(mozilla::dom::MessagePortMessage)
 DECLARE_USE_COPY_CONSTRUCTORS(mozilla::SourceBufferTask)
+DECLARE_USE_COPY_CONSTRUCTORS(JS::ObjectPtr)
 
 template<typename T>
 struct nsTArray_CopyChooser<std::function<T>>

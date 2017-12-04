@@ -56,6 +56,7 @@ PerformanceTiming::InitializeTimingInfo(nsITimedChannel* aChannel)
 {
   if (aChannel) {
     aChannel->GetAsyncOpen(&mAsyncOpen);
+    aChannel->GetDispatchFetchEventStart(&mWorkerStart);
     aChannel->GetAllRedirectsSameOrigin(&mAllRedirectsSameOrigin);
     aChannel->GetRedirectCount(&mRedirectCount);
     aChannel->GetRedirectStart(&mRedirectStart);
@@ -71,30 +72,38 @@ PerformanceTiming::InitializeTimingInfo(nsITimedChannel* aChannel)
     aChannel->GetResponseEnd(&mResponseEnd);
     aChannel->GetCacheReadEnd(&mCacheReadEnd);
 
-    // the performance timing api essentially requires that the event timestamps
-    // are >= asyncOpen().. but in truth the browser engages in a number of
-    // speculative activities that sometimes mean connections and lookups begin
-    // earlier. Workaround that here by just using asyncOpen as the minimum
-    // timestamp for dns and connection info.
+    // The performance timing api essentially requires that the event timestamps
+    // have a strict relation with each other. The truth, however, is the browser
+    // engages in a number of speculative activities that sometimes mean connections
+    // and lookups begin at different times. Workaround that here by clamping
+    // these values to what we expect FetchStart to be.  This means the later of
+    // AsyncOpen or WorkerStart times.
     if (!mAsyncOpen.IsNull()) {
-      if (!mDomainLookupStart.IsNull() && mDomainLookupStart < mAsyncOpen) {
-        mDomainLookupStart = mAsyncOpen;
+      // We want to clamp to the expected FetchStart value.  This is later of
+      // the AsyncOpen and WorkerStart values.
+      const TimeStamp* clampTime = &mAsyncOpen;
+      if (!mWorkerStart.IsNull() && mWorkerStart > mAsyncOpen) {
+        clampTime = &mWorkerStart;
       }
 
-      if (!mDomainLookupEnd.IsNull() && mDomainLookupEnd < mAsyncOpen) {
-        mDomainLookupEnd = mAsyncOpen;
+      if (!mDomainLookupStart.IsNull() && mDomainLookupStart < *clampTime) {
+        mDomainLookupStart = *clampTime;
       }
 
-      if (!mConnectStart.IsNull() && mConnectStart < mAsyncOpen) {
-        mConnectStart = mAsyncOpen;
+      if (!mDomainLookupEnd.IsNull() && mDomainLookupEnd < *clampTime) {
+        mDomainLookupEnd = *clampTime;
       }
 
-      if (!mSecureConnectionStart.IsNull() && mSecureConnectionStart < mAsyncOpen) {
-        mSecureConnectionStart = mAsyncOpen;
+      if (!mConnectStart.IsNull() && mConnectStart < *clampTime) {
+        mConnectStart = *clampTime;
       }
 
-      if (!mConnectEnd.IsNull() && mConnectEnd < mAsyncOpen) {
-        mConnectEnd = mAsyncOpen;
+      if (!mSecureConnectionStart.IsNull() && mSecureConnectionStart < *clampTime) {
+        mSecureConnectionStart = *clampTime;
+      }
+
+      if (!mConnectEnd.IsNull() && mConnectEnd < *clampTime) {
+        mConnectEnd = *clampTime;
       }
     }
   }
@@ -113,9 +122,13 @@ PerformanceTiming::FetchStartHighRes()
     }
     MOZ_ASSERT(!mAsyncOpen.IsNull(), "The fetch start time stamp should always be "
         "valid if the performance timing is enabled");
-    mFetchStart = (!mAsyncOpen.IsNull())
-        ? TimeStampToDOMHighRes(mAsyncOpen)
-        : 0.0;
+    if (!mAsyncOpen.IsNull()) {
+      if (!mWorkerStart.IsNull() && mWorkerStart > mAsyncOpen) {
+        mFetchStart = TimeStampToDOMHighRes(mWorkerStart);
+      } else {
+        mFetchStart = TimeStampToDOMHighRes(mAsyncOpen);
+      }
+    }
   }
   return mFetchStart;
 }
@@ -162,7 +175,7 @@ PerformanceTiming::TimingAllowed() const
   return mTimingAllowed;
 }
 
-uint16_t
+uint8_t
 PerformanceTiming::GetRedirectCount() const
 {
   if (!nsContentUtils::IsPerformanceTimingEnabled() || !IsInitialized()) {
@@ -185,6 +198,26 @@ PerformanceTiming::ShouldReportCrossOriginRedirect() const
   // redirects doesn't have the proper Timing-Allow-Origin header,
   // then RedirectStart and RedirectEnd will be set to zero
   return (mRedirectCount != 0) && mReportCrossOriginRedirect;
+}
+
+DOMHighResTimeStamp
+PerformanceTiming::AsyncOpenHighRes()
+{
+  if (!nsContentUtils::IsPerformanceTimingEnabled() || !IsInitialized() ||
+      mAsyncOpen.IsNull()) {
+    return mZeroTime;
+  }
+  return TimeStampToDOMHighRes(mAsyncOpen);
+}
+
+DOMHighResTimeStamp
+PerformanceTiming::WorkerStartHighRes()
+{
+  if (!nsContentUtils::IsPerformanceTimingEnabled() || !IsInitialized() ||
+      mWorkerStart.IsNull()) {
+    return mZeroTime;
+  }
+  return TimeStampToDOMHighRes(mWorkerStart);
 }
 
 /**
