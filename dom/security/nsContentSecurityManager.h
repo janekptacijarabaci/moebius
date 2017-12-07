@@ -35,7 +35,9 @@ public:
   static bool AllowTopLevelNavigationToDataURI(nsIURI* aURI,
                                                nsContentPolicyType aContentPolicyType,
                                                nsIPrincipal* aTriggeringPrincipal,
-                                               bool aLoadFromExternal);
+                                               bool aLoadFromExternal,
+                                               bool aIsDownload);
+ 
 
 private:
   static nsresult CheckChannel(nsIChannel* aChannel);

@@ -9872,7 +9872,8 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         aURI,
         contentType,
         aTriggeringPrincipal,
-        (aLoadType == LOAD_NORMAL_EXTERNAL))) {
+        (aLoadType == LOAD_NORMAL_EXTERNAL),
+        !aFileName.IsVoid())) {
     // logging to console happens within AllowTopLevelNavigationToDataURI
     return NS_OK;
   }
