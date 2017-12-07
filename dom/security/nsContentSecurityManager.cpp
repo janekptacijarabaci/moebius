@@ -68,6 +68,9 @@ nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
   if (dataSpec.Length() > 50) {
     dataSpec.Truncate(50);
     dataSpec.AppendLiteral("...");
+  }
+  NS_ConvertUTF8toUTF16 specUTF16(NS_UnescapeURL(dataSpec));
+  const char16_t* params[] = { specUTF16.get() };
   nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
                                   NS_LITERAL_CSTRING("DATA_URI_BLOCKED"),
                                   // no doc available, log to browser console
