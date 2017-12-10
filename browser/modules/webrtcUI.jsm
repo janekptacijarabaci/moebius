@@ -646,7 +646,7 @@ function prompt(aBrowser, aRequest) {
             } else {
               let brand =
                 doc.getElementById("bundle_brand").getString("brandShortName");
-              string = bundle.getFormattedString("getUserMedia.shareFirefoxWarning.message",
+              string = bundle.getFormattedString("getUserMedia.shareBasiliskWarning.message",
                                                  [brand, learnMore]);
             }
             warning.innerHTML = string;
