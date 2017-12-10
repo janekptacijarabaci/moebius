@@ -105,6 +105,7 @@ private:
            const nsTArray<nsCString>& aUnsafeHeaders,
            bool aForcePreflight,
            bool aIsPreflight,
+           bool aLoadTriggeredFromExternal,
            bool aForceHSTSPriming,
            bool aMixedContentWouldBlock);
   LoadInfo(const LoadInfo& rhs);
@@ -150,6 +151,7 @@ private:
   nsTArray<nsCString>              mCorsUnsafeHeaders;
   bool                             mForcePreflight;
   bool                             mIsPreflight;
+  bool                             mLoadTriggeredFromExternal;
 
   bool                             mForceHSTSPriming : 1;
   bool                             mMixedContentWouldBlock : 1;
