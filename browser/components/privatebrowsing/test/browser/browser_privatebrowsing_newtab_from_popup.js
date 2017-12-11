@@ -22,6 +22,10 @@ const WINDOW_BODY = `data:text/html,
                      </a>`;
 
 add_task(function* test_private_popup_window_opens_private_tabs() {
+  // allow top level data: URI navigations, otherwise clicking a data: link fails
+  yield SpecialPowers.pushPrefEnv({
+    "set": [["security.data_uri.block_toplevel_data_uri_navigations", false]]
+  });
   let privWin = yield BrowserTestUtils.openNewBrowserWindow({ private: true });
 
   // Sanity check - this browser better be private.

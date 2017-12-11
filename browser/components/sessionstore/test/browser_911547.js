@@ -6,6 +6,10 @@
 // The policy being tested disallows inline scripts
 
 add_task(function* test() {
+  // allow top level data: URI navigations, otherwise clicking a data: link fails
+  yield SpecialPowers.pushPrefEnv({
+    "set": [["security.data_uri.block_toplevel_data_uri_navigations", false]]
+  });
   // create a tab that has a CSP
   let testURL = "http://mochi.test:8888/browser/browser/components/sessionstore/test/browser_911547_sample.html";
   let tab = gBrowser.selectedTab = gBrowser.addTab(testURL);
