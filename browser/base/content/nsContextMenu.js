@@ -1143,7 +1143,8 @@ nsContextMenu.prototype = {
                        this.browser.contentPrincipal,
                        Ci.nsIScriptSecurityManager.DISALLOW_SCRIPT);
       openUILink(this.mediaURL, e, { disallowInheritPrincipal: true,
-                                     referrerURI: referrerURI });
+                                     referrerURI: referrerURI,
+                                     forceAllowDataURI: true });
     }
   },
 

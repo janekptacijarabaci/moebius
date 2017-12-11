@@ -194,6 +194,7 @@ function openUILinkIn(url, where, aAllowThirdPartyFixup, aPostData, aReferrerURI
   openLinkIn(url, where, params);
 }
 
+/* eslint-disable complexity */
 function openLinkIn(url, where, params) {
   if (!where || !url)
     return;
@@ -209,6 +210,7 @@ function openLinkIn(url, where, params) {
       params.referrerPolicy : Ci.nsIHttpChannel.REFERRER_POLICY_UNSET);
   var aRelatedToCurrent     = params.relatedToCurrent;
   var aAllowMixedContent    = params.allowMixedContent;
+  var aForceAllowDataURI    = params.forceAllowDataURI;
   var aInBackground         = params.inBackground;
   var aDisallowInheritPrincipal = params.disallowInheritPrincipal;
   var aInitiatingDoc        = params.initiatingDoc;
@@ -390,6 +392,9 @@ function openLinkIn(url, where, params) {
     }
     if (aIndicateErrorPageLoad) {
       flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ERROR_LOAD_CHANGES_RV;
+    }
+    if (aForceAllowDataURI) {
+      flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
     }
 
     if (aForceAboutBlankViewerInCurrent) {
