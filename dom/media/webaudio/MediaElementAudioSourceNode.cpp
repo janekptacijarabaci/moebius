@@ -25,10 +25,12 @@ MediaElementAudioSourceNode::Create(AudioContext& aAudioContext,
     return nullptr;
   }
 
+#ifdef MOZ_EME
   if (aOptions.mMediaElement->ContainsRestrictedContent()) {
     aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return nullptr;
   }
+#endif
 
   if (aAudioContext.CheckClosed(aRv)) {
     return nullptr;

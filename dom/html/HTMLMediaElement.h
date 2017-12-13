@@ -19,7 +19,9 @@
 #include "mozilla/dom/TextTrackManager.h"
 #include "mozilla/WeakPtr.h"
 #include "MediaDecoder.h"
+#ifdef MOZ_EME
 #include "mozilla/dom/MediaKeys.h"
+#endif
 #include "mozilla/StateWatching.h"
 #include "nsGkAtoms.h"
 #include "PrincipalChangeObserver.h"
@@ -624,6 +626,7 @@ public:
 
   // XPCOM MozPreservesPitch() is OK
 
+#ifdef MOZ_EME
   MediaKeys* GetMediaKeys() const;
 
   already_AddRefed<Promise> SetMediaKeys(MediaKeys* mediaKeys,
@@ -645,6 +648,7 @@ public:
   already_AddRefed<nsIPrincipal> GetTopLevelPrincipal();
 
   bool ContainsRestrictedContent();
+#endif // MOZ_EME
 
   void CannotDecryptWaitingForKey();
 
@@ -1204,7 +1208,9 @@ protected:
    */
   void HiddenVideoStop();
 
+#ifdef MOZ_EME
   void ReportEMETelemetry();
+#endif
 
   void ReportTelemetry();
 
@@ -1450,8 +1456,10 @@ protected:
   // Timer used to simulate video-suspend.
   nsCOMPtr<nsITimer> mVideoDecodeSuspendTimer;
 
+#ifdef MOZ_EME
   // Encrypted Media Extension media keys.
   RefPtr<MediaKeys> mMediaKeys;
+#endif
 
   // Stores the time at the start of the current 'played' range.
   double mCurrentPlayRangeStart;
@@ -1598,8 +1606,10 @@ protected:
   // Listens for waitingForKey events from the owned decoder.
   MediaEventListener mWaitingForKeyListener;
 
+#ifdef MOZ_EME
   // Init Data that needs to be sent in 'encrypted' events in MetadataLoaded().
   EncryptionInfo mPendingEncryptedInitData;
+#endif
 
   // True if the media's channel's download has been suspended.
   Watchable<bool> mDownloadSuspendedByCache;
