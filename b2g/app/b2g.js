@@ -322,9 +322,11 @@ pref("media.cache_readahead_limit", 30);
 pref("media.gonk.enabled", true);
 #endif
 
+#ifdef MOZ_EME
 //Encrypted media extensions.
 pref("media.eme.enabled", true);
 pref("media.eme.apiVisible", true);
+#endif
 // The default number of decoded video frames that are enqueued in
 // MediaDecoderReader's mVideoQueue.
 pref("media.video-queue.default-size", 3);

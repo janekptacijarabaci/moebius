@@ -1358,18 +1358,19 @@ pref("identity.fxaccounts.migrateToDevEdition", false);
 pref("ui.key.menuAccessKeyFocuses", true);
 #endif
 
+#ifdef MOZ_EME
 // Encrypted media extensions.
 // EME is visible but disabled by default. This is so that the
-// "Play DRM content" checkbox in the Firefox UI is unchecked by default.
+// "Play DRM content" checkbox in the browser UI is unchecked by default.
 // DRM requires downloading and installing proprietary binaries, which
 // users didn't necessarily opt-in to by installing the browser.
 // The first time a site using EME is encountered, the user will be
 // prompted to enable DRM, whereupon the EME plugin binaries will be
 // downloaded if permission is granted.
 pref("media.eme.enabled", false);
-#ifdef MOZ_EME
 pref("media.eme.apiVisible", true);
 #else
+// Disable redundant interfaces
 pref("media.eme.apiVisible", false);
 #endif
 
