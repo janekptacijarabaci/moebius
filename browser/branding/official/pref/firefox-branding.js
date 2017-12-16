@@ -48,3 +48,6 @@ pref("browser.safebrowsing.downloads.remote.enabled", false);
 // Disable the UI controls for it as well for Basilisk-official.
 pref("browser.safebrowsing.UI.enabled", false);
 
+// FxA override
+pref("general.useragent.override.accounts.firefox.com", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Goanna/4.0 Basilisk/55.0.0");
+
