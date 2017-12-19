@@ -205,6 +205,9 @@ These should match what Safari and other Apple applications use on OS X Lion. --
 <!ENTITY printButton.label            "Print">
 <!ENTITY printButton.tooltip          "Print this page">
 
+<!ENTITY errorConsoleCmd.label        "Error Console">
+<!ENTITY errorConsoleCmd.accesskey    "C">
+
 <!ENTITY urlbar.viewSiteInfo.label                      "View site information">
 
 <!ENTITY urlbar.defaultNotificationAnchor.tooltip         "Open message panel">
