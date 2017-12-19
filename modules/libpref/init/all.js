@@ -2241,7 +2241,8 @@ pref("services.blocklist.gfx.checked", 0);
 pref("services.blocklist.signing.enforced", true);
 
 // Enable blocklists via the services settings mechanism
-pref("services.blocklist.update_enabled", true);
+// This requires a Kinto server.
+pref("services.blocklist.update_enabled", false);
 
 // Enable certificate blocklist updates via services settings
 pref("security.onecrl.via.amo", false);
