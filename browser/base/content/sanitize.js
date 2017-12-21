@@ -43,6 +43,7 @@ Sanitizer.prototype = {
   },
 
   prefDomain: "",
+  isShutDown: false,
 
   getNameFromPreference(aPreferenceName) {
     return aPreferenceName.substr(this.prefDomain.length);
@@ -157,6 +158,7 @@ Sanitizer.prototype = {
     let handles = [];
     for (let name of itemsToClear) {
       let item = this.items[name];
+      item.isShutdown = this.isShutdown;
       try {
         // Catch errors here, so later we can just loop through these.
         handles.push({ name,
@@ -290,6 +292,11 @@ Sanitizer.prototype = {
         Components.utils.import("resource:///modules/offlineAppCache.jsm");
         // This doesn't wait for the cleanup to be complete.
         OfflineAppCacheHelper.clear();
+        if (!range || this.isShutDown) {
+          // Clear local storage entries
+          Components.utils.import("resource:///modules/QuotaManager.jsm");
+          QuotaManagerHelper.clear(this.isShutdown);
+        }
       })
     },
 
@@ -871,6 +878,7 @@ var sanitizeOnShutdown = Task.async(function*(options = {}) {
   // Need to sanitize upon shutdown
   let s = new Sanitizer();
   s.prefDomain = "privacy.clearOnShutdown.";
+  s.isShutDown = true;
   yield s.sanitize(null, options);
   // We didn't crash during shutdown sanitization, so annotate it to avoid
   // sanitizing again on startup.
