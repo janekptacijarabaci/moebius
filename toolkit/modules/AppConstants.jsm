@@ -36,11 +36,17 @@ this.AppConstants = Object.freeze({
   false,
 #endif
 
-  // Official corresponds, roughly, to whether this build is performed
-  // on Mozilla's continuous integration infrastructure. You should
+  // Official corresponds to whether this build is considered an
+  // official, branded release for the public. You should
   // disable developer-only functionality when this flag is set.
-  MOZILLA_OFFICIAL:
-#ifdef MOZILLA_OFFICIAL
+  MOZ_OFFICIAL:
+#ifdef MC_OFFICIAL
+  true,
+#else
+  false,
+#endif
+  MC_OFFICIAL:
+#ifdef MC_OFFICIAL
   true,
 #else
   false,

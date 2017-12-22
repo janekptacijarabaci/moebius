@@ -1066,7 +1066,7 @@ nsXULAppInfo::GetDistributionID(nsACString& aResult)
 NS_IMETHODIMP
 nsXULAppInfo::GetIsOfficial(bool* aResult)
 {
-#ifdef MOZILLA_OFFICIAL
+#ifdef MC_OFFICIAL
   *aResult = true;
 #else
   *aResult = false;
