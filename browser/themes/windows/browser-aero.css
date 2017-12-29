@@ -241,10 +241,6 @@
       opacity: 0.5;
     }
 
-    #main-window[chromemargin^="0,"][sizemode=normal] #navigator-toolbox {
-      margin-top: -4px;
-    }
-
     #main-window[sizemode="maximized"] #titlebar-close {
       padding-right: 19px;
     }
