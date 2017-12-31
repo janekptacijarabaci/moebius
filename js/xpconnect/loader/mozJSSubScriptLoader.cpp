@@ -34,6 +34,7 @@
 #include "nsContentUtils.h"
 #include "nsStringGlue.h"
 #include "nsCycleCollectionParticipant.h"
+#include "GoannaProfiler.h"
 
 using namespace mozilla::scache;
 using namespace JS;
@@ -627,9 +628,14 @@ mozJSSubScriptLoader::DoLoadSubScriptWithOptions(const nsAString& url,
         return NS_OK;
     }
 
+    const nsCString& asciiUrl = NS_LossyConvertUTF16toASCII(url);
+    PROFILER_LABEL_DYNAMIC("mozJSSubScriptLoader", "LoadSubScript",
+                           js::ProfileEntry::Category::OTHER,
+                           asciiUrl.get());
+
     // Make sure to explicitly create the URI, since we'll need the
     // canonicalized spec.
-    rv = NS_NewURI(getter_AddRefs(uri), NS_LossyConvertUTF16toASCII(url).get(), nullptr, serv);
+    rv = NS_NewURI(getter_AddRefs(uri), asciiUrl.get(), nullptr, serv);
     if (NS_FAILED(rv)) {
         ReportError(cx, LOAD_ERROR_NOURI);
         return NS_OK;
