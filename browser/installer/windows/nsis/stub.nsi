@@ -74,7 +74,7 @@ Var ProgressCompleted
 Var ProgressTotal
 
 Var ExitCode
-Var FirefoxLaunchCode
+Var BasiliskLaunchCode
 
 ; The first three tick counts are for the start of a phase and equate equate to
 ; the display of individual installer pages.
@@ -294,15 +294,10 @@ ChangeUI all "nsisui.exe"
 
 !include "nsisstrings.nlf"
 
-!if "${AB_CD}" == "en-US"
-  ; Custom strings for en-US. This is done here so they aren't translated.
-  !include oneoff_en-US.nsh
-!else
-  !define INTRO_BLURB "$(INTRO_BLURB1)"
-  !define INSTALL_BLURB1 "$(INSTALL_BLURB1)"
-  !define INSTALL_BLURB2 "$(INSTALL_BLURB2)"
-  !define INSTALL_BLURB3 "$(INSTALL_BLURB3)"
-!endif
+!define INTRO_BLURB "$(INTRO_BLURB1)"
+!define INSTALL_BLURB1 "$(INSTALL_BLURB1)"
+!define INSTALL_BLURB2 "$(INSTALL_BLURB2)"
+!define INSTALL_BLURB3 "$(INSTALL_BLURB3)"
 
 Caption "$(WIN_CAPTION)"
 
@@ -454,7 +449,7 @@ Function .onInit
   StrCpy $EndInstallPhaseTickCount "0"
   StrCpy $InitialInstallRequirementsCode ""
   StrCpy $IsDownloadFinished ""
-  StrCpy $FirefoxLaunchCode "0"
+  StrCpy $BasiliskLaunchCode "0"
   StrCpy $CheckboxShortcuts "1"
   StrCpy $CheckboxSendPing "1"
 !ifdef MOZ_MAINTENANCE_SERVICE
@@ -675,17 +670,17 @@ Function SendPing
       ${GetParent} "$R2" $R3
       ${GetLongPath} "$R3" $R3
       ${If} $R3 == $INSTDIR
-        StrCpy $R2 "1" ; This Firefox install is set as default.
+        StrCpy $R2 "1" ; This Basilisk install is set as default.
       ${Else}
         StrCpy $R2 "$R2" "" -11 # length of firefox.exe
         ${If} "$R2" == "${FileMainEXE}"
-          StrCpy $R2 "2" ; Another Firefox install is set as default.
+          StrCpy $R2 "2" ; Another Basilisk install is set as default.
         ${Else}
           StrCpy $R2 "0"
         ${EndIf}
       ${EndIf}
     ${Else}
-      StrCpy $R2 "0" ; Firefox is not set as default.
+      StrCpy $R2 "0" ; Basilisk is not set as default.
     ${EndIf}
 
     ${If} "$R2" == "0"
@@ -705,17 +700,17 @@ Function SendPing
             ${GetParent} "$R2" $R3
             ${GetLongPath} "$R3" $R3
             ${If} $R3 == $INSTDIR
-              StrCpy $R2 "1" ; This Firefox install is set as default.
+              StrCpy $R2 "1" ; This Basilisk install is set as default.
             ${Else}
               StrCpy $R2 "$R2" "" -11 # length of firefox.exe
               ${If} "$R2" == "${FileMainEXE}"
-                StrCpy $R2 "2" ; Another Firefox install is set as default.
+                StrCpy $R2 "2" ; Another Basilisk install is set as default.
               ${Else}
                 StrCpy $R2 "0"
               ${EndIf}
             ${EndIf}
           ${Else}
-            StrCpy $R2 "0" ; Firefox is not set as default.
+            StrCpy $R2 "0" ; Basilisk is not set as default.
           ${EndIf}
         ${EndIf}
       ${EndUnless}
@@ -741,7 +736,7 @@ Function SendPing
                       $\nBuild Channel = ${Channel} \
                       $\nUpdate Channel = ${UpdateChannel} \
                       $\nLocale = ${AB_CD} \
-                      $\nFirefox x64 = $R0 \
+                      $\nBasilisk x64 = $R0 \
                       $\nRunning x64 Windows = $R1 \
                       $\nMajor = $5 \
                       $\nMinor = $6 \
@@ -749,7 +744,7 @@ Function SendPing
                       $\nServicePack = $8 \
                       $\nIsServer = $9 \
                       $\nExit Code = $ExitCode \
-                      $\nFirefox Launch Code = $FirefoxLaunchCode \
+                      $\nBasilisk Launch Code = $BasiliskLaunchCode \
                       $\nDownload Retry Count = $DownloadRetryCount \
                       $\nDownloaded Bytes = $DownloadedBytes \
                       $\nDownload Size Bytes = $DownloadSizeBytes \
@@ -780,7 +775,7 @@ Function SendPing
     Call RelativeGotoPage
 !else
     ${NSD_CreateTimer} OnPing ${DownloadIntervalMS}
-    InetBgDL::Get "${BaseURLStubPing}/${StubURLVersion}${StubURLVersionAppend}/${Channel}/${UpdateChannel}/${AB_CD}/$R0/$R1/$5/$6/$7/$8/$9/$ExitCode/$FirefoxLaunchCode/$DownloadRetryCount/$DownloadedBytes/$DownloadSizeBytes/$IntroPhaseSeconds/$OptionsPhaseSeconds/$0/$1/$DownloadFirstTransferSeconds/$2/$3/$4/$InitialInstallRequirementsCode/$OpenedDownloadPage/$ExistingProfile/$ExistingVersion/$ExistingBuildID/$R5/$R6/$R7/$R8/$R2/$R3/$DownloadServerIP/$PostSigningData" \
+    InetBgDL::Get "${BaseURLStubPing}/${StubURLVersion}${StubURLVersionAppend}/${Channel}/${UpdateChannel}/${AB_CD}/$R0/$R1/$5/$6/$7/$8/$9/$ExitCode/$BasiliskLaunchCode/$DownloadRetryCount/$DownloadedBytes/$DownloadSizeBytes/$IntroPhaseSeconds/$OptionsPhaseSeconds/$0/$1/$DownloadFirstTransferSeconds/$2/$3/$4/$InitialInstallRequirementsCode/$OpenedDownloadPage/$ExistingProfile/$ExistingVersion/$ExistingBuildID/$R5/$R6/$R7/$R8/$R2/$R3/$DownloadServerIP/$PostSigningData" \
                   "$PLUGINSDIR\_temp" /END
 !endif
   ${Else}
@@ -806,10 +801,10 @@ Function createIntro
   nsDialogs::OnBack /NOUNLOAD $0
 
 !ifdef ${AB_CD}_rtl
-  ; For RTL align the text with the top of the F in the Firefox bitmap
+  ; For RTL align the text with the top of the F in the Basilisk bitmap
   StrCpy $0 "${INTRO_BLURB_RTL_TOP_DU}"
 !else
-  ; For LTR align the text with the top of the x in the Firefox bitmap
+  ; For LTR align the text with the top of the x in the Basilisk bitmap
   StrCpy $0 "${INTRO_BLURB_LTR_TOP_DU}"
 !endif
   ${NSD_CreateLabel} ${INTRO_BLURB_EDGE_DU} $0 ${INTRO_BLURB_WIDTH_DU} 76u "${INTRO_BLURB}"
@@ -1421,7 +1416,7 @@ Function createInstall
     StrCpy $ExistingBuildID "0"
   ${EndIf}
 
-  ${If} ${FileExists} "$LOCALAPPDATA\Mozilla\Firefox"
+  ${If} ${FileExists} "$LOCALAPPDATA\Mozilla\Basilisk"
     StrCpy $ExistingProfile "1"
   ${Else}
     StrCpy $ExistingProfile "0"
@@ -1857,7 +1852,7 @@ Function FinishInstall
     ; If we have something other than empty string now, write the value.
     ${If} "$0" != ""
       ClearErrors
-      WriteRegStr HKCU "Software\Mozilla\Firefox" "OldDefaultBrowserCommand" "$0"
+      WriteRegStr HKCU "Software\Mozilla\Basilisk" "OldDefaultBrowserCommand" "$0"
     ${EndIf}
 
     ${GetParameters} $0
@@ -2128,13 +2123,13 @@ Function LaunchApp
 !ifndef DEV_EDITION
   FindWindow $0 "${WindowClass}"
   ${If} $0 <> 0 ; integer comparison
-    StrCpy $FirefoxLaunchCode "1"
+    StrCpy $BasiliskLaunchCode "1"
     MessageBox MB_OK|MB_ICONQUESTION "$(WARN_MANUALLY_CLOSE_APP_LAUNCH)"
     Return
   ${EndIf}
 !endif
 
-  StrCpy $FirefoxLaunchCode "2"
+  StrCpy $BasiliskLaunchCode "2"
 
   ; Set the current working directory to the installation directory
   SetOutPath "$INSTDIR"
@@ -2167,8 +2162,8 @@ Function CopyPostSigningData
     ClearErrors
     StrCpy $PostSigningData "0"
   ${Else}
-    CreateDirectory "$LOCALAPPDATA\Mozilla\Firefox"
-    CopyFiles /SILENT "$EXEDIR\postSigningData" "$LOCALAPPDATA\Mozilla\Firefox"
+    CreateDirectory "$LOCALAPPDATA\Mozilla\Basilisk"
+    CopyFiles /SILENT "$EXEDIR\postSigningData" "$LOCALAPPDATA\Mozilla\Basilisk"
   ${Endif}
 FunctionEnd
 
