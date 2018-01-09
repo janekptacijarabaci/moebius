@@ -836,20 +836,6 @@ nsHttpHandler::InitUserAgentComponents()
     }
 #endif // ANDROID
 
-#ifdef MOZ_MULET
-    {
-        // Add the `Mobile` or `Tablet` or `TV` token when running in the b2g
-        // desktop simulator via preference.
-        nsCString deviceType;
-        nsresult rv = Preferences::GetCString("devtools.useragent.device_type", &deviceType);
-        if (NS_SUCCEEDED(rv)) {
-            mCompatDevice.Assign(deviceType);
-        } else {
-            mCompatDevice.AssignLiteral("Mobile");
-        }
-    }
-#endif // MOZ_MULET
-
 #if defined(MOZ_WIDGET_GONK)
     // Device model identifier should be a simple token, which can be composed
     // of letters, numbers, hyphen ("-") and dot (".").
