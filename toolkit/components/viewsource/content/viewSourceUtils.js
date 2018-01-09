@@ -15,8 +15,6 @@
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ViewSourceBrowser",
   "resource://gre/modules/ViewSourceBrowser.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Deprecated",
-  "resource://gre/modules/Deprecated.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
@@ -228,10 +226,6 @@ var gViewSourceUtils = {
                                  aLineNumber, aCallBack) {
     let data;
     if (typeof aArgsOrURL == "string") {
-      Deprecated.warning("The arguments you're passing to " +
-                         "openInExternalEditor are using an out-of-date API.",
-                         "https://developer.mozilla.org/en-US/Add-ons/" +
-                         "Code_snippets/View_Source_for_XUL_Applications");
       if (Components.utils.isCrossProcessWrapper(aDocument)) {
         throw new Error("View Source cannot accept a CPOW as a document.");
       }
