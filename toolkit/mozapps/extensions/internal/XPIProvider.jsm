@@ -1359,6 +1359,25 @@ function generateTemporaryInstallID(aFile) {
   return id;
 }
 
+function getInstallID(aFile) {
+  const re = /\x06\x03U\x04\x03\x14[\s\S](\{[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}|[a-z0-9-\._]*\@[a-z0-9-\._]+)0\x82\x02"0\r\x06\t/i;
+  let result, is = {close() {}}, sis = {close() {}};
+  let uri = getURIForResourceInFile(aFile, "META-INF/mozilla.rsa");
+  try {
+    is = Services.io.newChannelFromURIWithLoadInfo(uri, null).open();
+    sis = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
+    sis.init(is);
+    let str = sis.readBytes(sis.available());
+    let match = str.match(re); 
+    if (match) {
+      result = match[1];
+    }
+  } catch(ex) {}
+  sis.close(); is.close();
+  logger.info(`Got id ${result} for ${aFile.path}`);
+  return result;
+}
+
 /**
  * Loads an AddonInternal object from an add-on extracted in a directory.
  *
@@ -1529,8 +1548,12 @@ var loadManifestFromZipReader = Task.async(function*(aZipReader, aInstallLocatio
         throw new Error(`Webextension is signed with an invalid id (${addon.id})`);
       }
     }
-    if (!addon.id && aInstallLocation == TemporaryInstallLocation) {
-      addon.id = generateTemporaryInstallID(aZipReader.file);
+    if (!addon.id) {
+      if (aInstallLocation == TemporaryInstallLocation) {
+        addon.id = generateTemporaryInstallID(aZipReader.file);
+      } else if (!ADDON_SIGNING) {
+        addon.id = getInstallID(aZipReader.file);
+      }
     }
   }
   addon.appDisabled = !isUsableAddon(addon);
@@ -1758,8 +1781,9 @@ function shouldVerifySignedState(aAddon) {
   if (aAddon._installLocation.name == KEY_APP_SYSTEM_DEFAULTS)
     return false;
 
-  // Otherwise only check signatures if the add-on is one of the signed types.
-  return SIGNED_TYPES.has(aAddon.type);
+  // Otherwise only check signatures if signing is enabled and the add-on is one
+  // of the signed types.
+  return ADDON_SIGNING && SIGNED_TYPES.has(aAddon.type);
 }
 
 let gCertDB = Cc["@mozilla.org/security/x509certdb;1"]
