@@ -775,7 +775,6 @@
     "toolkit/mozapps/extensions/test/browser/browser_experiments.js": 11973, 
     "toolkit/mozapps/extensions/test/browser/browser_globalwarnings.js": 5113, 
     "toolkit/mozapps/extensions/test/browser/browser_gmpProvider.js": 53557, 
-    "toolkit/mozapps/extensions/test/browser/browser_hotfix.js": 4078, 
     "toolkit/mozapps/extensions/test/browser/browser_inlinesettings.js": 10764, 
     "toolkit/mozapps/extensions/test/browser/browser_inlinesettings_browser.js": 7811, 
     "toolkit/mozapps/extensions/test/browser/browser_inlinesettings_custom.js": 3870, 

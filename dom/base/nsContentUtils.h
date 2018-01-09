@@ -571,8 +571,16 @@ public:
    *                  string (meaning UTF-8)
    */
   static nsresult ConvertStringFromEncoding(const nsACString& aEncoding,
-                                            const nsACString& aInput,
+                                            const char* aInput,
+                                            uint32_t aInputLen,
                                             nsAString& aOutput);
+
+  static nsresult ConvertStringFromEncoding(const nsACString& aEncoding,
+                                            const nsACString& aInput,
+                                            nsAString& aOutput) {
+    return ConvertStringFromEncoding(aEncoding, aInput.BeginReading(),
+                                     aInput.Length(), aOutput);
+  }
 
   /**
    * Determine whether a buffer begins with a BOM for UTF-8, UTF-16LE,
@@ -2053,6 +2061,14 @@ public:
   }
 
   /*
+   * Returns true if the performance timing APIs are enabled.
+   */
+  static bool IsPerformanceNavigationTimingEnabled()
+  {
+    return sIsPerformanceNavigationTimingEnabled;
+  }
+
+  /*
    * Returns true if notification should be sent for peformance timing events.
    */
   static bool SendPerformanceTimingNotifications()
@@ -2779,7 +2795,8 @@ private:
 
   static void DropFragmentParsers();
 
-  static bool MatchClassNames(nsIContent* aContent, int32_t aNamespaceID,
+  static bool MatchClassNames(mozilla::dom::Element* aElement,
+                              int32_t aNamespaceID,
                               nsIAtom* aAtom, void* aData);
   static void DestroyClassNameArray(void* aData);
   static void* AllocClassMatchingInfo(nsINode* aRootNode,
@@ -2855,6 +2872,7 @@ private:
   static uint32_t sHandlingInputTimeout;
   static bool sIsPerformanceTimingEnabled;
   static bool sIsResourceTimingEnabled;
+  static bool sIsPerformanceNavigationTimingEnabled;
   static bool sIsUserTimingLoggingEnabled;
   static bool sIsFrameTimingPrefEnabled;
   static bool sIsExperimentalAutocompleteEnabled;

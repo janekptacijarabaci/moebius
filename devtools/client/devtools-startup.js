@@ -25,7 +25,7 @@ function DevToolsStartup() {}
 
 DevToolsStartup.prototype = {
   handle: function (cmdLine) {
-    let consoleFlag = cmdLine.handleFlag("jsconsole", false);
+    let consoleFlag = cmdLine.handleFlag("browserconsole", false);
     let debuggerFlag = cmdLine.handleFlag("jsdebugger", false);
     let devtoolsFlag = cmdLine.handleFlag("devtools", false);
 
@@ -75,9 +75,9 @@ DevToolsStartup.prototype = {
       this.initDevTools();
 
       let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
-      let hudservice = require("devtools/client/webconsole/hudservice");
+      let { HUDService } = require("devtools/client/webconsole/hudservice");
       let { console } = Cu.import("resource://gre/modules/Console.jsm", {});
-      hudservice.toggleBrowserConsole().then(null, console.error);
+      HUDService.toggleBrowserConsole().then(null, console.error);
     } else {
       // the Browser Console was already open
       window.focus();
@@ -104,12 +104,14 @@ DevToolsStartup.prototype = {
         return Services.prefs.getBoolPref(pref);
       });
     } catch (ex) {
+      let { console } = Cu.import("resource://gre/modules/Console.jsm", {});
       console.error(ex);
       return false;
     }
     if (!remoteDebuggingEnabled) {
       let errorMsg = "Could not run chrome debugger! You need the following " +
                      "prefs to be set to true: " + kDebuggerPrefs.join(", ");
+      let { console } = Cu.import("resource://gre/modules/Console.jsm", {});
       console.error(new Error(errorMsg));
       // Dump as well, as we're doing this from a commandline, make sure people
       // don't miss it:
@@ -202,7 +204,7 @@ DevToolsStartup.prototype = {
   },
 
   /* eslint-disable max-len */
-  helpInfo: "  --jsconsole                                  Open the Browser Console.\n" +
+  helpInfo: "  --browserconsole                             Open the Browser Console.\n" +
             "  --jsdebugger                                 Open the Browser Toolbox.\n" +
             "  --devtools                                   Open DevTools on initial load.\n" +
             "  --start-debugger-server [ws:][<port>|<path>] Start the debugger server on\n" +

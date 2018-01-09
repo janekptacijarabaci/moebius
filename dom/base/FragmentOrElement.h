@@ -25,6 +25,7 @@
 
 class ContentUnbinder;
 class nsContentList;
+class nsLabelsNodeList;
 class nsDOMAttributeMap;
 class nsDOMTokenList;
 class nsIControllers;
@@ -314,6 +315,11 @@ public:
      */
     RefPtr<nsDOMTokenList> mClassList;
 
+    /*
+     * An object implementing the .labels property for this element.
+     */
+    RefPtr<nsLabelsNodeList> mLabelsList;
+
     /**
      * ShadowRoot bound to the element.
      */
@@ -348,7 +354,8 @@ public:
     /**
      * Registered Intersection Observers on the element.
      */
-    nsDataHashtable<nsPtrHashKey<DOMIntersectionObserver>, int32_t> mRegisteredIntersectionObservers;
+    nsDataHashtable<nsRefPtrHashKey<DOMIntersectionObserver>, int32_t>
+      mRegisteredIntersectionObservers;
   };
 
 protected:

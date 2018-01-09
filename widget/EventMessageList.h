@@ -340,6 +340,7 @@ NS_EVENT_MESSAGE(eTransitionCancel)
 NS_EVENT_MESSAGE(eAnimationStart)
 NS_EVENT_MESSAGE(eAnimationEnd)
 NS_EVENT_MESSAGE(eAnimationIteration)
+NS_EVENT_MESSAGE(eAnimationCancel)
 
 // Webkit-prefixed versions of Transition & Animation events, for web compat:
 NS_EVENT_MESSAGE(eWebkitTransitionEnd)
@@ -439,6 +440,9 @@ NS_EVENT_MESSAGE(eEditorInput)
 // selection events
 NS_EVENT_MESSAGE(eSelectStart)
 NS_EVENT_MESSAGE(eSelectionChange)
+
+// visibility change
+NS_EVENT_MESSAGE(eVisibilityChange)
 
 // Details element events.
 NS_EVENT_MESSAGE(eToggle)

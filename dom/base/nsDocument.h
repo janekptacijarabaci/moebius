@@ -1281,7 +1281,9 @@ public:
 
   js::ExpandoAndGeneration mExpandoAndGeneration;
 
+#ifdef MOZ_EME
   bool ContainsEMEContent();
+#endif
 
   bool ContainsMSEContent();
 
@@ -1361,7 +1363,8 @@ protected:
   nsTObserverArray<nsIDocumentObserver*> mObservers;
 
   // Array of intersection observers
-  nsTArray<RefPtr<mozilla::dom::DOMIntersectionObserver>> mIntersectionObservers;
+  nsTHashtable<nsPtrHashKey<mozilla::dom::DOMIntersectionObserver>>
+    mIntersectionObservers;
 
   // Tracker for animations that are waiting to start.
   // nullptr until GetOrCreatePendingAnimationTracker is called.
@@ -1516,7 +1519,6 @@ private:
   void PostUnblockOnloadEvent();
   void DoUnblockOnload();
 
-  nsresult CheckFrameOptions();
   nsresult InitCSP(nsIChannel* aChannel);
 
   /**

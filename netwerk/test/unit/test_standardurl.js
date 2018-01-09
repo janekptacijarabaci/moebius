@@ -335,6 +335,14 @@ add_test(function test_backslashReplacement()
   run_next_test();
 });
 
+add_test(function test_authority_host()
+{
+  Assert.throws(() => { stringToURL("http:"); }, "TYPE_AUTHORITY should have host");
+  Assert.throws(() => { stringToURL("http:///"); }, "TYPE_AUTHORITY should have host");
+
+  run_next_test();
+});
+
 add_test(function test_trim_C0_and_space()
 {
   var url = stringToURL("\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f http://example.com/ \x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f ");
@@ -451,5 +459,25 @@ add_test(function test_invalidHostChars() {
 
   // It also can't contain /, \, #, ?, but we treat these characters as
   // hostname separators, so there is no way to set them and fail.
+  run_next_test();
+});
+
+add_test(function test_emptyPassword() {
+  var url = stringToURL("http://a:@example.com");
+  do_check_eq(url.spec, "http://a@example.com/");
+  url.password = "pp";
+  do_check_eq(url.spec, "http://a:pp@example.com/");
+  url.password = "";
+  do_check_eq(url.spec, "http://a@example.com/");
+  url.userPass = "xxx:";
+  do_check_eq(url.spec, "http://xxx@example.com/");
+  url.password = "zzzz";
+  do_check_eq(url.spec, "http://xxx:zzzz@example.com/");
+  url.userPass = "xxxxx:yyyyyy";
+  do_check_eq(url.spec, "http://xxxxx:yyyyyy@example.com/");
+  url.userPass = "z:";
+  do_check_eq(url.spec, "http://z@example.com/");
+  url.password = "ppppppppppp";
+  do_check_eq(url.spec, "http://z:ppppppppppp@example.com/");
   run_next_test();
 });

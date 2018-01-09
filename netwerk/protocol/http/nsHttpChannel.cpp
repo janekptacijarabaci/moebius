@@ -5406,7 +5406,7 @@ nsHttpChannel::AsyncProcessRedirection(uint32_t redirectType)
     if (NS_EscapeURL(location.get(), -1, esc_OnlyNonASCII, locationBuf))
         location = locationBuf;
 
-    if (mRedirectionLimit == 0) {
+    if (mRedirectCount >= mRedirectionLimit || mInternalRedirectCount >= mRedirectionLimit) {
         LOG(("redirection limit reached!\n"));
         return NS_ERROR_REDIRECT_LOOP;
     }
@@ -6400,6 +6400,15 @@ nsHttpChannel::GetConnectStart(TimeStamp* _retval) {
         *_retval = mTransaction->GetConnectStart();
     else
         *_retval = mTransactionTimings.connectStart;
+    return NS_OK;
+}
+
+NS_IMETHODIMP
+nsHttpChannel::GetSecureConnectionStart(TimeStamp* _retval) {
+    if (mTransaction)
+        *_retval = mTransaction->GetSecureConnectionStart();
+    else
+        *_retval = mTransactionTimings.secureConnectionStart;
     return NS_OK;
 }
 
@@ -8310,9 +8319,31 @@ nsHttpChannel::ResumeInternal()
     LOG(("nsHttpChannel::ResumeInternal [this=%p]\n", this));
 
     if (--mSuspendCount == 0 && mCallOnResume) {
-        nsresult rv = AsyncCall(mCallOnResume);
+        // Resume the interrupted procedure first, then resume
+        // the pump to continue process the input stream.
+        RefPtr<nsRunnableMethod<nsHttpChannel>> callOnResume=
+            NewRunnableMethod(this, mCallOnResume);
+        // Should not resume pump that created after resumption.
+        RefPtr<nsInputStreamPump> transactionPump = mTransactionPump;
+        RefPtr<nsInputStreamPump> cachePump = mCachePump;
+
+        nsresult rv =
+            NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+                [callOnResume, transactionPump, cachePump]() {
+                    callOnResume->Run();
+
+                    if (transactionPump) {
+                        transactionPump->Resume();
+                    }
+
+                    if (cachePump) {
+                        cachePump->Resume();
+                    }
+                })
+            );
         mCallOnResume = nullptr;
         NS_ENSURE_SUCCESS(rv, rv);
+        return rv;
     }
 
     nsresult rvTransaction = NS_OK;

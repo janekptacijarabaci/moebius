@@ -1101,31 +1101,31 @@ nsHTMLDocument::Applets()
 }
 
 bool
-nsHTMLDocument::MatchLinks(nsIContent *aContent, int32_t aNamespaceID,
+nsHTMLDocument::MatchLinks(Element* aElement, int32_t aNamespaceID,
                            nsIAtom* aAtom, void* aData)
 {
-  nsIDocument* doc = aContent->GetUncomposedDoc();
+  nsIDocument* doc = aElement->GetUncomposedDoc();
 
   if (doc) {
-    NS_ASSERTION(aContent->IsInUncomposedDoc(),
+    NS_ASSERTION(aElement->IsInUncomposedDoc(),
                  "This method should never be called on content nodes that "
                  "are not in a document!");
 #ifdef DEBUG
     {
       nsCOMPtr<nsIHTMLDocument> htmldoc =
-        do_QueryInterface(aContent->GetUncomposedDoc());
+        do_QueryInterface(aElement->GetUncomposedDoc());
       NS_ASSERTION(htmldoc,
                    "Huh, how did this happen? This should only be used with "
                    "HTML documents!");
     }
 #endif
 
-    mozilla::dom::NodeInfo *ni = aContent->NodeInfo();
+    mozilla::dom::NodeInfo *ni = aElement->NodeInfo();
 
     nsIAtom *localName = ni->NameAtom();
     if (ni->NamespaceID() == kNameSpaceID_XHTML &&
         (localName == nsGkAtoms::a || localName == nsGkAtoms::area)) {
-      return aContent->HasAttr(kNameSpaceID_None, nsGkAtoms::href);
+      return aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::href);
     }
   }
 
@@ -1149,24 +1149,24 @@ nsHTMLDocument::Links()
 }
 
 bool
-nsHTMLDocument::MatchAnchors(nsIContent *aContent, int32_t aNamespaceID,
+nsHTMLDocument::MatchAnchors(Element* aElement, int32_t aNamespaceID,
                              nsIAtom* aAtom, void* aData)
 {
-  NS_ASSERTION(aContent->IsInUncomposedDoc(),
+  NS_ASSERTION(aElement->IsInUncomposedDoc(),
                "This method should never be called on content nodes that "
                "are not in a document!");
 #ifdef DEBUG
   {
     nsCOMPtr<nsIHTMLDocument> htmldoc =
-      do_QueryInterface(aContent->GetUncomposedDoc());
+      do_QueryInterface(aElement->GetUncomposedDoc());
     NS_ASSERTION(htmldoc,
                  "Huh, how did this happen? This should only be used with "
                  "HTML documents!");
   }
 #endif
 
-  if (aContent->NodeInfo()->Equals(nsGkAtoms::a, kNameSpaceID_XHTML)) {
-    return aContent->HasAttr(kNameSpaceID_None, nsGkAtoms::name);
+  if (aElement->IsHTMLElement(nsGkAtoms::a)) {
+    return aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::name);
   }
 
   return false;
@@ -1256,6 +1256,11 @@ nsHTMLDocument::GetCookie(nsAString& aCookie, ErrorResult& rv)
     rv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return;
   }
+
+  // If the document is a cookie-averse document, return an empty string.
+  if (IsCookieAverse()) {
+    return;
+  }
   
   // not having a cookie service isn't an error
   nsCOMPtr<nsICookieService> service = do_GetService(NS_COOKIESERVICE_CONTRACTID);
@@ -1308,6 +1313,11 @@ nsHTMLDocument::SetCookie(const nsAString& aCookie, ErrorResult& rv)
   // is prohibited.
   if (mSandboxFlags & SANDBOXED_ORIGIN) {
     rv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return;
+  }
+
+  // If the document is a cookie-averse document, do nothing.
+  if (IsCookieAverse()) {
     return;
   }
 
@@ -1943,14 +1953,14 @@ nsHTMLDocument::Writeln(JSContext* cx, const Sequence<nsString>& aText,
 }
 
 bool
-nsHTMLDocument::MatchNameAttribute(nsIContent* aContent, int32_t aNamespaceID,
+nsHTMLDocument::MatchNameAttribute(Element* aElement, int32_t aNamespaceID,
                                    nsIAtom* aAtom, void* aData)
 {
-  NS_PRECONDITION(aContent, "Must have content node to work with!");
+  NS_PRECONDITION(aElement, "Must have element to work with!");
   nsString* elementName = static_cast<nsString*>(aData);
   return
-    aContent->GetNameSpaceID() == kNameSpaceID_XHTML &&
-    aContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name,
+    aElement->GetNameSpaceID() == kNameSpaceID_XHTML &&
+    aElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name,
                           *elementName, eCaseMatters);
 }
 
@@ -2128,24 +2138,8 @@ NS_IMETHODIMP
 nsHTMLDocument::GetSelection(nsISelection** aReturn)
 {
   ErrorResult rv;
-  NS_IF_ADDREF(*aReturn = GetSelection(rv));
+  NS_IF_ADDREF(*aReturn = nsDocument::GetSelection(rv));
   return rv.StealNSResult();
-}
-
-Selection*
-nsHTMLDocument::GetSelection(ErrorResult& aRv)
-{
-  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(GetScopeObject());
-  if (!window) {
-    return nullptr;
-  }
-
-  NS_ASSERTION(window->IsInnerWindow(), "Should have inner window here!");
-  if (!window->IsCurrentInnerWindow()) {
-    return nullptr;
-  }
-
-  return nsGlobalWindow::Cast(window)->GetSelection(aRv);
 }
 
 NS_IMETHODIMP
@@ -2270,10 +2264,10 @@ nsHTMLDocument::GetForms()
   return mForms;
 }
 
-static bool MatchFormControls(nsIContent* aContent, int32_t aNamespaceID,
-                                nsIAtom* aAtom, void* aData)
+static bool MatchFormControls(Element* aElement, int32_t aNamespaceID,
+                              nsIAtom* aAtom, void* aData)
 {
-  return aContent->IsNodeOfType(nsIContent::eHTML_FORM_CONTROL);
+  return aElement->IsNodeOfType(nsIContent::eHTML_FORM_CONTROL);
 }
 
 nsContentList*

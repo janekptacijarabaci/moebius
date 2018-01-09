@@ -209,7 +209,15 @@ nsIDNService::IDNA2008StringPrep(const nsAString& input,
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Output the result of nameToUnicode even if there were errors
+  // Output the result of nameToUnicode even if there were errors.
+  // But in the case of invalid punycode, the uidna_labelToUnicode result
+  // appears to get an appended U+FFFD REPLACEMENT CHARACTER, which will
+  // confuse our subsequent processing, so we drop that.
+  // (https://bugzilla.mozilla.org/show_bug.cgi?id=1399540#c9)
+  if ((info.errors & UIDNA_ERROR_PUNYCODE) &&
+      outLen > 0 && outputBuffer[outLen - 1] == 0xfffd) {
+    --outLen;
+  }
   ICUUtils::AssignUCharArrayToString(outputBuffer, outLen, output);
 
   if (flag == eStringPrepIgnoreErrors) {
@@ -287,6 +295,10 @@ nsresult nsIDNService::ACEtoUTF8(const nsACString & input, nsACString & _retval,
   // RFC 3490 - 4.2 ToUnicode
   // ToUnicode never fails.  If any step fails, then the original input
   // sequence is returned immediately in that step.
+  //
+  // Note that this refers to the decoding of a single label.
+  // ACEtoUTF8 may be called with a sequence of labels separated by dots;
+  // this test applies individually to each label.
 
   uint32_t len = 0, offset = 0;
   nsAutoCString decodedBuf;
@@ -300,13 +312,15 @@ nsresult nsIDNService::ACEtoUTF8(const nsACString & input, nsACString & _retval,
   while (start != end) {
     len++;
     if (*start++ == '.') {
-      if (NS_FAILED(decodeACE(Substring(input, offset, len - 1), decodedBuf,
-                              flag))) {
-        _retval.Assign(input);
-        return NS_OK;
+      nsDependentCSubstring origLabel(input, offset, len - 1);
+      if (NS_FAILED(decodeACE(origLabel, decodedBuf, flag))) {
+        // If decoding failed, use the original input sequence
+        // for this label.
+        _retval.Append(origLabel);
+      } else {
+        _retval.Append(decodedBuf);
       }
 
-      _retval.Append(decodedBuf);
       _retval.Append('.');
       offset += len;
       len = 0;
@@ -314,11 +328,12 @@ nsresult nsIDNService::ACEtoUTF8(const nsACString & input, nsACString & _retval,
   }
   // decode the last node
   if (len) {
-    if (NS_FAILED(decodeACE(Substring(input, offset, len), decodedBuf,
-                            flag)))
-      _retval.Assign(input);
-    else
+    nsDependentCSubstring origLabel(input, offset, len);
+    if (NS_FAILED(decodeACE(origLabel, decodedBuf, flag))) {
+      _retval.Append(origLabel);
+    } else {
       _retval.Append(decodedBuf);
+    }
   }
 
   return NS_OK;
@@ -797,6 +812,7 @@ bool nsIDNService::isLabelSafe(const nsAString &label)
 
   Script lastScript = Script::INVALID;
   uint32_t previousChar = 0;
+  uint32_t baseChar = 0; // last non-diacritic seen (base char for marks)
   uint32_t savedNumberingSystem = 0;
 // Simplified/Traditional Chinese check temporarily disabled -- bug 857481
 #if 0
@@ -846,11 +862,19 @@ bool nsIDNService::isLabelSafe(const nsAString &label)
       }
     }
 
-    // Check for consecutive non-spacing marks
-    if (previousChar != 0 &&
-        previousChar == ch &&
-        GetGeneralCategory(ch) == HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK) {
-      return false;
+    if (GetGeneralCategory(ch) == HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK) {
+      // Check for consecutive non-spacing marks
+      if (previousChar != 0 && previousChar == ch) {
+        return false;
+      }
+      // Check for diacritics on dotless-i or dotless-j, which would be
+      // indistinguishable from normal accented letter.
+      if ((baseChar == 0x0237 || baseChar == 0x0131) &&
+          ((ch >= 0x0300 && ch <= 0x0314) || ch == 0x031a)) {
+        return false;
+      }
+    } else {
+       baseChar = ch;
     }
 
     // Simplified/Traditional Chinese check temporarily disabled -- bug 857481

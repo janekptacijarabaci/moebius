@@ -3045,6 +3045,7 @@ exports.CSS_PROPERTIES = {
       "text-emphasis-style",
       "-webkit-text-fill-color",
       "text-indent",
+      "text-justify",
       "text-orientation",
       "text-overflow",
       "text-rendering",
@@ -3222,6 +3223,7 @@ exports.CSS_PROPERTIES = {
       "dialog",
       "difference",
       "disabled",
+      "distribute",
       "dotted",
       "double",
       "drag",
@@ -3282,6 +3284,8 @@ exports.CSS_PROPERTIES = {
       "inline-table",
       "inset",
       "inside",
+      "inter-character",
+      "inter-word",
       "intersect",
       "isolate",
       "italic",
@@ -8811,6 +8815,23 @@ exports.CSS_PROPERTIES = {
       "unset"
     ]
   },
+  "text-justify": {
+    "isInherited": true,
+    "subproperties": [
+      "text-justify"
+    ],
+    "supports": [],
+    "values": [
+      "auto",
+      "distribute",
+      "inherit",
+      "initial",
+      "inter-character",
+      "inter-word",
+      "none",
+      "unset"
+    ]
+  },
   "text-orientation": {
     "isInherited": true,
     "subproperties": [
@@ -9488,6 +9509,10 @@ exports.PREFERENCES = [
   [
     "-webkit-text-fill-color",
     "layout.css.prefixes.webkit"
+  ],
+  [
+    "text-justify",
+    "layout.css.text-justify.enabled"
   ],
   [
     "-webkit-text-stroke",

@@ -605,9 +605,6 @@ this.AddonRepository = {
   _repopulateCacheInternal: Task.async(function*(aSendPerformance, aTimeout) {
     let allAddons = yield AddonManager.getAllAddons();
 
-    // Filter the hotfix out of our list of add-ons
-    allAddons = allAddons.filter(a => a.id != AddonManager.hotfixID);
-
     // Completely remove cache if caching is not enabled
     if (!this.cacheEnabled) {
       logger.debug("Clearing cache because it is disabled");

@@ -7,6 +7,7 @@
 #include "mozilla/LoadInfo.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/dom/TabChild.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozIThirdPartyUtil.h"
 #include "nsFrameLoader.h"
@@ -46,12 +47,14 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
                            aTriggeringPrincipal : mLoadingPrincipal.get())
   , mPrincipalToInherit(nullptr)
   , mLoadingContext(do_GetWeakReference(aLoadingContext))
+  , mContextForTopLevelLoad(nullptr)
   , mSecurityFlags(aSecurityFlags)
   , mInternalContentPolicyType(aContentPolicyType)
   , mTainting(LoadTainting::Basic)
   , mUpgradeInsecureRequests(false)
   , mVerifySignedContent(false)
   , mEnforceSRI(false)
+  , mForceAllowDataURI(false)
   , mForceInheritPrincipalDropped(false)
   , mInnerWindowID(0)
   , mOuterWindowID(0)
@@ -62,6 +65,7 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
   , mIsThirdPartyContext(false)
   , mForcePreflight(false)
   , mIsPreflight(false)
+  , mLoadTriggeredFromExternal(false)
   , mForceHSTSPriming(false)
   , mMixedContentWouldBlock(false)
 {
@@ -215,16 +219,19 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
 */
 LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
                    nsIPrincipal* aTriggeringPrincipal,
+                   nsISupports* aContextForTopLevelLoad,
                    nsSecurityFlags aSecurityFlags)
   : mLoadingPrincipal(nullptr)
   , mTriggeringPrincipal(aTriggeringPrincipal)
   , mPrincipalToInherit(nullptr)
+  , mContextForTopLevelLoad(do_GetWeakReference(aContextForTopLevelLoad))
   , mSecurityFlags(aSecurityFlags)
   , mInternalContentPolicyType(nsIContentPolicy::TYPE_DOCUMENT)
   , mTainting(LoadTainting::Basic)
   , mUpgradeInsecureRequests(false)
   , mVerifySignedContent(false)
   , mEnforceSRI(false)
+  , mForceAllowDataURI(false)
   , mForceInheritPrincipalDropped(false)
   , mInnerWindowID(0)
   , mOuterWindowID(0)
@@ -235,6 +242,7 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   , mIsThirdPartyContext(false) // NB: TYPE_DOCUMENT implies not third-party.
   , mForcePreflight(false)
   , mIsPreflight(false)
+  , mLoadTriggeredFromExternal(false)
   , mForceHSTSPriming(false)
   , mMixedContentWouldBlock(false)
 {
@@ -277,12 +285,14 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
   , mTriggeringPrincipal(rhs.mTriggeringPrincipal)
   , mPrincipalToInherit(rhs.mPrincipalToInherit)
   , mLoadingContext(rhs.mLoadingContext)
+  , mContextForTopLevelLoad(rhs.mContextForTopLevelLoad)
   , mSecurityFlags(rhs.mSecurityFlags)
   , mInternalContentPolicyType(rhs.mInternalContentPolicyType)
   , mTainting(rhs.mTainting)
   , mUpgradeInsecureRequests(rhs.mUpgradeInsecureRequests)
   , mVerifySignedContent(rhs.mVerifySignedContent)
   , mEnforceSRI(rhs.mEnforceSRI)
+  , mForceAllowDataURI(rhs.mForceAllowDataURI)
   , mForceInheritPrincipalDropped(rhs.mForceInheritPrincipalDropped)
   , mInnerWindowID(rhs.mInnerWindowID)
   , mOuterWindowID(rhs.mOuterWindowID)
@@ -298,6 +308,7 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
   , mCorsUnsafeHeaders(rhs.mCorsUnsafeHeaders)
   , mForcePreflight(rhs.mForcePreflight)
   , mIsPreflight(rhs.mIsPreflight)
+  , mLoadTriggeredFromExternal(rhs.mLoadTriggeredFromExternal)
   , mForceHSTSPriming(rhs.mForceHSTSPriming)
   , mMixedContentWouldBlock(rhs.mMixedContentWouldBlock)
 {
@@ -312,6 +323,7 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
                    bool aUpgradeInsecureRequests,
                    bool aVerifySignedContent,
                    bool aEnforceSRI,
+                   bool aForceAllowDataURI,
                    bool aForceInheritPrincipalDropped,
                    uint64_t aInnerWindowID,
                    uint64_t aOuterWindowID,
@@ -326,6 +338,7 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
                    const nsTArray<nsCString>& aCorsUnsafeHeaders,
                    bool aForcePreflight,
                    bool aIsPreflight,
+                   bool aLoadTriggeredFromExternal,
                    bool aForceHSTSPriming,
                    bool aMixedContentWouldBlock)
   : mLoadingPrincipal(aLoadingPrincipal)
@@ -337,6 +350,7 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
   , mUpgradeInsecureRequests(aUpgradeInsecureRequests)
   , mVerifySignedContent(aVerifySignedContent)
   , mEnforceSRI(aEnforceSRI)
+  , mForceAllowDataURI(aForceAllowDataURI)
   , mForceInheritPrincipalDropped(aForceInheritPrincipalDropped)
   , mInnerWindowID(aInnerWindowID)
   , mOuterWindowID(aOuterWindowID)
@@ -349,6 +363,7 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
   , mCorsUnsafeHeaders(aCorsUnsafeHeaders)
   , mForcePreflight(aForcePreflight)
   , mIsPreflight(aIsPreflight)
+  , mLoadTriggeredFromExternal(aLoadTriggeredFromExternal)
   , mForceHSTSPriming (aForceHSTSPriming)
   , mMixedContentWouldBlock(aMixedContentWouldBlock)
 {
@@ -476,6 +491,17 @@ LoadInfo::LoadingNode()
 {
   nsCOMPtr<nsINode> node = do_QueryReferent(mLoadingContext);
   return node;
+}
+
+nsISupports*
+LoadInfo::ContextForTopLevelLoad()
+{
+  // Most likely you want to query LoadingNode() instead of
+  // ContextForTopLevelLoad() if this assertion fires.
+  MOZ_ASSERT(mInternalContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT,
+            "should only query this context for top level document loads");
+  nsCOMPtr<nsISupports> context = do_QueryReferent(mContextForTopLevelLoad);
+  return context;
 }
 
 NS_IMETHODIMP
@@ -645,6 +671,23 @@ NS_IMETHODIMP
 LoadInfo::GetEnforceSRI(bool* aResult)
 {
   *aResult = mEnforceSRI;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LoadInfo::SetForceAllowDataURI(bool aForceAllowDataURI)
+{
+  MOZ_ASSERT(!mForceAllowDataURI ||
+             mInternalContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT,
+             "can only allow data URI navigation for TYPE_DOCUMENT");
+  mForceAllowDataURI = aForceAllowDataURI;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LoadInfo::GetForceAllowDataURI(bool* aForceAllowDataURI)
+{
+  *aForceAllowDataURI = mForceAllowDataURI;
   return NS_OK;
 }
 
@@ -860,10 +903,33 @@ LoadInfo::SetIsPreflight()
   mIsPreflight = true;
 }
 
+void
+LoadInfo::SetUpgradeInsecureRequests()
+{
+  mUpgradeInsecureRequests = true;
+}
+
 NS_IMETHODIMP
 LoadInfo::GetIsPreflight(bool* aIsPreflight)
 {
   *aIsPreflight = mIsPreflight;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LoadInfo::SetLoadTriggeredFromExternal(bool aLoadTriggeredFromExternal)
+{
+  MOZ_ASSERT(!aLoadTriggeredFromExternal ||
+             mInternalContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT,
+             "can only set load triggered from external for TYPE_DOCUMENT");
+  mLoadTriggeredFromExternal = aLoadTriggeredFromExternal;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LoadInfo::GetLoadTriggeredFromExternal(bool* aLoadTriggeredFromExternal)
+{
+  *aLoadTriggeredFromExternal = mLoadTriggeredFromExternal;
   return NS_OK;
 }
 

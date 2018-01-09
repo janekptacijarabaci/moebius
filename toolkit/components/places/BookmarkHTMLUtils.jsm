@@ -1047,7 +1047,12 @@ BookmarkExporter.prototype = {
   },
 
   _writeLine(aText) {
-    this._write(aText + "\n");
+    if (Services.sysinfo.getProperty("name") == "Windows_NT") {
+      // Write CRLF line endings on Windows
+      this._write(aText + "\r\n");
+    } else {
+      this._write(aText + "\n");
+    }
   },
 
   _writeHeader() {
@@ -1145,7 +1150,7 @@ BookmarkExporter.prototype = {
     if (aItem.charset)
       this._writeAttribute("LAST_CHARSET", escapeHtmlEntities(aItem.charset));
     if (aItem.tags)
-      this._writeAttribute("TAGS", aItem.tags);
+      this._writeAttribute("TAGS", escapeHtmlEntities(aItem.tags));
     this._writeLine(">" + escapeHtmlEntities(aItem.title) + "</A>");
     this._writeDescription(aItem, aIndent);
   },

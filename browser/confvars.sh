@@ -20,9 +20,23 @@ fi
 # Enable building ./signmar and running libmar signature tests
 MOZ_ENABLE_SIGNMAR=
 
-MOZ_APP_VERSION=$FIREFOX_VERSION
-MOZ_APP_VERSION_DISPLAY=$FIREFOX_VERSION_DISPLAY
+# For Basilisk we want to use 55.0.YYYY.MM.DD as MOZ_APP_VERSION in release
+# builds so add-on developers have something to target while maintaining
+# Firefox compatiblity.
+# To enable add "export BASILISK_VERSION=1" to the .mozconfig file.
+# However, this will cause a full rebuild at 00:00 UTC every day so
+# don't export the variable if you are in development or don't care.
+# When not exported we fall back the value in the version.txt file.
+if test -n "$BASILISK_VERSION" ; then
+    MOZ_APP_VERSION=55.0.`date --utc '+%Y.%m.%d'`
+    MOZ_APP_VERSION_DISPLAY=`date --utc '+%Y.%m.%d'`
+else
+    MOZ_APP_VERSION=$FIREFOX_VERSION
+    MOZ_APP_VERSION_DISPLAY=$FIREFOX_VERSION_DISPLAY
+fi
+
 MOZ_EXTENSIONS_DEFAULT=" gio"
+
 # MOZ_APP_DISPLAYNAME will be set by branding/configure.sh
 # MOZ_BRANDING_DIRECTORY is the default branding directory used when none is
 # specified. It should never point to the "official" branding directory.
@@ -41,10 +55,10 @@ MAR_CHANNEL_ID=basilisk-release
 MOZ_PROFILE_MIGRATOR=1
 MOZ_WEBGL_CONFORMANT=1
 MOZ_JSDOWNLOADS=1
-MOZ_RUST_MP4PARSE=
 
 # Enable checking that add-ons are signed by the trusted root
-MOZ_ADDON_SIGNING=
+MOZ_ADDON_SIGNING=0
+MOZ_REQUIRE_SIGNING=0
 
 # Include the DevTools client, not just the server (which is the default)
 MOZ_DEVTOOLS=all

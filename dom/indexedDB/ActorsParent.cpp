@@ -7,6 +7,7 @@
 #include "ActorsParent.h"
 
 #include <algorithm>
+#include <stdint.h> // UINTPTR_MAX, uintptr_t
 #include "FileInfo.h"
 #include "FileManager.h"
 #include "IDBObjectStore.h"
@@ -854,6 +855,11 @@ ReadCompressedIndexDataValuesFromBlob(const uint8_t* aBlobData,
                  "ReadCompressedIndexDataValuesFromBlob",
                  js::ProfileEntry::Category::STORAGE);
 
+  if (uintptr_t(aBlobData) > UINTPTR_MAX - aBlobDataLength) {
+    IDB_REPORT_INTERNAL_ERR();
+    return NS_ERROR_FILE_CORRUPTED;
+  }
+
   const uint8_t* blobDataIter = aBlobData;
   const uint8_t* blobDataEnd = aBlobData + aBlobDataLength;
 
@@ -873,7 +879,8 @@ ReadCompressedIndexDataValuesFromBlob(const uint8_t* aBlobData,
 
     if (NS_WARN_IF(blobDataIter == blobDataEnd) ||
         NS_WARN_IF(keyBufferLength > uint64_t(UINT32_MAX)) ||
-        NS_WARN_IF(blobDataIter + keyBufferLength > blobDataEnd)) {
+        NS_WARN_IF(keyBufferLength > uintptr_t(blobDataEnd)) ||
+        NS_WARN_IF(blobDataIter > blobDataEnd - keyBufferLength)) {
       IDB_REPORT_INTERNAL_ERR();
       return NS_ERROR_FILE_CORRUPTED;
     }
@@ -891,7 +898,8 @@ ReadCompressedIndexDataValuesFromBlob(const uint8_t* aBlobData,
     if (sortKeyBufferLength > 0) {
       if (NS_WARN_IF(blobDataIter == blobDataEnd) ||
           NS_WARN_IF(sortKeyBufferLength > uint64_t(UINT32_MAX)) ||
-          NS_WARN_IF(blobDataIter + sortKeyBufferLength > blobDataEnd)) {
+          NS_WARN_IF(sortKeyBufferLength > uintptr_t(blobDataEnd)) ||
+          NS_WARN_IF(blobDataIter > blobDataEnd - sortKeyBufferLength)) {
         IDB_REPORT_INTERNAL_ERR();
         return NS_ERROR_FILE_CORRUPTED;
       }
@@ -21011,19 +21019,32 @@ FactoryOp::CheckPermission(ContentParent* aContentParent,
   MOZ_ASSERT(mState == State::Initial || mState == State::PermissionRetry);
 
   const PrincipalInfo& principalInfo = mCommonParams.principalInfo();
-  if (principalInfo.type() != PrincipalInfo::TSystemPrincipalInfo &&
-      NS_WARN_IF(!Preferences::GetBool(kPrefIndexedDBEnabled, false))) {
-    if (aContentParent) {
-      // The DOM in the other process should have kept us from receiving any
-      // indexedDB messages so assume that the child is misbehaving.
-      aContentParent->KillHard("IndexedDB CheckPermission 1");
-    }
-    return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
-  }
+  if (principalInfo.type() != PrincipalInfo::TSystemPrincipalInfo) {
+    if (principalInfo.type() != PrincipalInfo::TContentPrincipalInfo) {
+      if (aContentParent) {
+        // We just want ContentPrincipalInfo or SystemPrincipalInfo.
+        aContentParent->KillHard("IndexedDB CheckPermission 0");
+      }
 
-  if (NS_WARN_IF(mCommonParams.privateBrowsingMode())) {
-    // XXX This is only temporary.
-    return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
+      return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
+    }
+
+    if (NS_WARN_IF(!Preferences::GetBool(kPrefIndexedDBEnabled, false))) {
+      if (aContentParent) {
+        // The DOM in the other process should have kept us from receiving any
+        // indexedDB messages so assume that the child is misbehaving.
+        aContentParent->KillHard("IndexedDB CheckPermission 1");
+      }
+
+      return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
+    }
+
+    const ContentPrincipalInfo& contentPrincipalInfo =
+      principalInfo.get_ContentPrincipalInfo();
+    if (contentPrincipalInfo.attrs().mPrivateBrowsingId != 0) {
+      // IndexedDB is currently disabled in privateBrowsing.
+      return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
+    }
   }
 
   mFileHandleDisabled = !Preferences::GetBool(kPrefFileHandleEnabled);

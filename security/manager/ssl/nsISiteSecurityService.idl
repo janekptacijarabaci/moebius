@@ -254,8 +254,7 @@ interface nsISiteSecurityService : nsISupports
      * Returns an enumerator of the nsISiteSecurityService storage. Each item in
      * the enumeration is a nsISiteSecurityState that can be QueryInterfaced to
      * the appropriate nsISiteHSTSState or nsISiteHPKPState, depending on the
-     * provided type. Doesn't include preloaded entries (either the hard-coded
-     * ones or the preloaded-delivered-by-kinto ones).
+     * provided type. Doesn't include preloaded entries.
      *
      * @param aType the type of security state in question.
      */

@@ -4,7 +4,7 @@ function test_resetPref() {
   const prefNewName = "browser.newpref.fake";
   Assert.ok(!Preferences.has(prefNewName), "pref should not exist");
 
-  const prefExistingName = "extensions.hotfix.id";
+  const prefExistingName = "extensions.update.url";
   Assert.ok(Preferences.has(prefExistingName), "pref should exist");
   Assert.ok(!Preferences.isSet(prefExistingName), "pref should not be user-set");
   let prefExistingOriginalValue = Preferences.get(prefExistingName);

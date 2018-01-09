@@ -2297,6 +2297,15 @@ Http2Session::OnTransportStatus(nsITransport* aTransport,
   case NS_NET_STATUS_TLS_HANDSHAKE_ENDED:
   {
     Http2Stream *target = mStreamIDHash.Get(1);
+    if (!target) {
+      // any transaction will do if we can't find the low numbered one
+      // generally this happens when the initial transaction hasn't been
+      // assigned a stream id yet.
+      auto iter = mStreamTransactionHash.Iter();
+      if (!iter.Done()) {
+        target = iter.Data();
+      }
+    }
     nsAHttpTransaction *transaction = target ? target->Transaction() : nullptr;
     if (transaction)
       transaction->OnTransportStatus(aTransport, aStatus, aProgress);
@@ -2879,7 +2888,10 @@ Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter *writer,
     LOG3(("Http2Session::WriteSegments %p trying to discard %d bytes of data",
           this, discardCount));
 
-    if (!discardCount) {
+    if (!discardCount && mDownstreamState == DISCARDING_DATA_FRAME) {
+      // Only do this short-cirtuit if we're not discarding a pure padding
+      // frame, as we need to potentially handle the stream FIN in those cases.
+      // See bug 1381016 comment 36 for more details.
       ResetDownstreamState();
       ResumeRecv();
       return NS_BASE_STREAM_WOULD_BLOCK;

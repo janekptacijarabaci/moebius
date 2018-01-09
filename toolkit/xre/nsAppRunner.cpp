@@ -1066,7 +1066,7 @@ nsXULAppInfo::GetDistributionID(nsACString& aResult)
 NS_IMETHODIMP
 nsXULAppInfo::GetIsOfficial(bool* aResult)
 {
-#ifdef MOZILLA_OFFICIAL
+#ifdef MC_OFFICIAL
   *aResult = true;
 #else
   *aResult = false;
@@ -2263,7 +2263,7 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
     if (gDoProfileReset) {
       // If we're resetting a profile, create a new one and use it to startup.
       nsCOMPtr<nsIToolkitProfile> newProfile;
-      rv = CreateResetProfile(aProfileSvc, getter_AddRefs(newProfile));
+      rv = CreateResetProfile(aProfileSvc, gResetOldProfileName, getter_AddRefs(newProfile));
       if (NS_SUCCEEDED(rv)) {
         rv = newProfile->GetRootDir(getter_AddRefs(lf));
         NS_ENSURE_SUCCESS(rv, rv);
@@ -2409,20 +2409,20 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
             return ProfileLockedDialog(profile, unlocker, aNative, &tempProfileLock);
         }
 
-        nsCOMPtr<nsIToolkitProfile> newProfile;
-        rv = CreateResetProfile(aProfileSvc, getter_AddRefs(newProfile));
-        if (NS_FAILED(rv)) {
-          NS_WARNING("Failed to create a profile to reset to.");
-          gDoProfileReset = false;
-        } else {
-          nsresult gotName = profile->GetName(gResetOldProfileName);
-          if (NS_SUCCEEDED(gotName)) {
-            profile = newProfile;
-          } else {
-            NS_WARNING("Failed to get the name of the profile we're resetting, so aborting reset.");
-            gResetOldProfileName.Truncate(0);
+        nsresult gotName = profile->GetName(gResetOldProfileName);
+        if (NS_SUCCEEDED(gotName)) {
+          nsCOMPtr<nsIToolkitProfile> newProfile;
+          rv = CreateResetProfile(aProfileSvc, gResetOldProfileName, getter_AddRefs(newProfile));
+          if (NS_FAILED(rv)) {
+            NS_WARNING("Failed to create a profile to reset to.");
             gDoProfileReset = false;
+          } else {
+            profile = newProfile;
           }
+        } else {
+          NS_WARNING("Failed to get the name of the profile we're resetting, so aborting reset.");
+          gResetOldProfileName.Truncate(0);
+          gDoProfileReset = false;
         }
       }
 
@@ -2517,20 +2517,22 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
             return ProfileLockedDialog(profile, unlocker, aNative, &tempProfileLock);
         }
 
-        nsCOMPtr<nsIToolkitProfile> newProfile;
-        rv = CreateResetProfile(aProfileSvc, getter_AddRefs(newProfile));
-        if (NS_FAILED(rv)) {
-          NS_WARNING("Failed to create a profile to reset to.");
-          gDoProfileReset = false;
-        } else {
-          nsresult gotName = profile->GetName(gResetOldProfileName);
-          if (NS_SUCCEEDED(gotName)) {
-            profile = newProfile;
-          } else {
-            NS_WARNING("Failed to get the name of the profile we're resetting, so aborting reset.");
-            gResetOldProfileName.Truncate(0);
+        nsresult gotName = profile->GetName(gResetOldProfileName);
+        if (NS_SUCCEEDED(gotName)) {
+          nsCOMPtr<nsIToolkitProfile> newProfile;
+          rv = CreateResetProfile(aProfileSvc, gResetOldProfileName, getter_AddRefs(newProfile));
+          if (NS_FAILED(rv)) {
+            NS_WARNING("Failed to create a profile to reset to.");
             gDoProfileReset = false;
           }
+          else {
+            profile = newProfile;
+          }
+        }
+        else {
+          NS_WARNING("Failed to get the name of the profile we're resetting, so aborting reset.");
+          gResetOldProfileName.Truncate(0);
+          gDoProfileReset = false;
         }
       }
 
@@ -4276,7 +4278,8 @@ XREMain::XRE_mainRun()
         if (gDoProfileReset) {
           // Automatically migrate from the current application if we just
           // reset the profile.
-          aKey = MOZ_APP_NAME;
+          //For Basilisk: Hard-code MOZ_APP_NAME to firefox because of hard-coded type in migrator.
+          aKey = (MOZ_APP_NAME == "basilisk") ? "firefox" : MOZ_APP_NAME;
         }
         pm->Migrate(&mDirProvider, aKey, gResetOldProfileName);
       }
@@ -4290,6 +4293,7 @@ XREMain::XRE_mainRun()
       rv = GetCurrentProfile(mProfileSvc, mProfD, getter_AddRefs(newProfile));
       if (NS_SUCCEEDED(rv)) {
         newProfile->SetName(gResetOldProfileName);
+        mProfileName.Assign(gResetOldProfileName);
         // Set the new profile as the default after we're done cleaning up the old profile,
         // iff that profile was already the default
         if (profileWasSelected) {

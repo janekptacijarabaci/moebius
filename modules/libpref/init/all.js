@@ -176,6 +176,9 @@ pref("dom.enable_resource_timing", true);
 // Enable high-resolution timing markers for users
 pref("dom.enable_user_timing", true);
 
+// Whether performance.GetEntries* will contain an entry for the active document
+pref("dom.enable_performance_navigation_timing", true);
+
 // Enable printing performance marks/measures to log
 pref("dom.performance.enable_user_timing_logging", false);
 
@@ -184,6 +187,9 @@ pref("dom.performance.enable_notify_performance_timing", false);
 
 // Enable Permission API's .revoke() method
 pref("dom.permissions.revoke.enable", false);
+
+// Enable exposing timeToNonBlankPaint
+pref("dom.performance.time_to_non_blank_paint.enabled", false);
 
 // Enable Performance Observer API
 #ifdef NIGHTLY_BUILD
@@ -1155,6 +1161,7 @@ pref("dom.disable_window_open_feature.menubar",     false);
 pref("dom.disable_window_open_feature.resizable",   true);
 pref("dom.disable_window_open_feature.minimizable", false);
 pref("dom.disable_window_open_feature.status",      true);
+pref("dom.disable_window_showModalDialog",          true);
 
 pref("dom.allow_scripts_to_close_windows",          false);
 
@@ -1162,7 +1169,7 @@ pref("dom.require_user_interaction_for_beforeunload", true);
 
 pref("dom.disable_open_during_load",                false);
 pref("dom.popup_maximum",                           20);
-pref("dom.popup_allowed_events", "change click dblclick mouseup notificationclick reset submit touchend");
+pref("dom.popup_allowed_events", "change click dblclick mouseup pointerup notificationclick reset submit touchend");
 pref("dom.disable_open_click_delay", 1000);
 
 pref("dom.storage.enabled", true);
@@ -1570,7 +1577,7 @@ pref("network.http.bypass-cachelock-threshold", 250);
 pref("network.http.spdy.enabled", true);
 pref("network.http.spdy.enabled.http2", true);
 pref("network.http.spdy.enabled.deps", true);
-pref("network.http.spdy.enforce-tls-profile", true);
+pref("network.http.spdy.enforce-tls-profile", false);
 pref("network.http.spdy.chunk-size", 16000);
 pref("network.http.spdy.timeout", 180);
 pref("network.http.spdy.coalesce-hostnames", true);
@@ -2043,7 +2050,7 @@ pref("intl.accept_languages",               "chrome://global/locale/intl.propert
 pref("intl.menuitems.alwaysappendaccesskeys","chrome://global/locale/intl.properties");
 pref("intl.menuitems.insertseparatorbeforeaccesskeys","chrome://global/locale/intl.properties");
 pref("intl.charset.detector",               "chrome://global/locale/intl.properties");
-pref("intl.charset.fallback.override",      "");
+pref("intl.charset.fallback.override",      "*"); // '*' to make sure the UI selects the proper entry for 'auto'
 pref("intl.charset.fallback.tld",           true);
 pref("intl.ellipsis",                       "chrome://global-platform/locale/intl.properties");
 pref("intl.locale.matchOS",                 false);
@@ -2196,9 +2203,6 @@ pref("security.cert_pinning.process_headers_from_non_builtin_roots", false);
 // their protocol with the inner URI of the view-source URI
 pref("security.view-source.reachable-from-inner-protocol", false);
 
-// Services security settings
-pref("services.settings.server", "https://firefox.settings.services.mozilla.com/v1");
-
 // Blocklist preferences
 pref("extensions.blocklist.enabled", true);
 // OneCRL freshness checking depends on this value, so if you change it,
@@ -2207,38 +2211,12 @@ pref("extensions.blocklist.interval", 86400);
 // Required blocklist freshness for OneCRL OCSP bypass
 // (default is 1.25x extensions.blocklist.interval, or 30 hours)
 pref("security.onecrl.maximum_staleness_in_seconds", 108000);
-pref("extensions.blocklist.url", "https://blocklist.addons.mozilla.org/blocklist/3/%APP_ID%/%APP_VERSION%/%PRODUCT%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/%PING_COUNT%/%TOTAL_PING_COUNT%/%DAYS_SINCE_LAST_PING%/");
+pref("extensions.blocklist.url", "https://blocklist.basilisk-browser.org/blocklist/%APP_ID%/%APP_VERSION%/%PRODUCT%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/");
 pref("extensions.blocklist.detailsURL", "https://www.mozilla.com/%LOCALE%/blocklist/");
 pref("extensions.blocklist.itemURL", "https://blocklist.addons.mozilla.org/%LOCALE%/%APP%/blocked/%blockID%");
 // Controls what level the blocklist switches from warning about items to forcibly
 // blocking them.
 pref("extensions.blocklist.level", 2);
-// Blocklist via settings server (Kinto)
-pref("services.blocklist.changes.path", "/buckets/monitor/collections/changes/records");
-pref("services.blocklist.bucket", "blocklists");
-pref("services.blocklist.onecrl.collection", "certificates");
-pref("services.blocklist.onecrl.checked", 0);
-pref("services.blocklist.addons.collection", "addons");
-pref("services.blocklist.addons.checked", 0);
-pref("services.blocklist.plugins.collection", "plugins");
-pref("services.blocklist.plugins.checked", 0);
-pref("services.blocklist.pinning.enabled", true);
-pref("services.blocklist.pinning.bucket", "pinning");
-pref("services.blocklist.pinning.collection", "pins");
-pref("services.blocklist.pinning.checked", 0);
-pref("services.blocklist.gfx.collection", "gfx");
-pref("services.blocklist.gfx.checked", 0);
-
-// Controls whether signing should be enforced on signature-capable blocklist
-// collections.
-pref("services.blocklist.signing.enforced", true);
-
-// Enable blocklists via the services settings mechanism
-pref("services.blocklist.update_enabled", true);
-
-// Enable certificate blocklist updates via services settings
-pref("security.onecrl.via.amo", false);
-
 
 // Modifier key prefs: default to Windows settings,
 // menu access key = alt, accelerator key = control.
@@ -2272,11 +2250,12 @@ pref("clipboard.autocopy", false);
 pref("clipboard.plainTextOnly", false);
 
 #ifdef XP_WIN
-// Setting false you can disable 4th button and/or 5th button of your mouse.
-// 4th button is typically mapped to "Back" and 5th button is typically mapped
-// to "Forward" button.
-pref("mousebutton.4th.enabled", true);
-pref("mousebutton.5th.enabled", true);
+// Mouse 4th/5th button handling
+// Setting these to false allows you to disable the 4th and/or 5th button of
+// your mouse. The 4th button is typically mapped to "Back" and the 5th
+// button is typically mapped to "Forward".
+pref("mouse.button4.enabled", true);
+pref("mouse.button5.enabled", true);
 #endif
 
 // mouse wheel scroll transaction period of time (in milliseconds)
@@ -2545,6 +2524,9 @@ pref("layout.css.convertFromNode.enabled", true);
 // Is support for CSS "text-align: unsafe X" enabled?
 pref("layout.css.text-align-unsafe-value.enabled", false);
 
+// Is support for CSS text-justify property enabled?
+pref("layout.css.text-justify.enabled", true);
+
 // Is support for CSS "float: inline-{start,end}" and
 // "clear: inline-{start,end}" enabled?
 #if defined(MOZ_B2G) || !defined(RELEASE_OR_BETA)
@@ -2706,18 +2688,6 @@ pref("layout.frame_rate", -1);
 pref("layout.display-list.dump", false);
 pref("layout.display-list.dump-content", false);
 
-// pref to control precision of the frame rate timer. When true,
-// we use a "precise" timer, which means each notification fires
-// Nms after the start of the last notification. That means if the
-// processing of the notification is slow, the timer can fire immediately
-// after we've just finished processing the last notification, which might
-// lead to starvation problems.
-// When false, we use a "slack" timer which fires Nms after the *end*
-// of the last notification. This can give less tight frame rates
-// but provides more time for other operations when the browser is
-// heavily loaded.
-pref("layout.frame_rate.precise", false);
-
 // pref to control whether layout warnings that are hit quite often are enabled
 pref("layout.spammy_warnings.enabled", false);
 
@@ -2780,8 +2750,8 @@ pref("editor.resizing.preserve_ratio",       true);
 pref("editor.positioning.offset",            0);
 
 pref("dom.use_watchdog", true);
-pref("dom.max_chrome_script_run_time", 20);
-pref("dom.max_script_run_time", 10);
+pref("dom.max_chrome_script_run_time", 90);
+pref("dom.max_script_run_time", 20);
 
 // Stop all scripts in a compartment when the "stop script" dialog is used.
 pref("dom.global_stop_script", true);
@@ -4433,7 +4403,7 @@ pref("font.name.monospace.x-unicode", "dt-interface user-ucs2.cjk_japan-0");
 // Login Manager prefs
 pref("signon.rememberSignons",              true);
 pref("signon.rememberSignons.visibilityToggle", true);
-pref("signon.autofillForms",                true);
+pref("signon.autofillForms",                false);
 pref("signon.autofillForms.http",           false);
 pref("signon.autologin.proxy",              false);
 pref("signon.formlessCapture.enabled",      true);
@@ -4532,6 +4502,10 @@ pref("image.webp.enabled", true);
 // Limit for the canvas image cache. 0 means we don't limit the size of the
 // cache.
 pref("canvas.image.cache.limit", 0);
+
+// Allow track-fobics to deliberately poison canvas data for
+// toDataURL() and getImageData()
+pref("canvas.poisondata", false);
 
 // WebGL prefs
 #ifdef ANDROID
@@ -4820,6 +4794,8 @@ pref("dom.webnotifications.requireinteraction.enabled", false);
 
 // Alert animation effect, name is disableSlidingEffect for backwards-compat.
 pref("alerts.disableSlidingEffect", false);
+// The immediate duration of the alert, in milliseconds.
+pref("alerts.durationImmediate", 20000);
 // Show favicons in web notifications.
 pref("alerts.showFavicons", false);
 
@@ -4994,18 +4970,6 @@ pref("memory.dump_reports_on_oom", false);
 
 // Number of stack frames to capture in createObjectURL for about:memory.
 pref("memory.blob_report.stack_frames", 0);
-
-// comma separated list of domain origins (e.g. https://domain.com) that still
-// need localStorage in the frameworker
-pref("social.whitelist", "https://mozsocial.cliqz.com");
-// comma separated list of domain origins (e.g. https://domain.com) for
-// directory websites (e.g. AMO) that can install providers for other sites
-pref("social.directories", "https://activations.cdn.mozilla.net");
-// remote-install allows any website to activate a provider, with extended UI
-// notifying user of installation. we can later pref off remote install if
-// necessary. This does not affect whitelisted and directory installs.
-pref("social.remote-install.enabled", true);
-pref("social.toast-notifications.enabled", true);
 
 // Disable idle observer fuzz, because only privileged content can access idle
 // observers (bug 780507).
@@ -5392,7 +5356,7 @@ pref("browser.search.official", true);
 //pref("media.gmp-manager.url.override", "");
 
 // Update service URL for GMP install/updates:
-pref("media.gmp-manager.url", "https://aus5.mozilla.org/update/3/GMP/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
+pref("media.gmp-manager.url", "https://aus5.mozilla.org/update/3/GMP/55.0/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
 
 // When |media.gmp-manager.cert.requireBuiltIn| is true or not specified the
 // final certificate and all certificates the connection is redirected to before
@@ -5602,6 +5566,12 @@ pref ("security.mixed_content.hsts_priming_cache_timeout", 10080);
 // Force the channel to timeout in 3 seconds if we have not received
 // expects a time in milliseconds
 pref ("security.mixed_content.hsts_priming_request_timeout", 3000);
+
+// TODO: Bug 1380959: Block toplevel data: URI navigations
+// If true, all toplevel data: URI navigations will be blocked.
+// Please note that manually entering a data: URI in the
+// URL-Bar will not be blocked when flipping this pref.
+pref("security.data_uri.block_toplevel_data_uri_navigations", false);
 
 // Disable Storage api in release builds.
 #ifdef NIGHTLY_BUILD

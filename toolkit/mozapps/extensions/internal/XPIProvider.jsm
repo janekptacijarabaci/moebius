@@ -139,10 +139,6 @@ const PREF_EM_MIN_COMPAT_PLATFORM_VERSION = "extensions.minCompatiblePlatformVer
 
 const PREF_CHECKCOMAT_THEMEOVERRIDE   = "extensions.checkCompatibility.temporaryThemeOverride_minAppVersion";
 
-const PREF_EM_HOTFIX_ID               = "extensions.hotfix.id";
-const PREF_EM_CERT_CHECKATTRIBUTES    = "extensions.hotfix.cert.checkAttributes";
-const PREF_EM_HOTFIX_CERTS            = "extensions.hotfix.certs.";
-
 const URI_EXTENSION_UPDATE_DIALOG     = "chrome://mozapps/content/extensions/update.xul";
 const URI_EXTENSION_STRINGS           = "chrome://mozapps/locale/extensions/extensions.properties";
 
@@ -942,8 +938,8 @@ var loadManifestFromWebManifest = Task.async(function*(aUri) {
   if (extension.errors.length)
     throw new Error("Extension is invalid");
 
-  let bss = (manifest.browser_specific_settings && manifest.browser_specific_settings.goanna)
-      || (manifest.applications && manifest.applications.goanna) || {};
+  let bss = (manifest.browser_specific_settings && manifest.browser_specific_settings.gecko)
+      || (manifest.applications && manifest.applications.gecko) || {};
   if (manifest.browser_specific_settings && manifest.applications) {
     logger.warn("Ignoring applications property in manifest");
   }
@@ -1731,19 +1727,6 @@ function getSignedStatus(aRv, aCert, aAddonID) {
       if (expectedCommonName && expectedCommonName != aCert.commonName)
         return AddonManager.SIGNEDSTATE_BROKEN;
 
-      let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
-      if (hotfixID && hotfixID == aAddonID && Preferences.get(PREF_EM_CERT_CHECKATTRIBUTES, false)) {
-        // The hotfix add-on has some more rigorous certificate checks
-        try {
-          CertUtils.validateCert(aCert,
-                                 CertUtils.readCertPrefs(PREF_EM_HOTFIX_CERTS));
-        } catch (e) {
-          logger.warn("The hotfix add-on was not signed by the expected " +
-                      "certificate and so will not be installed.", e);
-          return AddonManager.SIGNEDSTATE_BROKEN;
-        }
-      }
-
       if (aCert.organizationalUnit == "Mozilla Components")
         return AddonManager.SIGNEDSTATE_SYSTEM;
 
@@ -1775,14 +1758,8 @@ function shouldVerifySignedState(aAddon) {
   if (aAddon._installLocation.name == KEY_APP_SYSTEM_DEFAULTS)
     return false;
 
-  // Hotfixes should always have their signature checked
-  let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
-  if (hotfixID && aAddon.id == hotfixID)
-    return true;
-
-  // Otherwise only check signatures if signing is enabled and the add-on is one
-  // of the signed types.
-  return ADDON_SIGNING && SIGNED_TYPES.has(aAddon.type);
+  // Otherwise only check signatures if the add-on is one of the signed types.
+  return SIGNED_TYPES.has(aAddon.type);
 }
 
 let gCertDB = Cc["@mozilla.org/security/x509certdb;1"]
@@ -4442,11 +4419,6 @@ this.XPIProvider = {
         aAddon.type != "theme")
       return false;
 
-    // The hotfix is exempt
-    let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
-    if (hotfixID && hotfixID == aAddon.id)
-      return false;
-
     // The default theme is exempt
     if (aAddon.type == "theme" &&
         aAddon.internalName == XPIProvider.defaultSkin)
@@ -6981,10 +6953,15 @@ AddonInternal.prototype = {
       aPlatformVersion = Services.appinfo.platformVersion;
 
     let version;
-    if (app.id == Services.appinfo.ID)
+    if (app.id == Services.appinfo.ID) {
       version = aAppVersion;
-    else if (app.id == TOOLKIT_ID)
-      version = aPlatformVersion
+    } else if (app.id == TOOLKIT_ID) {
+      if (this.type == "webextension")
+        // For WebExtensions, don't use the GRE version
+        version = aAppVersion;
+      else
+        version = aPlatformVersion;
+    }
 
     // Only extensions and dictionaries can be compatible by default; themes
     // and language packs always use strict compatibility checking.
@@ -7536,10 +7513,6 @@ AddonWrapper.prototype = {
   // directly in the profile are considered syncable.
   get isSyncable() {
     let addon = addonFor(this);
-    let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
-    if (hotfixID && hotfixID == addon.id) {
-      return false;
-    }
     return (addon._installLocation.name == KEY_APP_PROFILE);
   },
 

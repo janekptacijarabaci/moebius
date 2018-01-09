@@ -2,7 +2,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this
 ; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-; Package file for the Firefox build.
+; Package file for the Basilisk build.
 ;
 ; Packaging manifest is used to copy files from dist/bin
 ; to the staging directory.
@@ -121,7 +121,7 @@
 ; [Base Browser Files]
 #ifndef XP_UNIX
 @BINPATH@/@MOZ_APP_NAME@.exe
-@BINPATH@/firefox.VisualElementsManifest.xml
+@BINPATH@/basilisk.VisualElementsManifest.xml
 @BINPATH@/browser/VisualElements/VisualElements_150.png
 @BINPATH@/browser/VisualElements/VisualElements_70.png
 #else
@@ -384,6 +384,8 @@
 @RESPATH@/components/DownloadLegacy.js
 @RESPATH@/components/BrowserPageThumbs.manifest
 @RESPATH@/components/crashmonitor.manifest
+@RESPATH@/components/jsconsole-clhandler.manifest
+@RESPATH@/components/jsconsole-clhandler.js
 @RESPATH@/components/nsCrashMonitor.js
 @RESPATH@/components/SiteSpecificUserAgent.js
 @RESPATH@/components/SiteSpecificUserAgent.manifest
@@ -607,7 +609,7 @@
 @RESPATH@/browser/chrome/icons/default/default32.png
 @RESPATH@/browser/chrome/icons/default/default48.png
 #endif
-@RESPATH@/browser/features/*
+#@RESPATH@/browser/features/*
 
 ; [Webide Files]
 @RESPATH@/browser/chrome/webide@JAREXT@
@@ -802,8 +804,10 @@ bin/libfreebl_32int64_3.so
 
 
 ; media
+#ifdef MOZ_EME
 @RESPATH@/gmp-clearkey/0.1/@DLL_PREFIX@clearkey@DLL_SUFFIX@
 @RESPATH@/gmp-clearkey/0.1/manifest.json
+#endif
 
 ; gfx
 #ifdef XP_WIN

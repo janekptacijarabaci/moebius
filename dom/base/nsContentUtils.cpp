@@ -283,6 +283,7 @@ bool nsContentUtils::sIsCutCopyAllowed = true;
 bool nsContentUtils::sIsFrameTimingPrefEnabled = false;
 bool nsContentUtils::sIsPerformanceTimingEnabled = false;
 bool nsContentUtils::sIsResourceTimingEnabled = false;
+bool nsContentUtils::sIsPerformanceNavigationTimingEnabled = false;
 bool nsContentUtils::sIsUserTimingLoggingEnabled = false;
 bool nsContentUtils::sIsExperimentalAutocompleteEnabled = false;
 bool nsContentUtils::sEncodeDecodeURLHash = false;
@@ -572,6 +573,9 @@ nsContentUtils::Init()
 
   Preferences::AddBoolVarCache(&sIsResourceTimingEnabled,
                                "dom.enable_resource_timing", true);
+
+  Preferences::AddBoolVarCache(&sIsPerformanceNavigationTimingEnabled,
+                               "dom.enable_performance_navigation_timing", true);
 
   Preferences::AddBoolVarCache(&sIsUserTimingLoggingEnabled,
                                "dom.performance.enable_user_timing_logging", false);
@@ -4159,9 +4163,15 @@ nsContentUtils::GetSubdocumentWithOuterWindowId(nsIDocument *aDocument,
 /* static */
 nsresult
 nsContentUtils::ConvertStringFromEncoding(const nsACString& aEncoding,
-                                          const nsACString& aInput,
+                                          const char* aInput,
+                                          uint32_t aInputLen,
                                           nsAString& aOutput)
 {
+  CheckedInt32 len = aInputLen;
+  if (!len.isValid()) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
   nsAutoCString encoding;
   if (aEncoding.IsEmpty()) {
     encoding.AssignLiteral("UTF-8");
@@ -4173,7 +4183,7 @@ nsContentUtils::ConvertStringFromEncoding(const nsACString& aEncoding,
   nsAutoPtr<TextDecoder> decoder(new TextDecoder());
   decoder->InitWithEncoding(encoding, false);
 
-  decoder->Decode(aInput.BeginReading(), aInput.Length(), false,
+  decoder->Decode(aInput, len.value(), false,
                   aOutput, rv);
   return rv.StealNSResult();
 }
@@ -6312,11 +6322,11 @@ struct ClassMatchingInfo {
 
 // static
 bool
-nsContentUtils::MatchClassNames(nsIContent* aContent, int32_t aNamespaceID,
+nsContentUtils::MatchClassNames(Element* aElement, int32_t aNamespaceID,
                                 nsIAtom* aAtom, void* aData)
 {
   // We can't match if there are no class names
-  const nsAttrValue* classAttr = aContent->GetClasses();
+  const nsAttrValue* classAttr = aElement->GetClasses();
   if (!classAttr) {
     return false;
   }

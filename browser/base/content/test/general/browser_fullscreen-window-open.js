@@ -5,6 +5,7 @@ var Cc = Components.classes;
 var Ci = Components.interfaces;
 
 const PREF_DISABLE_OPEN_NEW_WINDOW = "browser.link.open_newwindow.disabled_in_fullscreen";
+const PREF_BLOCK_TOPLEVEL_DATA = "security.data_uri.block_toplevel_data_uri_navigations";
 const isOSX = (Services.appinfo.OS === "Darwin");
 
 const TEST_FILE = "file_fullscreen-window-open.html";
@@ -15,6 +16,7 @@ function test() {
   waitForExplicitFinish();
 
   Services.prefs.setBoolPref(PREF_DISABLE_OPEN_NEW_WINDOW, true);
+  Services.prefs.setBoolPref(PREF_BLOCK_TOPLEVEL_DATA, false);
 
   let newTab = gBrowser.addTab(gHttpTestRoot + TEST_FILE);
   gBrowser.selectedTab = newTab;
@@ -34,6 +36,7 @@ registerCleanupFunction(function() {
   gBrowser.removeCurrentTab();
 
   Services.prefs.clearUserPref(PREF_DISABLE_OPEN_NEW_WINDOW);
+  Services.prefs.clearUserPref(PREF_BLOCK_TOPLEVEL_DATA);
 });
 
 var gTests = [

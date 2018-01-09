@@ -68,6 +68,8 @@
 #include "CanvasImageCache.h"
 
 #include <algorithm>
+#include <stdlib.h>
+#include <time.h>
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
@@ -105,6 +107,7 @@
 #include "mozilla/dom/CanvasPath.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLVideoElement.h"
+#include "mozilla/dom/SVGImageElement.h"
 #include "mozilla/dom/SVGMatrix.h"
 #include "mozilla/dom/TextMetrics.h"
 #include "mozilla/dom/SVGMatrix.h"
@@ -2121,6 +2124,18 @@ CanvasRenderingContext2D::GetInputStream(const char* aMimeType,
     return NS_ERROR_FAILURE;
   }
 
+  bool PoisonData = Preferences::GetBool("canvas.poisondata",false);
+  if (PoisonData) {
+    srand(time(NULL));
+    // Image buffer is always a packed BGRA array (BGRX -> BGR[FF])
+    // so always 4-byte pixels.
+    // GetImageBuffer => SurfaceToPackedBGRA [=> ConvertBGRXToBGRA]
+    for (int32_t j = 0; j < mWidth * mHeight * 4; ++j) {
+      if (imageBuffer[j] !=0 && imageBuffer[j] != 255)
+        imageBuffer[j] += rand() % 3 - 1;
+    }
+  }
+
   return ImageEncoder::GetInputStream(mWidth, mHeight, imageBuffer.get(),
                                       format, encoder, aEncoderOptions,
                                       aStream);
@@ -2503,10 +2518,10 @@ CanvasRenderingContext2D::CreatePattern(const CanvasImageSource& aSource,
     return nullptr;
   }
 
-  Element* htmlElement;
+  Element* element;
   if (aSource.IsHTMLCanvasElement()) {
     HTMLCanvasElement* canvas = &aSource.GetAsHTMLCanvasElement();
-    htmlElement = canvas;
+    element = canvas;
 
     nsIntSize size = canvas->GetSize();
     if (size.width == 0 || size.height == 0) {
@@ -2531,7 +2546,7 @@ CanvasRenderingContext2D::CreatePattern(const CanvasImageSource& aSource,
       }
 
       RefPtr<CanvasPattern> pat =
-        new CanvasPattern(this, srcSurf, repeatMode, htmlElement->NodePrincipal(), canvas->IsWriteOnly(), false);
+        new CanvasPattern(this, srcSurf, repeatMode, element->NodePrincipal(), canvas->IsWriteOnly(), false);
 
       return pat.forget();
     }
@@ -2542,11 +2557,19 @@ CanvasRenderingContext2D::CreatePattern(const CanvasImageSource& aSource,
       return nullptr;
     }
 
-    htmlElement = img;
+    element = img;
+  } else if (aSource.IsSVGImageElement()) {
+    SVGImageElement* img = &aSource.GetAsSVGImageElement();
+    if (img->IntrinsicState().HasState(NS_EVENT_STATE_BROKEN)) {
+      aError.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+      return nullptr;
+    }
+
+    element = img;
   } else if (aSource.IsHTMLVideoElement()) {
     auto& video = aSource.GetAsHTMLVideoElement();
     video.MarkAsContentSource(mozilla::dom::HTMLVideoElement::CallerAPI::CREATE_PATTERN);
-    htmlElement = &video;
+    element = &video;
   } else {
     // Special case for ImageBitmap
     ImageBitmap& imgBitmap = aSource.GetAsImageBitmap();
@@ -2585,7 +2608,7 @@ CanvasRenderingContext2D::CreatePattern(const CanvasImageSource& aSource,
   // The canvas spec says that createPattern should use the first frame
   // of animated images
   nsLayoutUtils::SurfaceFromElementResult res =
-    nsLayoutUtils::SurfaceFromElement(htmlElement,
+    nsLayoutUtils::SurfaceFromElement(element,
       nsLayoutUtils::SFE_WANT_FIRST_FRAME, mTarget);
 
   if (!res.GetSourceSurface()) {
@@ -4975,6 +4998,9 @@ CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
     if (aImage.IsHTMLImageElement()) {
       HTMLImageElement* img = &aImage.GetAsHTMLImageElement();
       element = img;
+    } else if (aImage.IsSVGImageElement()) {
+      SVGImageElement* img = &aImage.GetAsSVGImageElement();
+      element = img;
     } else {
       HTMLVideoElement* video = &aImage.GetAsHTMLVideoElement();
       video->MarkAsContentSource(mozilla::dom::HTMLVideoElement::CallerAPI::DRAW_IMAGE);
@@ -5001,10 +5027,12 @@ CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
       return;
     }
 
+#ifdef MOZ_EME
     if (video->ContainsRestrictedContent()) {
       aError.Throw(NS_ERROR_NOT_AVAILABLE);
       return;
     }
+#endif
 
     uint16_t readyState;
     if (NS_SUCCEEDED(video->GetReadyState(&readyState)) &&
@@ -5732,6 +5760,14 @@ CanvasRenderingContext2D::GetImageData(JSContext* aCx, double aSx,
   return imageData.forget();
 }
 
+inline uint8_t PoisonValue(uint8_t v)
+{
+  if (v==0 || v==255)
+    return v; //don't fuzz edges to prevent overflow/underflow
+    
+  return v + rand() %3 -1;
+}
+
 nsresult
 CanvasRenderingContext2D::GetImageDataArray(JSContext* aCx,
                                             int32_t aX,
@@ -5745,6 +5781,10 @@ CanvasRenderingContext2D::GetImageDataArray(JSContext* aCx,
   }
 
   MOZ_ASSERT(aWidth && aHeight);
+
+  bool PoisonData = Preferences::GetBool("canvas.poisondata",false);
+  if (PoisonData)
+    srand(time(NULL));
 
   CheckedInt<uint32_t> len = CheckedInt<uint32_t>(aWidth) * aHeight * 4;
   if (!len.isValid()) {
@@ -5818,21 +5858,31 @@ CanvasRenderingContext2D::GetImageDataArray(JSContext* aCx,
 
   uint8_t* dst = data + dstWriteRect.y * (aWidth * 4) + dstWriteRect.x * 4;
 
+  uint8_t a,r,g,b;
+
   if (mOpaque) {
     for (int32_t j = 0; j < dstWriteRect.height; ++j) {
       for (int32_t i = 0; i < dstWriteRect.width; ++i) {
         // XXX Is there some useful swizzle MMX we can use here?
 #if MOZ_LITTLE_ENDIAN
-        uint8_t b = *src++;
-        uint8_t g = *src++;
-        uint8_t r = *src++;
+        b = *src++;
+        g = *src++;
+        r = *src++;
         src++;
 #else
         src++;
-        uint8_t r = *src++;
-        uint8_t g = *src++;
-        uint8_t b = *src++;
+        r = *src++;
+        g = *src++;
+        b = *src++;
 #endif
+
+        // Poison data for trackers if enabled
+        if (PoisonData) {
+          PoisonValue(r);
+          PoisonValue(g);
+          PoisonValue(b);
+        }
+
         *dst++ = r;
         *dst++ = g;
         *dst++ = b;
@@ -5846,16 +5896,25 @@ CanvasRenderingContext2D::GetImageDataArray(JSContext* aCx,
     for (int32_t i = 0; i < dstWriteRect.width; ++i) {
       // XXX Is there some useful swizzle MMX we can use here?
 #if MOZ_LITTLE_ENDIAN
-      uint8_t b = *src++;
-      uint8_t g = *src++;
-      uint8_t r = *src++;
-      uint8_t a = *src++;
+      b = *src++;
+      g = *src++;
+      r = *src++;
+      a = *src++;
 #else
-      uint8_t a = *src++;
-      uint8_t r = *src++;
-      uint8_t g = *src++;
-      uint8_t b = *src++;
+      a = *src++;
+      r = *src++;
+      g = *src++;
+      b = *src++;
 #endif
+
+      // Poison data for trackers if enabled
+      if (PoisonData) {
+        PoisonValue(a);
+        PoisonValue(r);
+        PoisonValue(g);
+        PoisonValue(b);
+      }
+
       // Convert to non-premultiplied color
       *dst++ = gfxUtils::sUnpremultiplyTable[a * 256 + r];
       *dst++ = gfxUtils::sUnpremultiplyTable[a * 256 + g];

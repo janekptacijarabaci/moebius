@@ -43,6 +43,7 @@
 
 #include "nsArray.h"
 #include "nsArrayUtils.h"
+#include "nsContentSecurityManager.h"
 #include "nsICaptivePortalService.h"
 #include "nsIDOMStorage.h"
 #include "nsIContentViewer.h"
@@ -850,6 +851,9 @@ nsDocShell::~nsDocShell()
 {
   MOZ_ASSERT(!mObserved);
 
+  // Avoid notifying observers while we're in the dtor.
+  mIsBeingDestroyed = true;
+
   Destroy();
 
   nsCOMPtr<nsISHistoryInternal> shPrivate(do_QueryInterface(mSessionHistory));
@@ -1270,6 +1274,7 @@ nsDocShell::LoadURI(nsIURI* aURI,
   nsCOMPtr<nsISHEntry> shEntry;
   nsXPIDLString target;
   nsAutoString srcdoc;
+  bool forceAllowDataURI = false;
   nsCOMPtr<nsIDocShell> sourceDocShell;
   nsCOMPtr<nsIURI> baseURI;
 
@@ -1305,6 +1310,7 @@ nsDocShell::LoadURI(nsIURI* aURI,
     aLoadInfo->GetSrcdocData(srcdoc);
     aLoadInfo->GetSourceDocShell(getter_AddRefs(sourceDocShell));
     aLoadInfo->GetBaseURI(getter_AddRefs(baseURI));
+    aLoadInfo->GetForceAllowDataURI(&forceAllowDataURI);
   }
 
 #if defined(DEBUG)
@@ -1556,6 +1562,10 @@ nsDocShell::LoadURI(nsIURI* aURI,
 
   if (isSrcdoc) {
     flags |= INTERNAL_LOAD_FLAGS_IS_SRCDOC;
+  }
+
+  if (forceAllowDataURI) {
+    flags |= INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
   }
 
   return InternalLoad(aURI,
@@ -4799,6 +4809,9 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
   }
   nsAutoPopupStatePusher statePusher(popupState);
 
+  bool forceAllowDataURI =
+    aLoadFlags & LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
+
   // Don't pass certain flags that aren't needed and end up confusing
   // ConvertLoadTypeToDocShellLoadInfo.  We do need to ensure that they are
   // passed to LoadURI though, since it uses them.
@@ -4829,6 +4842,7 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
   loadInfo->SetHeadersStream(aHeaderStream);
   loadInfo->SetBaseURI(aBaseURI);
   loadInfo->SetTriggeringPrincipal(aTriggeringPrincipal);
+  loadInfo->SetForceAllowDataURI(forceAllowDataURI);
 
   if (fixupInfo) {
     nsAutoString searchProvider, keyword;
@@ -9864,40 +9878,29 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     contentType = nsIContentPolicy::TYPE_DOCUMENT;
   }
 
-  // If there's no targetDocShell, that means we are about to create a new window,
-  // perform a content policy check before creating the window.
-  if (!targetDocShell) {
-    nsCOMPtr<Element> requestingElement;
+  // If there's no targetDocShell, that means we are about to create a new
+  // window (or aWindowTarget is empty). Perform a content policy check before
+  // creating the window. Please note for all other docshell loads
+  // content policy checks are performed within the contentSecurityManager
+  // when the channel is about to be openend.
+  if (!targetDocShell && !aWindowTarget.IsEmpty()) {
+    MOZ_ASSERT(contentType == nsIContentPolicy::TYPE_DOCUMENT,
+               "opening a new window requires type to be TYPE_DOCUMENT");
+
     nsISupports* requestingContext = nullptr;
 
-    if (contentType == nsIContentPolicy::TYPE_DOCUMENT) {
-      if (XRE_IsContentProcess()) {
-        // In e10s the child process doesn't have access to the element that
-        // contains the browsing context (because that element is in the chrome
-        // process). So we just pass mScriptGlobal.
-        requestingContext = ToSupports(mScriptGlobal);
-      } else {
-        // This is for loading non-e10s tabs and toplevel windows of various
-        // sorts.
-        // For the toplevel window cases, requestingElement will be null.
-        requestingElement = mScriptGlobal->AsOuter()->GetFrameElementInternal();
-        requestingContext = requestingElement;
-      }
+    if (XRE_IsContentProcess()) {
+      // In e10s the child process doesn't have access to the element that
+      // contains the browsing context (because that element is in the chrome
+      // process). So we just pass mScriptGlobal.
+      requestingContext = ToSupports(mScriptGlobal);
     } else {
-      requestingElement = mScriptGlobal->AsOuter()->GetFrameElementInternal();
+      // This is for loading non-e10s tabs and toplevel windows of various
+      // sorts.
+      // For the toplevel window cases, requestingElement will be null.
+      nsCOMPtr<Element> requestingElement =
+        mScriptGlobal->AsOuter()->GetFrameElementInternal();
       requestingContext = requestingElement;
-
-#ifdef DEBUG
-      if (requestingElement) {
-        // Get the docshell type for requestingElement.
-        nsCOMPtr<nsIDocument> requestingDoc = requestingElement->OwnerDoc();
-        nsCOMPtr<nsIDocShell> elementDocShell = requestingDoc->GetDocShell();
-
-        // requestingElement docshell type = current docshell type.
-        MOZ_ASSERT(mItemType == elementDocShell->ItemType(),
-                  "subframes should have the same docshell type as their parent");
-      }
-#endif
     }
 
     // Since Content Policy checks are performed within docShell as well as
@@ -10073,6 +10076,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         // principal to inherit is: it should be aTriggeringPrincipal.
         loadInfo->SetPrincipalIsExplicit(true);
         loadInfo->SetLoadType(ConvertLoadTypeToDocShellLoadInfo(LOAD_LINK));
+        loadInfo->SetForceAllowDataURI(aFlags & INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI);
 
         rv = win->Open(NS_ConvertUTF8toUTF16(spec),
                        aWindowTarget, // window name
@@ -10224,8 +10228,11 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     }
   }
 
+  bool loadFromExternal = false;
+
   // Before going any further vet loads initiated by external programs.
   if (aLoadType == LOAD_NORMAL_EXTERNAL) {
+    loadFromExternal = true;
     // Disallow external chrome: loads targetted at content windows
     bool isChrome = false;
     if (NS_SUCCEEDED(aURI->SchemeIs("chrome", &isChrome)) && isChrome) {
@@ -10728,7 +10735,9 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                         nsINetworkPredictor::PREDICT_LOAD, this, nullptr);
 
   nsCOMPtr<nsIRequest> req;
-  rv = DoURILoad(aURI, aOriginalURI, aLoadReplace, aReferrer,
+  rv = DoURILoad(aURI, aOriginalURI, aLoadReplace, loadFromExternal,
+                 (aFlags & INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI),
+                 aReferrer,
                  !(aFlags & INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER),
                  aReferrerPolicy,
                  aTriggeringPrincipal, principalToInherit, aTypeHint,
@@ -10808,6 +10817,8 @@ nsresult
 nsDocShell::DoURILoad(nsIURI* aURI,
                       nsIURI* aOriginalURI,
                       bool aLoadReplace,
+                      bool aLoadFromExternal,
+                      bool aForceAllowDataURI,
                       nsIURI* aReferrerURI,
                       bool aSendReferrer,
                       uint32_t aReferrerPolicy,
@@ -10884,17 +10895,40 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   nsCOMPtr<nsINode> loadingNode;
   nsCOMPtr<nsPIDOMWindowOuter> loadingWindow;
   nsCOMPtr<nsIPrincipal> loadingPrincipal;
+  nsCOMPtr<nsISupports> topLevelLoadingContext;
 
   if (aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
     loadingNode = nullptr;
     loadingPrincipal = nullptr;
     loadingWindow = mScriptGlobal->AsOuter();
+    if (XRE_IsContentProcess()) {
+      // In e10s the child process doesn't have access to the element that
+      // contains the browsing context (because that element is in the chrome
+      // process).
+      nsCOMPtr<nsITabChild> tabChild = GetTabChild();
+      topLevelLoadingContext = ToSupports(tabChild);
+    } else {
+      // This is for loading non-e10s tabs and toplevel windows of various
+      // sorts.
+      // For the toplevel window cases, requestingElement will be null.
+      nsCOMPtr<Element> requestingElement =
+        loadingWindow->GetFrameElementInternal();
+      topLevelLoadingContext = requestingElement;
+    }
   } else {
     loadingWindow = nullptr;
     loadingNode = mScriptGlobal->AsOuter()->GetFrameElementInternal();
     if (loadingNode) {
       // If we have a loading node, then use that as our loadingPrincipal.
       loadingPrincipal = loadingNode->NodePrincipal();
+#ifdef DEBUG
+      // Get the docshell type for requestingElement.
+      nsCOMPtr<nsIDocument> requestingDoc = loadingNode->OwnerDoc();
+      nsCOMPtr<nsIDocShell> elementDocShell = requestingDoc->GetDocShell();
+      // requestingElement docshell type = current docshell type.
+      MOZ_ASSERT(mItemType == elementDocShell->ItemType(),
+                "subframes should have the same docshell type as their parent");
+#endif
     } else {
       // If this isn't a top-level load and mScriptGlobal's frame element is
       // null, then the element got removed from the DOM while we were trying
@@ -10945,7 +10979,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
 
   nsCOMPtr<nsILoadInfo> loadInfo =
     (aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) ?
-      new LoadInfo(loadingWindow, aTriggeringPrincipal,
+      new LoadInfo(loadingWindow, aTriggeringPrincipal, topLevelLoadingContext,
                    securityFlags) :
       new LoadInfo(loadingPrincipal, aTriggeringPrincipal, loadingNode,
                    securityFlags, aContentPolicyType);
@@ -10953,6 +10987,8 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   if (aPrincipalToInherit) {
     loadInfo->SetPrincipalToInherit(aPrincipalToInherit);
   }
+  loadInfo->SetLoadTriggeredFromExternal(aLoadFromExternal);
+  loadInfo->SetForceAllowDataURI(aForceAllowDataURI);
 
   // We have to do this in case our OriginAttributes are different from the
   // OriginAttributes of the parent document. Or in case there isn't a
@@ -11026,6 +11062,29 @@ nsDocShell::DoURILoad(nsIURI* aURI,
       isc->SetBaseURI(aBaseURI);
     }
   }
+
+  // Navigational requests that are same origin need to be upgraded in case
+  // upgrade-insecure-requests is present. Please note that in that case
+  // the triggeringPrincipal is holding the CSP that potentially
+  // holds upgrade-insecure-requests.
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  aTriggeringPrincipal->GetCsp(getter_AddRefs(csp));
+  if (csp) {
+    bool upgradeInsecureRequests = false;
+    csp->GetUpgradeInsecureRequests(&upgradeInsecureRequests);
+    if (upgradeInsecureRequests) {
+      // only upgrade if the navigation is same origin
+      nsCOMPtr<nsIPrincipal> resultPrincipal;
+      rv = nsContentUtils::GetSecurityManager()->
+             GetChannelResultPrincipal(channel,
+                                       getter_AddRefs(resultPrincipal));
+      NS_ENSURE_SUCCESS(rv, rv);
+      if (resultPrincipal->Equals(aTriggeringPrincipal)) {
+        static_cast<mozilla::LoadInfo*>(loadInfo.get())->SetUpgradeInsecureRequests();
+      }
+    }
+  }
+
 
   nsCOMPtr<nsIApplicationCacheChannel> appCacheChannel =
     do_QueryInterface(channel);

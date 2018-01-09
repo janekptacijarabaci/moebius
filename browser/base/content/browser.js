@@ -25,7 +25,7 @@ Cu.import("resource://gre/modules/NotificationDB.jsm");
           ProcessHangMonitor:false, PromiseUtils:false, ReaderMode:false,
           ReaderParent:false, RecentWindow:false, SessionStore:false,
           ShortcutUtils:false, SimpleServiceDiscovery:false, SitePermissions:false,
-          Social:false, TabCrashHandler:false, Task:false, TelemetryStopwatch:false,
+          TabCrashHandler:false, Task:false, TelemetryStopwatch:false,
           Translation:false, UITour:false, UpdateUtils:false, Weave:false,
           fxAccounts:false, gDevTools:false, gDevToolsBrowser:false, webrtcUI:false,
           URLBarZoom:false
@@ -68,7 +68,6 @@ Cu.import("resource://gre/modules/NotificationDB.jsm");
   ["ShortcutUtils", "resource://gre/modules/ShortcutUtils.jsm"],
   ["SimpleServiceDiscovery", "resource://gre/modules/SimpleServiceDiscovery.jsm"],
   ["SitePermissions", "resource:///modules/SitePermissions.jsm"],
-  ["Social", "resource:///modules/Social.jsm"],
   ["TabCrashHandler", "resource:///modules/ContentCrashHandlers.jsm"],
   ["Task", "resource://gre/modules/Task.jsm"],
   ["TelemetryStopwatch", "resource://gre/modules/TelemetryStopwatch.jsm"],
@@ -522,9 +521,7 @@ var gPopupBlockerObserver = {
         var brandShortName = brandBundle.getString("brandShortName");
         var popupCount = gBrowser.selectedBrowser.blockedPopups.length;
 
-        var stringKey = AppConstants.platform == "win"
-                        ? "popupWarningButton"
-                        : "popupWarningButtonUnix";
+        var stringKey = "popupWarningButton";
 
         var popupButtonText = gNavigatorBundle.getString(stringKey);
         var popupButtonAccesskey = gNavigatorBundle.getString(stringKey + ".accesskey");
@@ -1481,8 +1478,6 @@ var gBrowserInit = {
       // Enable the Restore Last Session command if needed
       RestoreLastSessionObserver.init();
 
-      SocialUI.init();
-
       // Start monitoring slow add-ons
       AddonWatcher.init();
 
@@ -1613,7 +1608,6 @@ var gBrowserInit = {
 
       gPrefService.removeObserver(ctrlTab.prefName, ctrlTab);
       ctrlTab.uninit();
-      SocialUI.uninit();
       gBrowserThumbnails.uninit();
       FullZoom.destroy();
 
@@ -4016,6 +4010,11 @@ function addToUrlbarHistory(aUrlToAdd) {
     PlacesUIUtils.markPageAsTyped(aUrlToAdd);
 }
 
+function toJavaScriptConsole()
+{
+  toOpenWindowByType("global:console", "chrome://global/content/console.xul");
+}
+
 function BrowserDownloadsUI() {
   if (PrivateBrowsingUtils.isWindowPrivate(window)) {
     openUILinkIn("about:downloads", "tab");
@@ -4372,9 +4371,7 @@ var XULBrowserWindow = {
 
   // Called before links are navigated to to allow us to retarget them if needed.
   onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab) {
-    let target = BrowserUtils.onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab);
-    SocialUI.closeSocialPanelForLinkTraversal(target, linkNode);
-    return target;
+    return BrowserUtils.onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab);
   },
 
   // Check whether this URI should load in the current process
@@ -4555,8 +4552,6 @@ var XULBrowserWindow = {
       BookmarkingUI.onLocationChange();
 
       gIdentityHandler.onLocationChange();
-
-      SocialUI.updateState();
 
       gTabletModePageCounter.inc();
 
@@ -5719,7 +5714,7 @@ function stripUnsafeProtocolOnPaste(pasteData) {
   // LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL for those.
   let changed = false;
   let pasteDataNoJS = pasteData.replace(/\r?\n/g, "")
-                               .replace(/^(?:\s*javascript:)+/i,
+                               .replace(/^(?:\W*javascript:)+/i,
                                         () => {
                                                 changed = true;
                                                 return "";
@@ -7931,7 +7926,7 @@ var TabContextMenu = {
 Object.defineProperty(this, "HUDService", {
   get: function HUDService_getter() {
     let devtools = Cu.import("resource://devtools/shared/Loader.jsm", {}).devtools;
-    return devtools.require("devtools/client/webconsole/hudservice");
+    return devtools.require("devtools/client/webconsole/hudservice").HUDService;
   },
   configurable: true,
   enumerable: true

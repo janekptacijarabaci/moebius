@@ -20,6 +20,7 @@
 #include "mozilla/dom/PerformanceEntryEvent.h"
 #include "mozilla/dom/PerformanceNavigationBinding.h"
 #include "mozilla/dom/PerformanceObserverBinding.h"
+#include "mozilla/dom/PerformanceNavigationTiming.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Preferences.h"
 #include "WorkerPrivate.h"
@@ -37,27 +38,6 @@ namespace dom {
 using namespace workers;
 
 namespace {
-
-// Helper classes
-class MOZ_STACK_CLASS PerformanceEntryComparator final
-{
-public:
-  bool Equals(const PerformanceEntry* aElem1,
-              const PerformanceEntry* aElem2) const
-  {
-    MOZ_ASSERT(aElem1 && aElem2,
-               "Trying to compare null performance entries");
-    return aElem1->StartTime() == aElem2->StartTime();
-  }
-
-  bool LessThan(const PerformanceEntry* aElem1,
-                const PerformanceEntry* aElem2) const
-  {
-    MOZ_ASSERT(aElem1 && aElem2,
-               "Trying to compare null performance entries");
-    return aElem1->StartTime() < aElem2->StartTime();
-  }
-};
 
 class PrefEnabledRunnable final
   : public WorkerCheckAPIExposureOnMainThreadRunnable
@@ -245,10 +225,10 @@ Performance::ClearResourceTimings()
 DOMHighResTimeStamp
 Performance::RoundTime(double aTime) const
 {
-  // Round down to the nearest 5us, because if the timer is too accurate people
+  // Round down to the nearest 50us, because if the timer is too accurate people
   // can do nasty timing attacks with it.  See similar code in the worker
   // Performance implementation.
-  const double maxResolutionMs = 0.005;
+  const double maxResolutionMs = 0.050;
   return floor(aTime / maxResolutionMs) * maxResolutionMs;
 }
 

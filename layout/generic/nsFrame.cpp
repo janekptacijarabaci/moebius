@@ -2579,14 +2579,11 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     buildingDisplayList.SetReferenceFrameAndCurrentOffset(outerReferenceFrame,
       GetOffsetToCrossDoc(outerReferenceFrame));
 
-    if (!aBuilder->IsForGenerateGlyphMask() &&
-        !aBuilder->IsForPaintingSelectionBG()) {
-      nsDisplayTransform *transformItem =
-        new (aBuilder) nsDisplayTransform(aBuilder, this,
-                                          &resultList, dirtyRect, 0,
-                                          allowAsyncAnimation);
-      resultList.AppendNewToTop(transformItem);
-    }
+    nsDisplayTransform *transformItem =
+      new (aBuilder) nsDisplayTransform(aBuilder, this,
+                                        &resultList, dirtyRect, 0,
+                                        allowAsyncAnimation);
+    resultList.AppendNewToTop(transformItem);
 
     if (hasPerspective) {
       if (clipCapturedBy == ContainerItemType::ePerspective) {
@@ -4879,7 +4876,7 @@ nsFrame::ComputeSize(nsRenderingContext* aRenderingContext,
       ComputeISizeValue(aRenderingContext, aCBSize.ISize(aWM),
                         boxSizingAdjust.ISize(aWM), boxSizingToMarginEdgeISize,
                         minISizeCoord, aFlags);
-  } else if (MOZ_UNLIKELY(isGridItem)) {
+  } else if (MOZ_UNLIKELY(aFlags & eIApplyAutoMinSize)) {
     // This implements "Implied Minimum Size of Grid Items".
     // https://drafts.csswg.org/css-grid/#min-size-auto
     minISize = std::min(maxISize, GetMinISize(aRenderingContext));

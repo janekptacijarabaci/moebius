@@ -123,7 +123,10 @@ TLSFilterTransaction::Close(nsresult aReason)
   if (!mTransaction) {
     return;
   }
-
+  if (mTimer) {
+    mTimer->Cancel();
+    mTimer = nullptr;
+  }
   mTransaction->Close(aReason);
   mTransaction = nullptr;
 }

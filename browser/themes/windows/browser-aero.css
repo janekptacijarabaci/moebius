@@ -97,36 +97,28 @@
     }
     @media (-moz-windows-accent-color-applies: 0) {
       /* Default styling for when no accent color is applied */
-      #main-window:not(:-moz-window-inactive):not(:-moz-lwtheme) {
-        background-color: hsl(235, 33%, 19%);
-      }
-      
-      :root:not(:-moz-window-inactive):not(:-moz-lwtheme) {
-        --titlebar-text-color: white;
-      }
-      
       #titlebar-min:not(:-moz-window-inactive):not(:-moz-lwtheme) {
-        list-style-image: url(chrome://browser/skin/caption-buttons.svg#minimize-highlight);
+        list-style-image: url(chrome://browser/skin/caption-buttons.svg#minimize);
       }
 
       #titlebar-max:not(:-moz-window-inactive):not(:-moz-lwtheme) {
-        list-style-image: url(chrome://browser/skin/caption-buttons.svg#maximize-highlight);
+        list-style-image: url(chrome://browser/skin/caption-buttons.svg#maximize);
       }
 
       #main-window[sizemode="maximized"] #titlebar-max:not(:-moz-window-inactive):not(:-moz-lwtheme) {
-        list-style-image: url(chrome://browser/skin/caption-buttons.svg#restore-highlight);
+        list-style-image: url(chrome://browser/skin/caption-buttons.svg#restore);
       }
       
-      #titlebar-close:not(:-moz-window-inactive):not(:-moz-lwtheme) {
-        list-style-image: url(chrome://browser/skin/caption-buttons.svg#close-highlight);
+      #titlebar-close:not(:-moz-window-inactive):not(:-moz-lwtheme):not(:hover) {
+        list-style-image: url(chrome://browser/skin/caption-buttons.svg#close);
       }
 
       .titlebar-button:not(#titlebar-close):not(:-moz-window-inactive):not(:-moz-lwtheme):hover {
-        background-color: hsla(0, 0%, 100%, .17);
+        background-color: hsla(0, 0%, 0%, .17);
       }
 
       .titlebar-button:not(#titlebar-close):not(:-moz-window-inactive):not(:-moz-lwtheme):hover:active	{
-        background-color: hsla(0, 0%, 100%, .27);
+        background-color: hsla(0, 0%, 0%, .27);
         transition: none;
       }
       
@@ -135,7 +127,7 @@
       }
 
       #titlebar-close:not(:-moz-window-inactive):not(:-moz-lwtheme):hover:active	{
-        background-color: hsla(0, 60%, 39%, 1);
+        background-color: hsla(0, 60%, 49%, 0.6);
         transition: none;
       }
     }
@@ -247,10 +239,6 @@
 
     .titlebar-button:not(:hover) > .toolbarbutton-icon:-moz-window-inactive {
       opacity: 0.5;
-    }
-
-    #main-window[chromemargin^="0,"][sizemode=normal] #navigator-toolbox {
-      margin-top: -4px;
     }
 
     #main-window[sizemode="maximized"] #titlebar-close {

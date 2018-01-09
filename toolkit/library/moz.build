@@ -66,11 +66,6 @@ def Libxul(name):
     if CONFIG['MOZ_NEEDS_LIBATOMIC']:
         OS_LIBS += ['atomic']
 
-    # This option should go away in bug 1290972, but we need to wait until
-    # Rust 1.12 has been released.
-    if CONFIG['MOZ_RUST'] and CONFIG['OS_ARCH'] == 'Darwin':
-        LDFLAGS += ['-Wl,-no_compact_unwind']
-
 Libxul('xul')
 
 FORCE_STATIC_LIB = True
@@ -391,9 +386,3 @@ if CONFIG['COMPILE_ENVIRONMENT']:
 
 # This library needs to be last to make XPCOM module registration work.
 USE_LIBS += ['StaticXULComponentsEnd']
-
-# The above library needs to be last for C++ purposes.  This library,
-# however, is entirely composed of Rust code, and needs to come after
-# all the C++ code so any possible C++ -> Rust calls can be resolved.
-if CONFIG['MOZ_RUST']:
-    USE_LIBS += ['gkrust']

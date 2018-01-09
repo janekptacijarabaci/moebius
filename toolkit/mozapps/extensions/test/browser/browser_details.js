@@ -9,7 +9,6 @@ const { REQUIRE_SIGNING } = Components.utils.import("resource://gre/modules/addo
 const PREF_AUTOUPDATE_DEFAULT = "extensions.update.autoUpdateDefault";
 const PREF_GETADDONS_GETSEARCHRESULTS = "extensions.getAddons.search.url";
 const SEARCH_URL = TESTROOT + "browser_details.xml";
-const PREF_EM_HOTFIX_ID = "extensions.hotfix.id";
 
 var gManagerWindow;
 var gCategoryUtilities;
@@ -49,7 +48,6 @@ function test() {
   // Turn on searching for this test
   Services.prefs.setIntPref(PREF_SEARCH_MAXRESULTS, 15);
   Services.prefs.setCharPref(PREF_GETADDONS_GETSEARCHRESULTS, SEARCH_URL);
-  Services.prefs.setCharPref(PREF_EM_HOTFIX_ID, "hotfix@tests.mozilla.org");
 
   waitForExplicitFinish();
 
@@ -168,9 +166,6 @@ function test() {
     name: "Test add-on 12",
     signedState: AddonManager.SIGNEDSTATE_SIGNED,
     foreignInstall: true,
-  }, {
-    id: "hotfix@tests.mozilla.org",
-    name: "Test hotfix 1",
   }]);
 
   open_manager(null, function(aWindow) {
@@ -182,7 +177,6 @@ function test() {
 }
 
 function end_test() {
-  Services.prefs.clearUserPref(PREF_EM_HOTFIX_ID);
   close_manager(gManagerWindow, function() {
     finish();
   });
@@ -946,26 +940,6 @@ add_test(function() {
         });
       });
     });
-  });
-});
-
-// Opens and tests the details view for hotfix 1
-add_test(function() {
-  open_details("hotfix@tests.mozilla.org", "extension", function() {
-    is(get("detail-name").textContent, "Test hotfix 1", "Name should be correct");
-
-    is_element_hidden(get("detail-updates-row"), "Updates should be hidden");
-
-    is_element_hidden(get("detail-prefs-btn"), "Preferences button should be hidden");
-    is_element_hidden(get("detail-enable-btn"), "Enable button should be hidden");
-    is_element_visible(get("detail-disable-btn"), "Disable button should be visible");
-    is_element_visible(get("detail-uninstall-btn"), "Remove button should be visible");
-
-    is_element_hidden(get("detail-warning"), "Warning message should be hidden");
-    is_element_hidden(get("detail-warning-link"), "Warning link should be hidden");
-    is_element_hidden(get("detail-pending"), "Pending message should be hidden");
-
-    run_next_test();
   });
 });
 

@@ -185,10 +185,8 @@ var gVersionInfoPage = {
         logger.debug("repopulateCache completed after dialog closed");
       }
     }
-    // Fetch the add-ons that are still affected by this update,
-    // excluding the hotfix add-on.
-    let idlist = Array.from(gUpdateWizard.affectedAddonIDs).filter(
-      a => a.id != AddonManager.hotfixID);
+    // Fetch the add-ons that are still affected by this update.
+    let idlist = Array.from(gUpdateWizard.affectedAddonIDs);
     if (idlist.length < 1) {
       gVersionInfoPage.onAllUpdatesFinished();
       return;

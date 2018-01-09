@@ -548,7 +548,7 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   transition: none;
 }
 
-#DateTimePickerPanel {
+#DateTimePickerPanel[active="true"] {
   -moz-binding: url("chrome://global/content/bindings/datetimepopup.xml#datetime-popup");
 }
 
@@ -928,11 +928,6 @@ html|*#gcli-output-frame,
 
 .browserStack[responsivemode][notransition] {
   transition: none;
-}
-
-panelview > .social-panel-frame {
-  width: auto;
-  height: auto;
 }
 
 /* Translation */

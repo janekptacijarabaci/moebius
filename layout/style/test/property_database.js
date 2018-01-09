@@ -132,6 +132,9 @@ var validGradientAndElementValues = [
   "linear-gradient(to right bottom, red, 50%, green 50%, 50%, blue)",
   "linear-gradient(to right bottom, red, 0%, green 50%, 100%, blue)",
 
+  /* Unitless 0 is valid as an <angle> */
+  "linear-gradient(0, red, blue)",
+
   "-moz-linear-gradient(red, blue)",
   "-moz-linear-gradient(red, yellow, blue)",
   "-moz-linear-gradient(red 1px, yellow 20%, blue 24em, green)",
@@ -388,10 +391,8 @@ var invalidGradientAndElementValues = [
   "-moz-linear-gradient(10 10px -45deg, red, blue) repeat",
   "-moz-linear-gradient(10px 10 -45deg, red, blue) repeat",
   "linear-gradient(red -99, yellow, green, blue 120%)",
-  /* Unitless 0 is invalid as an <angle> */
-  "-moz-linear-gradient(top left 0, red, blue)",
-  "-moz-linear-gradient(5px 5px 0, red, blue)",
-  "linear-gradient(0, red, blue)",
+  /* Unitless nonzero numbers are valid as an <angle> */
+  "linear-gradient(30, red, blue)",
   /* Invalid color, calc() or -moz-image-rect() function */
   "linear-gradient(red, rgb(0, rubbish, 0) 50%, red)",
   "linear-gradient(red, red calc(50% + rubbish), red)",
@@ -5570,6 +5571,17 @@ if (IsCSSPropertyPrefEnabled("layout.css.text-combine-upright.enabled")) {
   }
 }
 
+if (IsCSSPropertyPrefEnabled("layout.css.text-justify.enabled")) {
+  gCSSProperties["text-justify"] = {
+    domProp: "textJustify",
+    inherited: true,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: [ "auto" ],
+    other_values: [ "none", "inter-word", "inter-character", "distribute" ],
+    invalid_values: []
+  };
+}
+
 if (IsCSSPropertyPrefEnabled("layout.css.font-variations.enabled")) {
   gCSSProperties["font-variation-settings"] = {
     domProp: "fontVariationSettings",
@@ -6172,6 +6184,7 @@ if (IsCSSPropertyPrefEnabled("layout.css.grid.enabled")) {
       "repeat(auto-fill,minmax(1%,auto))",
       "repeat(auto-fill,minmax(1em,min-content)) minmax(min-content,0)",
       "repeat(auto-fill,minmax(max-content,1mm))",
+      "repeat(2, fit-content(1px))",
       "fit-content(1px) 1fr",
       "[a] fit-content(calc(1px - 99%)) [b]",
       "[a] fit-content(10%) [b c] fit-content(1em)",
@@ -6216,6 +6229,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.grid.enabled")) {
       "repeat(1, repeat(1, 20px))",
       "repeat(auto-fill, auto)",
       "repeat(auto-fit,auto)",
+      "repeat(auto-fill, fit-content(1px))",
+      "repeat(auto-fit, fit-content(1px))",
       "repeat(auto-fit,[])",
       "repeat(auto-fill, 0) repeat(auto-fit, 0) ",
       "repeat(auto-fit, 0) repeat(auto-fill, 0) ",
@@ -6237,6 +6252,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.grid.enabled")) {
       "fit-content(-1px)",
       "fit-content(auto)",
       "fit-content(min-content)",
+      "fit-content(1px) repeat(auto-fit, 1px)",
+      "fit-content(1px) repeat(auto-fill, 1px)",
     ],
     unbalanced_values: [
       "(foo] 40px",

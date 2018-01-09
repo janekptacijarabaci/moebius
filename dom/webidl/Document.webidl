@@ -272,10 +272,11 @@ partial interface Document {
     object registerElement(DOMString name, optional ElementRegistrationOptions options);
 };
 
-// http://dvcs.w3.org/hg/webperf/raw-file/tip/specs/PageVisibility/Overview.html#sec-document-interface
+// https://w3c.github.io/page-visibility/#extensions-to-the-document-interface
 partial interface Document {
   readonly attribute boolean hidden;
   readonly attribute VisibilityState visibilityState;
+           attribute EventHandler onvisibilitychange;
 };
 
 // http://dev.w3.org/csswg/cssom/#extensions-to-the-document-interface
@@ -424,6 +425,12 @@ partial interface Document {
    */
   [ChromeOnly, Throws]
   void removeAnonymousContent(AnonymousContent aContent);
+};
+
+// http://w3c.github.io/selection-api/#extensions-to-document-interface
+partial interface Document {
+  [Throws]
+  Selection? getSelection();
 };
 
 // Extension to give chrome JS the ability to determine whether

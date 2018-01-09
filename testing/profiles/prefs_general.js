@@ -112,7 +112,6 @@ user_pref("extensions.update.background.url", "http://%(server)s/extensions-dumm
 user_pref("extensions.blocklist.detailsURL", "http://%(server)s/extensions-dummy/blocklistDetailsURL");
 user_pref("extensions.blocklist.itemURL", "http://%(server)s/extensions-dummy/blocklistItemURL");
 user_pref("extensions.blocklist.url", "http://%(server)s/extensions-dummy/blocklistURL");
-user_pref("extensions.hotfix.url", "http://%(server)s/extensions-dummy/hotfixURL");
 user_pref("extensions.systemAddon.update.url", "http://%(server)s/dummy-system-addons.xml");
 // Turn off extension updates so they don't bother tests
 user_pref("extensions.update.enabled", false);
@@ -124,8 +123,6 @@ user_pref("extensions.getAddons.get.url", "http://%(server)s/extensions-dummy/re
 user_pref("extensions.getAddons.getWithPerformance.url", "http://%(server)s/extensions-dummy/repositoryGetWithPerformanceURL");
 user_pref("extensions.getAddons.search.browseURL", "http://%(server)s/extensions-dummy/repositoryBrowseURL");
 user_pref("extensions.getAddons.search.url", "http://%(server)s/extensions-dummy/repositorySearchURL");
-// Ensure blocklist updates don't hit the network
-user_pref("services.settings.server", "http://%(server)s/dummy-kinto/v1");
 // Make sure SNTP requests don't hit the network
 user_pref("network.sntp.pools", "%(server)s");
 // We know the SNTP request will fail, since localhost isn't listening on
@@ -187,6 +184,9 @@ user_pref("layout.css.prefixes.device-pixel-ratio-webkit", true);
 
 // Enable CSS shape-outside for testing
 user_pref("layout.css.shape-outside.enabled", true);
+
+// Enable CSS text-justify for testing
+user_pref("layout.css.text-justify.enabled", true);
 
 // Disable spammy layout warnings because they pollute test logs
 user_pref("layout.spammy_warnings.enabled", false);

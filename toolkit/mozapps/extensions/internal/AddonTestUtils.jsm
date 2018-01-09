@@ -253,13 +253,9 @@ var AddonTestUtils = {
     Services.prefs.setCharPref("extensions.update.url", "http://127.0.0.1/updateURL");
     Services.prefs.setCharPref("extensions.update.background.url", "http://127.0.0.1/updateBackgroundURL");
     Services.prefs.setCharPref("extensions.blocklist.url", "http://127.0.0.1/blocklistURL");
-    Services.prefs.setCharPref("services.settings.server", "http://localhost/dummy-kinto/v1");
 
     // By default ignore bundled add-ons
     Services.prefs.setBoolPref("extensions.installDistroAddons", false);
-
-    // By default don't check for hotfixes
-    Services.prefs.setCharPref("extensions.hotfix.id", "");
 
     // Ensure signature checks are enabled by default
     Services.prefs.setBoolPref("xpinstall.signatures.required", true);
@@ -426,7 +422,7 @@ var AddonTestUtils = {
 
     let manifest = yield body.json();
     try {
-      return manifest.applications.goanna.id;
+      return manifest.applications.gecko.id;
     } catch (e) {
       // IDs for WebExtensions are extracted from the certificate when
       // not present in the manifest, so just generate a random one.

@@ -241,7 +241,6 @@ public:
   {
     // Deprecated
   }
-  mozilla::dom::Selection* GetSelection(mozilla::ErrorResult& aRv);
   // The XPCOM CaptureEvents works fine for us.
   // The XPCOM ReleaseEvents works fine for us.
   // We're picking up GetLocation from Document
@@ -260,12 +259,13 @@ protected:
 
   nsIContent *MatchId(nsIContent *aContent, const nsAString& aId);
 
-  static bool MatchLinks(nsIContent *aContent, int32_t aNamespaceID,
+  static bool MatchLinks(mozilla::dom::Element* aElement, int32_t aNamespaceID,
+                         nsIAtom* aAtom, void* aData);
+  static bool MatchAnchors(mozilla::dom::Element* aElement, int32_t aNamespaceID,
                            nsIAtom* aAtom, void* aData);
-  static bool MatchAnchors(nsIContent *aContent, int32_t aNamespaceID,
-                             nsIAtom* aAtom, void* aData);
-  static bool MatchNameAttribute(nsIContent* aContent, int32_t aNamespaceID,
-                                   nsIAtom* aAtom, void* aData);
+  static bool MatchNameAttribute(mozilla::dom::Element* aElement,
+                                 int32_t aNamespaceID,
+                                 nsIAtom* aAtom, void* aData);
   static void* UseExistingNameString(nsINode* aRootNode, const nsString* aName);
 
   static void DocumentWriteTerminationFunc(nsISupports *aRef);

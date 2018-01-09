@@ -164,10 +164,9 @@ nsIContent::DoGetID() const
 }
 
 const nsAttrValue*
-nsIContent::DoGetClasses() const
+Element::DoGetClasses() const
 {
   MOZ_ASSERT(HasFlag(NODE_MAY_HAVE_CLASS), "Unexpected call");
-  MOZ_ASSERT(IsElement(), "Only elements can have classes");
 
   if (IsSVGElement()) {
     const nsAttrValue* animClass =
@@ -177,7 +176,7 @@ nsIContent::DoGetClasses() const
     }
   }
 
-  return AsElement()->GetParsedAttr(nsGkAtoms::_class);
+  return GetParsedAttr(nsGkAtoms::_class);
 }
 
 NS_IMETHODIMP
@@ -1830,6 +1829,24 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     }
     SetParentIsContent(false);
   }
+
+#ifdef DEBUG
+  // If we can get access to the PresContext, then we sanity-check that
+  // we're not leaving behind a pointer to ourselves as the PresContext's
+  // cached provider of the viewport's scrollbar styles.
+  if (document) {
+    nsIPresShell* presShell = document->GetShell();
+    if (presShell) {
+      nsPresContext* presContext = presShell->GetPresContext();
+      if (presContext) {
+        MOZ_ASSERT(this !=
+                   presContext->GetViewportScrollbarStylesOverrideNode(),
+                   "Leaving behind a raw pointer to this node (as having "
+                   "propagated scrollbar styles) - that's dangerous...");
+      }
+    }
+  }
+#endif
 
   // Ensure that CSS transitions don't continue on an element at a
   // different place in the tree (even if reinserted before next
@@ -3886,7 +3903,7 @@ Element::ClearDataset()
   slots->mDataset = nullptr;
 }
 
-nsDataHashtable<nsPtrHashKey<DOMIntersectionObserver>, int32_t>*
+nsDataHashtable<nsRefPtrHashKey<DOMIntersectionObserver>, int32_t>*
 Element::RegisteredIntersectionObservers()
 {
   nsDOMSlots* slots = DOMSlots();
@@ -3896,7 +3913,7 @@ Element::RegisteredIntersectionObservers()
 void
 Element::RegisterIntersectionObserver(DOMIntersectionObserver* aObserver)
 {
-  nsDataHashtable<nsPtrHashKey<DOMIntersectionObserver>, int32_t>* observers =
+  nsDataHashtable<nsRefPtrHashKey<DOMIntersectionObserver>, int32_t>* observers =
     RegisteredIntersectionObservers();
   if (observers->Contains(aObserver)) {
     return;
@@ -3907,7 +3924,7 @@ Element::RegisterIntersectionObserver(DOMIntersectionObserver* aObserver)
 void
 Element::UnregisterIntersectionObserver(DOMIntersectionObserver* aObserver)
 {
-  nsDataHashtable<nsPtrHashKey<DOMIntersectionObserver>, int32_t>* observers =
+  nsDataHashtable<nsRefPtrHashKey<DOMIntersectionObserver>, int32_t>* observers =
     RegisteredIntersectionObservers();
   observers->Remove(aObserver);
 }
@@ -3915,7 +3932,7 @@ Element::UnregisterIntersectionObserver(DOMIntersectionObserver* aObserver)
 bool
 Element::UpdateIntersectionObservation(DOMIntersectionObserver* aObserver, int32_t aThreshold)
 {
-  nsDataHashtable<nsPtrHashKey<DOMIntersectionObserver>, int32_t>* observers =
+  nsDataHashtable<nsRefPtrHashKey<DOMIntersectionObserver>, int32_t>* observers =
     RegisteredIntersectionObservers();
   if (!observers->Contains(aObserver)) {
     return false;
