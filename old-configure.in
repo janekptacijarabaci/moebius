@@ -2908,6 +2908,10 @@ AC_SUBST(MOZ_RAW)
 dnl ========================================================
 dnl = Apple platform decoder support
 dnl ========================================================
+if test "$MOZ_WIDGET_TOOLKIT" = "cocoa" || test "$MOZ_WIDGET_TOOLKIT" = "uikit"; then
+  MOZ_APPLEMEDIA=1
+fi
+
 if test "$COMPILE_ENVIRONMENT"; then
 if test -n "$MOZ_APPLEMEDIA"; then
   # hack in frameworks for fmp4 - see bug 1029974
@@ -2918,6 +2922,10 @@ if test -n "$MOZ_APPLEMEDIA"; then
     [AC_MSG_ERROR([MacOS X 10.7 SDK or later is required])])
 fi
 fi # COMPILE_ENVIRONMENT
+
+if test -n "$MOZ_APPLEMEDIA"; then
+  AC_DEFINE(MOZ_APPLEMEDIA)
+fi;
 
 dnl ========================================================
 dnl = DirectShow support
@@ -5615,6 +5623,7 @@ AC_SUBST(MOZ_FMP4)
 AC_SUBST(MOZ_EME)
 AC_SUBST(MOZ_DIRECTSHOW)
 AC_SUBST(MOZ_ANDROID_OMX)
+AC_SUBST(MOZ_APPLEMEDIA)
 AC_SUBST(MOZ_OMX_PLUGIN)
 AC_SUBST(VPX_USE_YASM)
 AC_SUBST_LIST(VPX_ASFLAGS)

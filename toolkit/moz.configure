@@ -337,17 +337,6 @@ add_old_configure_assignment('FT2_LIBS',
 add_old_configure_assignment('FT2_CFLAGS',
                              delayed_getattr(ft2_info, 'cflags'))
 
-# Apple platform decoder support
-# ==============================================================
-@depends(toolkit)
-def applemedia(toolkit):
-    if toolkit in ('cocoa', 'uikit'):
-        return True
-
-set_config('MOZ_APPLEMEDIA', applemedia)
-set_define('MOZ_APPLEMEDIA', applemedia)
-add_old_configure_assignment('MOZ_APPLEMEDIA', applemedia)
-
 # Miscellaneous
 # ==============================================================
 option(name='--enable-chrome-format',
