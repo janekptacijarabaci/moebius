@@ -177,6 +177,7 @@ def old_configure_options(*options):
     '--enable-extensions',
     '--enable-faststripe',
     '--enable-feeds',
+    '--enable-ffmpeg',
     '--enable-fmp4',
     '--enable-gamepad',
     '--enable-gconf',
