@@ -242,6 +242,7 @@ def old_configure_options(*options):
     '--enable-valgrind',
     '--enable-verify-mar',
     '--enable-webrtc',
+    '--enable-wmf',
     '--enable-xul',
     '--enable-zipwriter',
     '--includedir',
