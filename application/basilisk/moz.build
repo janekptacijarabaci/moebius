@@ -19,16 +19,10 @@ DIRS += [
     'extensions',
 ]
 
-DIRS += [
-    'app',
-]
+DIRS += ['app']
 
 if CONFIG['MAKENSISU']:
     DIRS += ['installer/windows']
-
-TEST_DIRS += [
-    'tools/mozscreenshots',
-]
 
 DIST_SUBDIR = 'browser'
 export('DIST_SUBDIR')
@@ -37,5 +31,5 @@ if CONFIG['MOZ_ARTIFACT_BUILDS']:
     # Ensure a pre-built interfaces.xpt installed to the objdir by the artifact
     # code is included by the top-level chrome.manifest.
     EXTRA_COMPONENTS += [
-        '../../build/prebuilt-interfaces.manifest',
+        '../../../build/prebuilt-interfaces.manifest',
     ]
