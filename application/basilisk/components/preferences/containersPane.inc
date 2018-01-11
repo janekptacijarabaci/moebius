@@ -5,7 +5,7 @@
 <!-- Containers panel -->
 
 <script type="application/javascript"
-        src="chrome://browser/content/preferences/in-content/containers.js"/>
+        src="chrome://browser/content/preferences/containersPane.js"/>
 
 <preferences id="containerPreferences" hidden="true" data-category="paneContainer">
   <!-- Containers -->

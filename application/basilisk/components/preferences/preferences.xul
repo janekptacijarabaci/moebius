@@ -66,8 +66,8 @@
   <script type="application/javascript"
           src="chrome://browser/content/utilityOverlay.js"/>
   <script type="application/javascript"
-          src="chrome://browser/content/preferences/in-content/preferences.js"/>
-  <script src="chrome://browser/content/preferences/in-content/subdialogs.js"/>
+          src="chrome://browser/content/preferences/preferences.js"/>
+  <script src="chrome://browser/content/preferences/subdialogs.js"/>
 
   <stringbundle id="bundleBrand"
                 src="chrome://branding/locale/brand.properties"/>
@@ -180,15 +180,15 @@
 
     <vbox class="main-content" flex="1">
       <prefpane id="mainPrefPane">
-#include main.xul
-#include search.xul
-#include privacy.xul
-#include containers.xul
-#include advanced.xul
-#include applications.xul
-#include content.xul
-#include security.xul
-#include sync.xul
+#include main.inc
+#include search.inc
+#include privacy.inc
+#include containersPane.inc
+#include advanced.inc
+#include applications.inc
+#include content.inc
+#include security.inc
+#include sync.inc
       </prefpane>
     </vbox>
 

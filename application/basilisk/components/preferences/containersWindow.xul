@@ -20,7 +20,7 @@
         onkeypress="gContainersManager.onWindowKeyPress(event);">
 
   <script src="chrome://global/content/treeUtils.js"/>
-  <script src="chrome://browser/content/preferences/containers.js"/>
+  <script src="chrome://browser/content/preferences/containersWindow.js"/>
 
   <stringbundle id="bundlePreferences"
                 src="chrome://browser/locale/preferences/preferences.properties"/>
