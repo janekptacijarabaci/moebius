@@ -15,7 +15,7 @@
     </preferences>
 
     <script type="application/javascript"
-            src="chrome://browser/content/preferences/in-content/search.js"/>
+            src="chrome://browser/content/preferences/search.js"/>
 
     <stringbundle id="engineManagerBundle" src="chrome://browser/locale/engineManager.properties"/>
 

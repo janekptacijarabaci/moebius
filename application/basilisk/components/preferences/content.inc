@@ -32,7 +32,7 @@
 <script type="application/javascript"
         src="chrome://mozapps/content/preferences/fontbuilder.js"/>
 <script type="application/javascript"
-        src="chrome://browser/content/preferences/in-content/content.js"/>
+        src="chrome://browser/content/preferences/content.js"/>
 
 <hbox id="header-content"
       class="header"

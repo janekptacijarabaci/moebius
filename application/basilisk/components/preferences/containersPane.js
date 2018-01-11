@@ -90,7 +90,7 @@ let gContainersPane = {
     }
 
     const params = { userContextId, identity, windowTitle: title };
-    gSubDialog.open("chrome://browser/content/preferences/containers.xul",
+    gSubDialog.open("chrome://browser/content/preferences/containersWindow.xul",
                      null, params);
   }
 

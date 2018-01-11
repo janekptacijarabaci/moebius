@@ -5,7 +5,7 @@
 <!-- General panel -->
 
 <script type="application/javascript"
-        src="chrome://browser/content/preferences/in-content/main.js"/>
+        src="chrome://browser/content/preferences/main.js"/>
 
 <preferences id="mainPreferences" hidden="true" data-category="paneGeneral">
 

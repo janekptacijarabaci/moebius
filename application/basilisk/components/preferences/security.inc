@@ -5,7 +5,7 @@
 <!-- Security panel -->
 
 <script type="application/javascript"
-        src="chrome://browser/content/preferences/in-content/security.js"/>
+        src="chrome://browser/content/preferences/security.js"/>
 
 <preferences id="securityPreferences" hidden="true" data-category="paneSecurity">
   <!-- XXX buttons -->
