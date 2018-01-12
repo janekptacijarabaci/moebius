@@ -66,7 +66,6 @@ set_define('MOZ_DMD', dmd)
 add_old_configure_assignment('MOZ_DMD', dmd)
 imply_option('--enable-profiling', dmd)
 # --enable-jemalloc is implied below.
-imply_option('--enable-replace-malloc', dmd)
 
 # JACK cubeb backend
 # ==============================================================
