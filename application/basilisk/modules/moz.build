@@ -5,14 +5,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXTRA_JS_MODULES += [
-    'AboutHome.jsm',
     'AboutNewTab.jsm',
     'AttributionCode.jsm',
-    'BrowserUITelemetry.jsm',
     'BrowserUsageTelemetry.jsm',
     'CastingApps.jsm',
     'ContentClick.jsm',
-    'ContentCrashHandlers.jsm',
     'ContentLinkHandler.jsm',
     'ContentObservers.jsm',
     'ContentSearch.jsm',
@@ -28,16 +25,22 @@ EXTRA_JS_MODULES += [
     'NetworkPrioritizer.jsm',
     'offlineAppCache.jsm',
     'PermissionUI.jsm',
-    'PluginContent.jsm',
-    'ProcessHangMonitor.jsm',
     'ReaderParent.jsm',
-    'RecentWindow.jsm',
     'RemotePrompt.jsm',
     'Sanitizer.jsm',
     'SelfSupportBackend.jsm',
     'SitePermissions.jsm',
     'TransientPrefs.jsm',
     'URLBarZoom.jsm',
+]
+
+EXTRA_PP_JS_MODULES += [
+    'AboutHome.jsm',
+    'BrowserUITelemetry.jsm',
+    'ContentCrashHandlers.jsm',
+    'PluginContent.jsm',
+    'ProcessHangMonitor.jsm',
+    'RecentWindow.jsm',
     'webrtcUI.jsm',
 ]
 

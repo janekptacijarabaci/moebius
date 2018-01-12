@@ -13,8 +13,6 @@ this.EXPORTED_SYMBOLS = [ "AboutHomeUtils", "AboutHome" ];
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
-  "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "AutoMigrate",
   "resource:///modules/AutoMigrate.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
@@ -54,10 +52,10 @@ this.AboutHomeUtils = {
       return !Services.prefs.getBoolPref("browser.EULA.override");
     } catch (e) { }
 
-    if (!AppConstants.MOZILLA_OFFICIAL) {
+#ifndef MOZILLA_OFFICIAL
       // Non-official builds shouldn't show the notification.
       return false;
-    }
+#endif
 
     // Look to see if the user has seen the current version or not.
     var currentVersion = Services.prefs.getIntPref("browser.rights.version");

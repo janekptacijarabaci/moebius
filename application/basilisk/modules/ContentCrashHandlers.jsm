@@ -18,8 +18,6 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "CrashSubmit",
   "resource://gre/modules/CrashSubmit.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
-  "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "RemotePages",
   "resource://gre/modules/RemotePageManager.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "SessionStore",
@@ -90,9 +88,12 @@ this.TabCrashHandler = {
           Services.telemetry
                   .getHistogramById("FX_CONTENT_CRASH_DUMP_UNAVAILABLE")
                   .add(1);
-        } else if (AppConstants.MOZ_CRASHREPORTER) {
+        }
+#ifdef MOZ_CRASHREPORTER
+        else {
           this.childMap.set(childID, dumpID);
         }
+#endif
 
         if (!this.flushCrashedBrowserQueue(childID)) {
           this.unseenCrashedChildIDs.push(childID);
@@ -330,9 +331,7 @@ this.TabCrashHandler = {
    *        even if they are empty.
    */
   maybeSendCrashReport(message) {
-    if (!AppConstants.MOZ_CRASHREPORTER)
-      return;
-
+#ifdef MOZ_CRASHREPORTER
     let browser = message.target.browser;
 
     if (message.data.autoSubmit) {
@@ -398,6 +397,9 @@ this.TabCrashHandler = {
 
     this.childMap.set(childID, null); // Avoid resubmission.
     this.removeSubmitCheckboxesForSameCrash(childID);
+#else
+    return;
+#endif
   },
 
   removeSubmitCheckboxesForSameCrash(childID) {
@@ -517,11 +519,11 @@ this.TabCrashHandler = {
    * @returns dumpID (String)
    */
   getDumpID(browser) {
-    if (!AppConstants.MOZ_CRASHREPORTER) {
-      return null;
-    }
-
+#ifdef MOZ_CRASHREPORTER
     return this.childMap.get(this.browserMap.get(browser.permanentKey));
+#else
+    return null;
+#endif
   },
 }
 

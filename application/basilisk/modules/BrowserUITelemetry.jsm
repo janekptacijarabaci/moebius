@@ -11,8 +11,6 @@ const {interfaces: Ci, utils: Cu} = Components;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
-  "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "UITelemetry",
   "resource://gre/modules/UITelemetry.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
@@ -81,11 +79,11 @@ XPCOMUtils.defineLazyGetter(this, "DEFAULT_AREA_PLACEMENTS", function() {
     result["PanelUI-contents"].push("characterencoding-button");
   }
 
-  if (AppConstants.NIGHTLY_BUILD) {
-    if (Services.prefs.getBoolPref("extensions.webcompat-reporter.enabled")) {
-      result["PanelUI-contents"].push("webcompat-reporter-button");
-    }
+#ifdef NIGHTLY_BUILD
+  if (Services.prefs.getBoolPref("extensions.webcompat-reporter.enabled")) {
+    result["PanelUI-contents"].push("webcompat-reporter-button");
   }
+#endif
 
   return result;
 });
