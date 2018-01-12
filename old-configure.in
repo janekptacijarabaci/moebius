@@ -749,6 +749,7 @@ if test "$MOZ_DMD"; then
         CXXFLAGS="$CXXFLAGS -funwind-tables"
     fi
     
+    MOZ_MEMORY=1                        # DMD enables jemalloc
     MOZ_REPLACE_MALLOC=1                # DMD enables replace-malloc
 fi
 
@@ -838,6 +839,10 @@ case "$target" in
     MKSHLIB='$(CXX) $(CXXFLAGS) $(DSO_PIC_CFLAGS) $(DSO_LDOPTS) -o $@'
     MKCSHLIB='$(CC) $(CFLAGS) $(DSO_PIC_CFLAGS) $(DSO_LDOPTS) -o $@'
     MOZ_OPTIMIZE_FLAGS="-O3"
+    # Statically disable jemalloc on 10.5 and 32-bit 10.6.  See bug 702250.
+    if test "$HAVE_64BIT_BUILD"; then
+        MOZ_MEMORY=1
+    fi
     CXXFLAGS="$CXXFLAGS -stdlib=libc++"
     DLL_SUFFIX=".dylib"
     DSO_LDOPTS=''
@@ -931,6 +936,8 @@ case "$target" in
         fi
     fi
 
+    MOZ_MEMORY=1
+    
     case "${target_cpu}" in
     alpha*)
         CFLAGS="$CFLAGS -mieee"
@@ -1154,12 +1161,12 @@ case "$target" in
             dnl See https://connect.microsoft.com/VisualStudio/feedback/details/1044914/fatal-error-lnk1248
             LDFLAGS="$LDFLAGS -MaxILKSize:0x7FF00000"
         fi
-        dnl Minimum reqiurement of Goanna is VS2010 or later which supports
-        dnl both SSSE3 and SSE4.1.
+        dnl Minimum requirement of Goanna is VS2013 which supports
+        dnl SSSE3, SSE4.1 and AVX2.
         HAVE_TOOLCHAIN_SUPPORT_MSSSE3=1
         HAVE_TOOLCHAIN_SUPPORT_MSSE4_1=1
-        dnl allow AVX2 code from VS2012
         HAVE_X86_AVX2=1
+        MOZ_MEMORY=1
     fi
     AC_DEFINE(WIN32_LEAN_AND_MEAN)
     dnl See http://support.microsoft.com/kb/143208 to use STL
@@ -2283,6 +2290,7 @@ esac
 case "${target}" in
     *-android*|*-linuxandroid*)
         MOZ_THEME_FASTSTRIPE=1
+        MOZ_MEMORY=1
         MOZ_RAW=1
         ;;
 
@@ -4330,6 +4338,14 @@ if test -n "$MOZ_DEBUG"; then
     AC_DEFINE(MOZ_DUMP_PAINTING)
 fi
 
+dnl ========================================================
+dnl = Enable jemalloc
+dnl ========================================================
+MOZ_ARG_ENABLE_BOOL(jemalloc,
+[  --enable-jemalloc       Replace memory allocator with jemalloc],
+    MOZ_MEMORY=1,
+    MOZ_MEMORY=)
+
 case "${OS_TARGET}" in
 Android|WINNT|Darwin)
   MOZ_GLUE_IN_PROGRAM=
@@ -4420,6 +4436,18 @@ dnl ========================================================
 dnl = Jemalloc build setup
 dnl ========================================================
 if test -z "$MOZ_MEMORY"; then
+  if test -n "$MOZ_JEMALLOC4" -a -z "$MOZ_REPLACE_MALLOC"; then
+    MOZ_SYSTEM_JEMALLOC=1
+    AC_CHECK_FUNCS(mallctl nallocx,,
+      [MOZ_SYSTEM_JEMALLOC=
+       break])
+    if test -n "$MOZ_SYSTEM_JEMALLOC"; then
+      MOZ_MEMORY=1
+      AC_DEFINE(MOZ_MEMORY)
+      AC_DEFINE(MOZ_JEMALLOC4)
+      AC_DEFINE(MOZ_SYSTEM_JEMALLOC)
+    fi
+  fi
   case "${target}" in
     *-mingw*)
       if test -z "$WIN32_REDIST_DIR" -a -z "$MOZ_DEBUG"; then
@@ -4428,14 +4456,9 @@ if test -z "$MOZ_MEMORY"; then
       ;;
   esac
 else
-  if test -n "$MOZ_JEMALLOC4" -a -z "$MOZ_REPLACE_MALLOC"; then
-    MOZ_SYSTEM_JEMALLOC=1
-    AC_CHECK_FUNCS(mallctl nallocx,,
-      [MOZ_SYSTEM_JEMALLOC=
-       break])
-    if test -n "$MOZ_SYSTEM_JEMALLOC"; then
-      AC_DEFINE(MOZ_SYSTEM_JEMALLOC)
-    fi
+  AC_DEFINE(MOZ_MEMORY)
+  if test -n "$MOZ_JEMALLOC4"; then
+    AC_DEFINE(MOZ_JEMALLOC4)
   fi
   if test "x$MOZ_DEBUG" = "x1"; then
     AC_DEFINE(MOZ_MEMORY_DEBUG)
@@ -4469,6 +4492,8 @@ else
     ;;
   esac
 fi # MOZ_MEMORY
+AC_SUBST(MOZ_MEMORY)
+AC_SUBST(MOZ_JEMALLOC4)
 AC_SUBST(MOZ_SYSTEM_JEMALLOC)
 AC_SUBST(MOZ_GLUE_IN_PROGRAM)
 
@@ -5921,6 +5946,9 @@ if test -n "$NSPR_CFLAGS" -o -n "$NSPR_LIBS"; then
     ac_configure_args="$ac_configure_args --with-nspr-libs='$NSPR_LIBS'"
 fi
 ac_configure_args="$ac_configure_args --prefix=$dist"
+if test "$MOZ_MEMORY"; then
+   ac_configure_args="$ac_configure_args --enable-jemalloc"
+fi
 if test -n "$ZLIB_IN_MOZGLUE"; then
    MOZ_ZLIB_LIBS=
 fi
@@ -5937,6 +5965,7 @@ unset MOZ_BUILD_APP
 export DIST
 export MOZ_LINKER
 export ZLIB_IN_MOZGLUE
+export MOZ_MEMORY
 export AR
 export RANLIB
 export CPP

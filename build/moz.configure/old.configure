@@ -190,6 +190,7 @@ def old_configure_options(*options):
     '--enable-install-strip',
     '--enable-ion',
     '--enable-ios-target',
+    '--enable-jemalloc',
     '--enable-jitspew',
     '--enable-libjpeg-turbo',
     '--enable-libproxy',
