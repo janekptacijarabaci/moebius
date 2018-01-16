@@ -35,11 +35,13 @@ XPIDL_SOURCES += [
 
 XPIDL_MODULE = 'browsercompsbase'
 
+DEFINES['INSTALL_COMPACT_THEMES'] = 1
+
 EXTRA_COMPONENTS += [
     'BrowserComponents.manifest',
 ]
 
-EXTRA_COMPONENTS += [
+EXTRA_PP_COMPONENTS += [
     'nsBrowserContentHandler.js',
     'nsBrowserGlue.js',
 ]

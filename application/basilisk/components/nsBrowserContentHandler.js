@@ -6,7 +6,6 @@
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource://gre/modules/AppConstants.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "LaterRun",
                                   "resource:///modules/LaterRun.jsm");
@@ -432,10 +431,10 @@ nsBrowserContentHandler.prototype = {
       cmdLine.preventDefault = true;
     }
 
-    if (AppConstants.platform == "win") {
-      // Handle "? searchterm" for Windows Vista start menu integration
-      for (var i = cmdLine.length - 1; i >= 0; --i) {
-        var param = cmdLine.getArgument(i);
+#ifdef XP_WIN
+    // Handle "? searchterm" for Windows Vista start menu integration
+    for (var i = cmdLine.length - 1; i >= 0; --i) {
+    var param = cmdLine.getArgument(i);
         if (param.match(/^\? /)) {
           cmdLine.removeArguments(i, i);
           cmdLine.preventDefault = true;
@@ -443,8 +442,8 @@ nsBrowserContentHandler.prototype = {
           searchParam = param.substr(2);
           doSearch(searchParam, cmdLine);
         }
-      }
     }
+#endif
   },
 
   get helpInfo() {
@@ -452,12 +451,8 @@ nsBrowserContentHandler.prototype = {
               "  --browser                                    Open a browser window.\n" +
               "  --new-window <url>                           Open <url> in a new window.\n" +
               "  --new-tab <url>                              Open <url> in a new tab.\n" +
-              "  --private-window <url>                       Open <url> in a new private window.\n";
-    if (AppConstants.platform == "win") {
-      info += "  --preferences                                Open Options dialog.\n";
-    } else {
-      info += "  --preferences                                Open Preferences dialog.\n";
-    }
+              "  --private-window <url>                       Open <url> in a new private window.\n"
+              "  --preferences                                Open Preferences dialog.\n";;
     info += "  --search <term>                              Search <term> with your default search engine.\n";
     return info;
   },
@@ -692,14 +687,14 @@ nsDefaultCommandLineHandler.prototype = {
   handle : function dch_handle(cmdLine) {
     var urilist = [];
 
-    if (AppConstants.platform == "win") {
-      // If we don't have a profile selected yet (e.g. the Profile Manager is
-      // displayed) we will crash if we open an url and then select a profile. To
-      // prevent this handle all url command line flags and set the command line's
-      // preventDefault to true to prevent the display of the ui. The initial
-      // command line will be retained when nsAppRunner calls LaunchChild though
-      // urls launched after the initial launch will be lost.
-      if (!this._haveProfile) {
+#ifdef XP_WIN
+  // If we don't have a profile selected yet (e.g. the Profile Manager is
+  // displayed) we will crash if we open an url and then select a profile. To
+  // prevent this handle all url command line flags and set the command line's
+  // preventDefault to true to prevent the display of the ui. The initial
+  // command line will be retained when nsAppRunner calls LaunchChild though
+  // urls launched after the initial launch will be lost.
+    if (!this._haveProfile) {
         try {
           // This will throw when a profile has not been selected.
           Services.dirsvc.get("ProfD", Components.interfaces.nsILocalFile);
@@ -707,9 +702,9 @@ nsDefaultCommandLineHandler.prototype = {
         } catch (e) {
           while ((ar = cmdLine.handleFlagWithParam("url", false)));
           cmdLine.preventDefault = true;
-        }
       }
     }
+#endif
 
     try {
       var ar;
@@ -756,9 +751,12 @@ nsDefaultCommandLineHandler.prototype = {
                    URLlist);
       }
 
-    } else if (!cmdLine.preventDefault) {
-      if (AppConstants.isPlatformAndVersionAtLeast("win", "10") &&
-          cmdLine.state != nsICommandLine.STATE_INITIAL_LAUNCH &&
+    }
+#ifdef XP_WIN
+    else if (!cmdLine.preventDefault) {
+      let Windows10OrHigher = Services.vc.compare(Services.sysinfo.getProperty("version"), "10") >= 0;
+
+      if (Windows10OrHigher && cmdLine.state != nsICommandLine.STATE_INITIAL_LAUNCH &&
           WindowsUIUtils.inTabletMode) {
         // In windows 10 tablet mode, do not create a new window, but reuse the existing one.
         let win = RecentWindow.getMostRecentBrowserWindow();
@@ -772,6 +770,7 @@ nsDefaultCommandLineHandler.prototype = {
                  "chrome,dialog=no,all" + gBrowserContentHandler.getFeatures(cmdLine),
                  gBrowserContentHandler.defaultArgs, NO_EXTERNAL_URIS);
     }
+#endif
   },
 
   helpInfo : "",
