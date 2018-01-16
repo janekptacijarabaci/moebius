@@ -6,7 +6,6 @@
 
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
-Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/osfile.jsm"); /* globals OS */
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
@@ -409,7 +408,7 @@ EdgeProfileMigrator.prototype.getLastUsedDate = function() {
  * See MigrationUtils.jsm for slightly more info on how sourceProfiles is used.
  */
 EdgeProfileMigrator.prototype.__defineGetter__("sourceProfiles", function() {
-  let isWin10OrHigher = AppConstants.isPlatformAndVersionAtLeast("win", "10");
+  let isWin10OrHigher = Services.vc.compare(Services.sysinfo.getProperty("version"), "10") >= 0;
   return isWin10OrHigher ? null : [];
 });
 
