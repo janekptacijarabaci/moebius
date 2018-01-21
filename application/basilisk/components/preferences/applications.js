@@ -2,12 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#filter substitution
+
 "use strict";
 
 // Constants & Enumeration Values
 
 Components.utils.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource://gre/modules/AppConstants.jsm");
 const TYPE_MAYBE_FEED = "application/vnd.mozilla.maybe.feed";
 const TYPE_MAYBE_VIDEO_FEED = "application/vnd.mozilla.maybe.video.feed";
 const TYPE_MAYBE_AUDIO_FEED = "application/vnd.mozilla.maybe.audio.feed";
@@ -67,9 +68,11 @@ const PREF_AUDIO_FEED_SELECTED_READER = "browser.audioFeeds.handler.default";
 // identifying the "use plugin" action, so we use this constant instead.
 const kActionUsePlugin = 5;
 
-const ICON_URL_APP = AppConstants.platform == "linux" ?
-                     "moz-icon://dummy.exe?size=16" :
-                     "chrome://browser/skin/preferences/application.png";
+#ifdef XP_LINUX
+const ICON_URL_APP = "moz-icon://dummy.exe?size=16";
+#else
+const ICON_URL_APP = "chrome://browser/skin/preferences/application.png";
+#endif
 
 // For CSS. Can be one of "ask", "save", "plugin" or "feed". If absent, the icon URL
 // was set by us to a custom handler icon and CSS should not try to override it.
@@ -78,20 +81,20 @@ const APP_ICON_ATTR_NAME = "appHandlerIcon";
 // Utilities
 
 function getFileDisplayName(file) {
-  if (AppConstants.platform == "win") {
-    if (file instanceof Ci.nsILocalFileWin) {
-      try {
-        return file.getVersionInfoField("FileDescription");
-      } catch (e) {}
-    }
+#ifdef XP_WIN
+  if (file instanceof Ci.nsILocalFileWin) {
+    try {
+      return file.getVersionInfoField("FileDescription");
+    } catch (e) {}
   }
-  if (AppConstants.platform == "macosx") {
-    if (file instanceof Ci.nsILocalFileMac) {
-      try {
-        return file.bundleDisplayName;
-      } catch (e) {}
-    }
+#elif XP_MACOSX
+  if (file instanceof Ci.nsILocalFileMac) {
+    try {
+      return file.bundleDisplayName;
+    } catch (e) {}
   }
+#endif
+
   return file.leafName;
 }
 
@@ -467,7 +470,11 @@ FeedHandlerInfo.prototype = {
     Cc["@mozilla.org/embeddor.implemented/web-content-handler-registrar;1"].
     getService(Ci.nsIWebContentConverterService),
 
-  _shellSvc: AppConstants.HAVE_SHELL_SERVICE ? getShellService() : null,
+#ifdef HAVE_SHELL_SERVICE
+  _shellSvc: getShellService(),
+#else
+  _shellSvc: null,
+#endif
 
   // nsIHandlerInfo
 
@@ -587,13 +594,13 @@ FeedHandlerInfo.prototype = {
       return this.__defaultApplicationHandler;
 
     var defaultFeedReader = null;
-    if (AppConstants.HAVE_SHELL_SERVICE) {
-      try {
-        defaultFeedReader = this._shellSvc.defaultFeedReader;
-      } catch (ex) {
-        // no default reader or _shellSvc is null
-      }
+#ifdef HAVE_SHELL_SERVICE
+    try {
+      defaultFeedReader = this._shellSvc.defaultFeedReader;
+    } catch (ex) {
+      // no default reader or _shellSvc is null
     }
+#endif
 
     if (defaultFeedReader) {
       let handlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"].
@@ -611,14 +618,14 @@ FeedHandlerInfo.prototype = {
   },
 
   get hasDefaultHandler() {
-    if (AppConstants.HAVE_SHELL_SERVICE) {
-      try {
-        if (this._shellSvc.defaultFeedReader)
-          return true;
-      } catch (ex) {
-        // no default reader or _shellSvc is null
-      }
+#ifdef HAVE_SHELL_SERVICE
+    try {
+      if (this._shellSvc.defaultFeedReader)
+        return true;
+    } catch (ex) {
+      // no default reader or _shellSvc is null
     }
+#endif
 
     return false;
   },
@@ -1317,13 +1324,13 @@ var gApplicationsPane = {
 
   _isValidHandlerExecutable(aExecutable) {
     let leafName;
-    if (AppConstants.platform == "win") {
-      leafName = `${AppConstants.MOZ_APP_NAME}.exe`;
-    } else if (AppConstants.platform == "macosx") {
-      leafName = AppConstants.MOZ_MACBUNDLE_NAME;
-    } else {
-      leafName = `${AppConstants.MOZ_APP_NAME}-bin`;
-    }
+#ifdef XP_WIN
+    leafName = '@MOZ_APP_NAME@.exe';
+#elif XP_MACOSX
+    leafName = '@MOZ_MACBUNDLE_NAME@';
+#else
+    leafName = '@MOZ_APP_NAME@-bin';
+#endif
     return aExecutable &&
            aExecutable.exists() &&
            aExecutable.isExecutable() &&
@@ -1465,13 +1472,13 @@ var gApplicationsPane = {
 
     // Create a menu item for selecting a local application.
     let canOpenWithOtherApp = true;
-    if (AppConstants.platform == "win") {
-      // On Windows, selecting an application to open another application
-      // would be meaningless so we special case executables.
-      let executableType = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService)
-                                                    .getTypeFromExtension("exe");
-      canOpenWithOtherApp = handlerInfo.type != executableType;
-    }
+#ifdef XP_WIN
+    // On Windows, selecting an application to open another application
+    // would be meaningless so we special case executables.
+    let executableType = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService)
+                                                  .getTypeFromExtension("exe");
+    canOpenWithOtherApp = handlerInfo.type != executableType;
+#endif
     if (canOpenWithOtherApp) {
       let menuItem = document.createElement("menuitem");
       menuItem.className = "choose-app-item";
@@ -1714,61 +1721,61 @@ var gApplicationsPane = {
       }
     }.bind(this);
 
-    if (AppConstants.platform == "win") {
-      var params = {};
-      var handlerInfo = this._handledTypes[this._list.selectedItem.type];
+#ifdef XP_WIN
+    var params = {};
+    var handlerInfo = this._handledTypes[this._list.selectedItem.type];
 
-      if (isFeedType(handlerInfo.type)) {
-        // MIME info will be null, create a temp object.
-        params.mimeInfo = this._mimeSvc.getFromTypeAndExtension(handlerInfo.type,
-                                                   handlerInfo.primaryExtension);
-      } else {
-        params.mimeInfo = handlerInfo.wrappedHandlerInfo;
+    if (isFeedType(handlerInfo.type)) {
+      // MIME info will be null, create a temp object.
+      params.mimeInfo = this._mimeSvc.getFromTypeAndExtension(handlerInfo.type,
+                                                 handlerInfo.primaryExtension);
+    } else {
+      params.mimeInfo = handlerInfo.wrappedHandlerInfo;
+    }
+
+    params.title         = this._prefsBundle.getString("fpTitleChooseApp");
+    params.description   = handlerInfo.description;
+    params.filename      = null;
+    params.handlerApp    = null;
+
+    let onAppSelected = () => {
+      if (this.isValidHandlerApp(params.handlerApp)) {
+        handlerApp = params.handlerApp;
+
+        // Add the app to the type's list of possible handlers.
+        handlerInfo.addPossibleApplicationHandler(handlerApp);
       }
 
-      params.title         = this._prefsBundle.getString("fpTitleChooseApp");
-      params.description   = handlerInfo.description;
-      params.filename      = null;
-      params.handlerApp    = null;
+      chooseAppCallback(handlerApp);
+    };
 
-      let onAppSelected = () => {
-        if (this.isValidHandlerApp(params.handlerApp)) {
-          handlerApp = params.handlerApp;
+    gSubDialog.open("chrome://global/content/appPicker.xul",
+                    null, params, onAppSelected);
+#else
+    let winTitle = this._prefsBundle.getString("fpTitleChooseApp");
+    let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+    let fpCallback = function fpCallback_done(aResult) {
+      if (aResult == Ci.nsIFilePicker.returnOK && fp.file &&
+          this._isValidHandlerExecutable(fp.file)) {
+        handlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"].
+                     createInstance(Ci.nsILocalHandlerApp);
+        handlerApp.name = getFileDisplayName(fp.file);
+        handlerApp.executable = fp.file;
 
-          // Add the app to the type's list of possible handlers.
-          handlerInfo.addPossibleApplicationHandler(handlerApp);
-        }
+        // Add the app to the type's list of possible handlers.
+        let handler = this._handledTypes[this._list.selectedItem.type];
+        handler.addPossibleApplicationHandler(handlerApp);
 
         chooseAppCallback(handlerApp);
-      };
+      }
+    }.bind(this);
 
-      gSubDialog.open("chrome://global/content/appPicker.xul",
-                      null, params, onAppSelected);
-    } else {
-      let winTitle = this._prefsBundle.getString("fpTitleChooseApp");
-      let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-      let fpCallback = function fpCallback_done(aResult) {
-        if (aResult == Ci.nsIFilePicker.returnOK && fp.file &&
-            this._isValidHandlerExecutable(fp.file)) {
-          handlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"].
-                       createInstance(Ci.nsILocalHandlerApp);
-          handlerApp.name = getFileDisplayName(fp.file);
-          handlerApp.executable = fp.file;
-
-          // Add the app to the type's list of possible handlers.
-          let handler = this._handledTypes[this._list.selectedItem.type];
-          handler.addPossibleApplicationHandler(handlerApp);
-
-          chooseAppCallback(handlerApp);
-        }
-      }.bind(this);
-
-      // Prompt the user to pick an app.  If they pick one, and it's a valid
-      // selection, then add it to the list of possible handlers.
-      fp.init(window, winTitle, Ci.nsIFilePicker.modeOpen);
-      fp.appendFilters(Ci.nsIFilePicker.filterApps);
-      fp.open(fpCallback);
-    }
+    // Prompt the user to pick an app.  If they pick one, and it's a valid
+    // selection, then add it to the list of possible handlers.
+    fp.init(window, winTitle, Ci.nsIFilePicker.modeOpen);
+    fp.appendFilters(Ci.nsIFilePicker.filterApps);
+    fp.open(fpCallback);
+#endif
   },
 
   // Mark which item in the list was last selected so we can reselect it
