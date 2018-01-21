@@ -53,9 +53,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     </content>
 
     <implementation implements="nsIObserver, nsIDOMEventListener">
-      <field name="AppConstants" readonly="true">
-        (Components.utils.import("resource://gre/modules/AppConstants.jsm", {})).AppConstants;
-      </field>
 
       <field name="ExtensionSearchHandler" readonly="true">
         (Components.utils.import("resource://gre/modules/ExtensionSearchHandler.jsm", {})).ExtensionSearchHandler;
@@ -641,9 +638,11 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
           }
 
           let url = aUrl;
-          let accel = this.AppConstants.platform == "macosx" ?
-                      aTriggeringEvent.metaKey :
-                      aTriggeringEvent.ctrlKey;
+#ifdef XP_MACOSX
+          let accel = aTriggeringEvent.metaKey;
+#else
+          let accel = aTriggeringEvent.ctrlKey;
+#endif
           let shift = aTriggeringEvent.shiftKey;
           let suffix = "";
 
@@ -1081,9 +1080,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
               KeyEvent.DOM_VK_ALT,
               KeyEvent.DOM_VK_SHIFT,
             ]);
-            let modifier = this.AppConstants.platform == "macosx" ?
-                           KeyEvent.DOM_VK_META :
-                           KeyEvent.DOM_VK_CONTROL;
+#ifdef XP_MACOSX
+            let modifier = KeyEvent.DOM_VK_META;
+#else
+            let modifier = KeyEvent.DOM_VK_CONTROL;
+#endif
+
             this.__noActionKeys.add(modifier);
           }
           return this.__noActionKeys;
