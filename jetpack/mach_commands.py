@@ -23,9 +23,9 @@ from mach.decorators import (
 @CommandProvider
 class MachCommands(MachCommandBase):
     @Command('generate-addon-sdk-moz-build', category='misc',
-        description='Generates the moz.build file for the addon-sdk/ directory.')
+        description='Generates the moz.build file for the jetpack/ directory.')
     def run_addon_sdk_moz_build(self, **params):
-        addon_sdk_dir = mozpath.join(self.topsrcdir, 'addon-sdk')
+        addon_sdk_dir = mozpath.join(self.topsrcdir, 'jetpack')
         js_src_dir = mozpath.join(addon_sdk_dir, 'source/lib')
         dirs_to_files = {}
 
