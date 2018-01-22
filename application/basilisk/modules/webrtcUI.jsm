@@ -835,7 +835,7 @@ function removePrompt(aBrowser, aCallId) {
 }
 
 function getGlobalIndicator() {
-#ifdef XP_MACOSX
+#ifndef XP_MACOSX
   const INDICATOR_CHROME_URI = "chrome://browser/content/webrtcIndicator.xul";
   const features = "chrome,dialog=yes,titlebar=no,popup=yes";
 

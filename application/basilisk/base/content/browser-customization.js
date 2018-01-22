@@ -63,7 +63,7 @@ var CustomizationHandler = {
       gHomeButton.updateTooltip();
       XULBrowserWindow.init();
 
-#ifdef XP_MACOSX
+#ifndef XP_MACOSX
       updateEditUIVisibility();
 #endif
 

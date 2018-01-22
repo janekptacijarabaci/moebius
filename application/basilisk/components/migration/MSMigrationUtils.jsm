@@ -722,7 +722,7 @@ WindowsVaultFormPasswords.prototype = {
 
   get exists() {
     // work only on windows 8+
-    if (Services.vc.compare(Services.sysinfo.getProperty("version"), "10") >= 0) {
+    if (Services.vc.compare(Services.sysinfo.getProperty("version"), "6.2") >= 0) {
       // check if there are passwords available for migration.
       return this.migrate(() => {}, true);
     }

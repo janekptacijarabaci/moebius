@@ -3314,7 +3314,7 @@
         <parameter name="aTab"/>
         <body>
           <![CDATA[
-#ifdef E10S_TESTING_ONLY
+#ifndef E10S_TESTING_ONLY
             throw "This method is intended only for e10s testing!";
 #endif
             let url = aTab.linkedBrowser.currentURI.spec;

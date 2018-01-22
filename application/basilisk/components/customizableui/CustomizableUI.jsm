@@ -202,7 +202,7 @@ var CustomizableUIInternal = {
       "sync-button",
     ];
 
-#ifdef MOZ_DEV_EDITION
+#ifndef MOZ_DEV_EDITION
     panelPlacements.splice(-1, 0, "developer-button");
 #endif
 

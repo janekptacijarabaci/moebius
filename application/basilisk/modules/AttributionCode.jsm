@@ -30,7 +30,7 @@ function getAttributionFile() {
   let file = Services.dirsvc.get("LocalAppData", Ci.nsIFile);
   // appinfo does not exist in xpcshell, so we need defaults.
   file.append(Services.appinfo.vendor || "mozilla");
-  file.append(Services.appinfo.name);
+  file.append(Services.appinfo.name.toLowerCase());
   file.append("postSigningData");
   return file;
 }
