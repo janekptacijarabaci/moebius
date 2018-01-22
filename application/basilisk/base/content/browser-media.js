@@ -232,8 +232,9 @@ let gDecoderDoctorHandler = {
     if (type == "cannot-initialize-pulseaudio") {
       return "fix-common-audio-and-video-issues";
     }
-#endif
+
     return "";
+#endif
   },
 
   receiveMessage({target: browser, data: data}) {
