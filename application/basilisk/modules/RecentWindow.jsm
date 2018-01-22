@@ -41,13 +41,14 @@ this.RecentWindow = {
     // if we're lucky, this isn't a popup, and we can just return this
     if (win && !isSuitableBrowserWindow(win)) {
       win = null;
-    let windowList = Services.wm.getEnumerator("navigator:browser");
-    // this is oldest to newest, so this gets a bit ugly
-    while (windowList.hasMoreElements()) {
-      let nextWin = windowList.getNext();
-      if (isSuitableBrowserWindow(nextWin))
-        win = nextWin;
-    }
+      let windowList = Services.wm.getEnumerator("navigator:browser");
+      // this is oldest to newest, so this gets a bit ugly
+      while (windowList.hasMoreElements()) {
+        let nextWin = windowList.getNext();
+        if (isSuitableBrowserWindow(nextWin)) {
+          win = nextWin;
+        }
+      }
     }
     return win;
 #endif

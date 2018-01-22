@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+#filter substitution 
+
 this.EXPORTED_SYMBOLS = ["AttributionCode"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
@@ -30,7 +32,7 @@ function getAttributionFile() {
   let file = Services.dirsvc.get("LocalAppData", Ci.nsIFile);
   // appinfo does not exist in xpcshell, so we need defaults.
   file.append(Services.appinfo.vendor || "mozilla");
-  file.append(Services.appinfo.name.toLowerCase());
+  file.append("@MOZ_APP_NAME@");
   file.append("postSigningData");
   return file;
 }
