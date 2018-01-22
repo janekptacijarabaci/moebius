@@ -55,8 +55,7 @@ this.AboutHomeUtils = {
 #ifndef MOZILLA_OFFICIAL
       // Non-official builds shouldn't show the notification.
       return false;
-#endif
-
+#else
     // Look to see if the user has seen the current version or not.
     var currentVersion = Services.prefs.getIntPref("browser.rights.version");
     try {
@@ -71,6 +70,7 @@ this.AboutHomeUtils = {
 
     // We haven't shown the notification before, so do so now.
     return true;
+#endif
   }
 };
 
