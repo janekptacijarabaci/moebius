@@ -150,7 +150,7 @@ DIRS += [
 if 'gtk' in CONFIG['MOZ_WIDGET_TOOLKIT']:
     DIRS += ['/toolkit/system/gnome']
 
-DIRS += ['/addon-sdk']
+DIRS += ['/jetpack']
 
 if CONFIG['ENABLE_MARIONETTE']:
     DIRS += [
@@ -160,8 +160,12 @@ if CONFIG['ENABLE_MARIONETTE']:
 
 DIRS += [
     '/tools/quitter',
-    '/media/gmp-clearkey/0.1',
 ]
+
+if CONFIG['MOZ_EME']:
+    DIRS += [
+    '/media/gmp-clearkey/0.1',
+    ]
 
 if CONFIG['ENABLE_TESTS']:
     DIRS += [

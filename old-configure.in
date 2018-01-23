@@ -68,7 +68,7 @@ GNOMEUI_VERSION=2.2.0
 GCONF_VERSION=1.2.1
 STARTUP_NOTIFICATION_VERSION=0.8
 DBUS_VERSION=0.60
-SQLITE_VERSION=3.19.3
+SQLITE_VERSION=3.21.0
 
 dnl Set various checks
 dnl ========================================================
@@ -748,6 +748,9 @@ if test "$MOZ_DMD"; then
         CFLAGS="$CFLAGS -funwind-tables"
         CXXFLAGS="$CXXFLAGS -funwind-tables"
     fi
+    
+    MOZ_MEMORY=1                        # DMD enables jemalloc
+    MOZ_REPLACE_MALLOC=1                # DMD enables replace-malloc
 fi
 
 dnl ========================================================
@@ -809,8 +812,8 @@ if test -z "$MOZILLA_VERSION"; then
 fi
 
 dnl Get version of various core apps from the version files.
-FIREFOX_VERSION=`cat $_topsrcdir/browser/config/version.txt`
-FIREFOX_VERSION_DISPLAY=`cat $_topsrcdir/browser/config/version_display.txt`
+FIREFOX_VERSION=`cat $_topsrcdir/application/basilisk/config/version.txt`
+FIREFOX_VERSION_DISPLAY=`cat $_topsrcdir/application/basilisk/config/version_display.txt`
 
 if test -z "$FIREFOX_VERSION"; then
     AC_MSG_ERROR([FIREFOX_VERSION is unexpectedly blank.])
@@ -836,6 +839,10 @@ case "$target" in
     MKSHLIB='$(CXX) $(CXXFLAGS) $(DSO_PIC_CFLAGS) $(DSO_LDOPTS) -o $@'
     MKCSHLIB='$(CC) $(CFLAGS) $(DSO_PIC_CFLAGS) $(DSO_LDOPTS) -o $@'
     MOZ_OPTIMIZE_FLAGS="-O3"
+    # Statically disable jemalloc on 10.5 and 32-bit 10.6.  See bug 702250.
+    if test "$HAVE_64BIT_BUILD"; then
+        MOZ_MEMORY=1
+    fi
     CXXFLAGS="$CXXFLAGS -stdlib=libc++"
     DLL_SUFFIX=".dylib"
     DSO_LDOPTS=''
@@ -929,6 +936,8 @@ case "$target" in
         fi
     fi
 
+    MOZ_MEMORY=1
+    
     case "${target_cpu}" in
     alpha*)
         CFLAGS="$CFLAGS -mieee"
@@ -1152,12 +1161,12 @@ case "$target" in
             dnl See https://connect.microsoft.com/VisualStudio/feedback/details/1044914/fatal-error-lnk1248
             LDFLAGS="$LDFLAGS -MaxILKSize:0x7FF00000"
         fi
-        dnl Minimum reqiurement of Goanna is VS2010 or later which supports
-        dnl both SSSE3 and SSE4.1.
+        dnl Minimum requirement of Goanna is VS2013 which supports
+        dnl SSSE3, SSE4.1 and AVX2.
         HAVE_TOOLCHAIN_SUPPORT_MSSSE3=1
         HAVE_TOOLCHAIN_SUPPORT_MSSE4_1=1
-        dnl allow AVX2 code from VS2012
         HAVE_X86_AVX2=1
+        MOZ_MEMORY=1
     fi
     AC_DEFINE(WIN32_LEAN_AND_MEAN)
     dnl See http://support.microsoft.com/kb/143208 to use STL
@@ -2213,7 +2222,7 @@ MOZ_ARG_HEADER(Application)
 ENABLE_SYSTEM_EXTENSION_DIRS=1
 MOZ_BRANDING_DIRECTORY=
 MOZ_OFFICIAL_BRANDING=
-MC_OFFICIAL=1
+MC_OFFICIAL=
 MOZ_FEEDS=1
 MOZ_AUTH_EXTENSION=1
 if test "$MOZ_IOS"; then
@@ -2225,6 +2234,13 @@ MOZ_TREMOR=
 MOZ_SAMPLE_TYPE_FLOAT32=
 MOZ_SAMPLE_TYPE_S16=
 MOZ_DIRECTSHOW=
+MOZ_WMF=
+if test -n "$MOZ_FMP4"; then
+  MOZ_FMP4=1
+else
+  MOZ_FMP4=
+fi
+MOZ_FFMPEG=
 MOZ_WEBRTC=1
 MOZ_PEERCONNECTION=
 MOZ_SRTP=
@@ -2274,6 +2290,7 @@ esac
 case "${target}" in
     *-android*|*-linuxandroid*)
         MOZ_THEME_FASTSTRIPE=1
+        MOZ_MEMORY=1
         MOZ_RAW=1
         ;;
 
@@ -2298,21 +2315,20 @@ AC_SUBST(MOZ_ANDROID_DISTRIBUTION_DIRECTORY)
 dnl ========================================================
 dnl = Vendor override
 dnl ========================================================
-MOZ_ARG_DISABLE_BOOL(official-vendor,
-[  --disable-official-vendor   Disable the use of official vendor.],
-    MC_OFFICIAL=,
-    MC_OFFICIAL=1)
+MOZ_ARG_ENABLE_BOOL(official-vendor,
+[  --enable-official-vendor   This is an official release build.],
+    MC_OFFICIAL=1,
+    MC_OFFICIAL=)
 
 dnl ========================================================
 dnl = Trademarked Branding
 dnl ========================================================
 MOZ_ARG_ENABLE_BOOL(official-branding,
 [  --enable-official-branding
-                          Enable Official mozilla.org Branding
+                          Enable Official Branding
                           Do not distribute builds with
                           --enable-official-branding unless you have
-                          permission to use trademarks per
-                          http://www.mozilla.org/foundation/trademarks/ .],
+                          permission to use our trademarks!],
     MOZ_OFFICIAL_BRANDING=1,
     MOZ_OFFICIAL_BRANDING=)
 
@@ -2379,14 +2395,9 @@ if test -n "$MOZ_GRAPHENE"; then
     AC_DEFINE(MOZ_GRAPHENE)
 fi
 
-if test -n "$MOZ_MULET"; then
-    AC_DEFINE(MOZ_MULET)
-fi
-
 AC_SUBST(MOZ_PHOENIX)
 AC_SUBST(MOZ_XULRUNNER)
 AC_SUBST(MOZ_B2G)
-AC_SUBST(MOZ_MULET)
 AC_SUBST(MOZ_B2G_VERSION)
 
 dnl ========================================================
@@ -2542,6 +2553,7 @@ if test -n "$MOZ_OFFICIAL_BRANDING"; then
   else
     MOZ_BRANDING_DIRECTORY=${MOZ_OFFICIAL_BRANDING_DIRECTORY}
     AC_DEFINE(MOZ_OFFICIAL_BRANDING)
+dnl Using official branding implies an official release build.
     MC_OFFICIAL=1
   fi
 fi
@@ -2906,6 +2918,10 @@ AC_SUBST(MOZ_RAW)
 dnl ========================================================
 dnl = Apple platform decoder support
 dnl ========================================================
+if test "$MOZ_WIDGET_TOOLKIT" = "cocoa" || test "$MOZ_WIDGET_TOOLKIT" = "uikit"; then
+  MOZ_APPLEMEDIA=1
+fi
+
 if test "$COMPILE_ENVIRONMENT"; then
 if test -n "$MOZ_APPLEMEDIA"; then
   # hack in frameworks for fmp4 - see bug 1029974
@@ -2916,6 +2932,10 @@ if test -n "$MOZ_APPLEMEDIA"; then
     [AC_MSG_ERROR([MacOS X 10.7 SDK or later is required])])
 fi
 fi # COMPILE_ENVIRONMENT
+
+if test -n "$MOZ_APPLEMEDIA"; then
+  AC_DEFINE(MOZ_APPLEMEDIA)
+fi;
 
 dnl ========================================================
 dnl = DirectShow support
@@ -2935,8 +2955,72 @@ if test -n "$MOZ_DIRECTSHOW"; then
 fi;
 
 dnl ========================================================
+dnl = Windows Media Foundation support
+dnl ========================================================
+if test "$OS_ARCH" = "WINNT"; then
+    dnl Enable Windows Media Foundation support by default.
+    dnl Note our minimum SDK version is Windows 7 SDK, so we are (currently)
+    dnl guaranteed to have a recent-enough SDK to build WMF.
+    MOZ_WMF=1
+fi
+
+MOZ_ARG_DISABLE_BOOL(wmf,
+[  --disable-wmf  Disable support for Windows Media Foundation],
+    MOZ_WMF=,
+    MOZ_WMF=1)
+
+if test -n "$MOZ_WMF"; then
+    AC_DEFINE(MOZ_WMF)
+fi;
+
+dnl ========================================================
+dnl FFmpeg H264/AAC Decoding Support
+dnl ========================================================
+case "$OS_TARGET" in
+WINNT|Android)
+    ;;
+*)
+    MOZ_FFMPEG=1
+    ;;
+esac
+
+MOZ_ARG_DISABLE_BOOL(ffmpeg,
+[  --disable-ffmpeg         Disable FFmpeg for fragmented H264/AAC decoding],
+    MOZ_FFMPEG=,
+    MOZ_FFMPEG=1
+)
+
+if test -n "$MOZ_FFMPEG"; then
+    AC_DEFINE(MOZ_FFMPEG)
+fi;
+
+dnl ========================================================
 dnl = Built-in fragmented MP4 support.
 dnl ========================================================
+
+if test "$OS_TARGET" = Android -a -z "$gonkdir"; then
+    MOZ_FMP4=1
+fi
+
+if test -n "$MOZ_WMF" -o -n "$MOZ_FFMPEG" -o -n "$MOZ_APPLEMEDIA"; then
+    dnl Enable fragmented MP4 parser on Windows by default.
+    dnl We will also need to enable it on other platforms as we implement
+    dnl platform decoder support there too.
+    MOZ_FMP4=1
+fi
+
+MOZ_ARG_DISABLE_BOOL(fmp4,
+[  --disable-fmp4  Disable support for in built Fragmented MP4 parsing],
+    MOZ_FMP4=,
+    MOZ_FMP4=1)
+
+if test -n "$MOZ_FFMPEG" -a -z "$MOZ_FMP4"; then
+    AC_MSG_ERROR([Fragmented MP4 support must be enabled if using FFMPEG])
+fi
+
+if test -n "$MOZ_FMP4"; then
+    AC_DEFINE(MOZ_FMP4)
+fi;
 
 if test x"$MOZ_WIDGET_TOOLKIT" = x"gonk" -a -n "$MOZ_FMP4" -a -n "$android_version"; then
     # we now know for sure that $android_version is not an empty string!
@@ -2946,6 +3030,35 @@ if test x"$MOZ_WIDGET_TOOLKIT" = x"gonk" -a -n "$MOZ_FMP4" -a -n "$android_versi
     fi
 fi
 
+dnl ========================================================
+dnl = EME support
+dnl ========================================================
+
+MOZ_ARG_ENABLE_STRING(eme,
+[  --enable-eme[=widevine]  Enable support for Encrypted Media Extensions  ],
+    MOZ_EME_ARGS=$enableval)
+
+if test "$MOZ_EME_ARGS"; then
+    if test "$MOZ_EME_ARGS" = "no"; then
+        dnl EME explicitly disabled with --disable-eme
+        MOZ_EME=
+    elif test "$MOZ_EME_ARGS" = "yes"; then
+        dnl EME explicitly enabled with --enable-eme
+        MOZ_EME=1
+    else
+        dnl EME explicitly enabled with --enable-eme=<args>
+        MOZ_EME=1
+        MOZ_EME_MODULES=`echo $MOZ_EME_ARGS | sed -e 's/,/ /g'`
+    fi
+fi
+
+AC_SUBST_SET(MOZ_EME_MODULES)
+if test -n "$MOZ_EME"; then
+    if test -z "$MOZ_FMP4"; then
+        AC_MSG_ERROR([Encrypted Media Extension support requires Fragmented MP4 support])
+    fi
+    AC_DEFINE(MOZ_EME)
+fi
 
 dnl ========================================================
 dnl = Enable media plugin support
@@ -4163,6 +4276,14 @@ if test -n "$MOZ_DEBUG"; then
     AC_DEFINE(MOZ_DUMP_PAINTING)
 fi
 
+dnl ========================================================
+dnl = Enable jemalloc
+dnl ========================================================
+MOZ_ARG_ENABLE_BOOL(jemalloc,
+[  --enable-jemalloc       Replace memory allocator with jemalloc],
+    MOZ_MEMORY=1,
+    MOZ_MEMORY=)
+
 case "${OS_TARGET}" in
 Android|WINNT|Darwin)
   MOZ_GLUE_IN_PROGRAM=
@@ -4174,7 +4295,24 @@ Android|WINNT|Darwin)
   ;;
 esac
 
-if test -n "$MOZ_REPLACE_MALLOC"; then
+dnl ========================================================
+dnl = Enable dynamic replacement of malloc implementation
+dnl ========================================================
+if test -n "$NIGHTLY_BUILD" -a -n "$MOZ_MEMORY"; then
+  # Enable on central for the debugging opportunities it adds.
+  MOZ_REPLACE_MALLOC=1
+fi
+MOZ_ARG_ENABLE_BOOL(replace-malloc,
+[  --enable-replace-malloc   Enable ability to dynamically replace the malloc implementation],
+    MOZ_REPLACE_MALLOC=1,
+    MOZ_REPLACE_MALLOC= )
+
+if test -n "$MOZ_REPLACE_MALLOC" -a -z "$MOZ_MEMORY"; then
+    dnl We don't want to enable jemalloc unconditionally because it may be a
+    dnl deliberate choice not to enable it (bug 702250, for instance)
+    AC_MSG_ERROR([--enable-replace-malloc requires --enable-jemalloc])
+elif test -n "$MOZ_REPLACE_MALLOC"; then
+    AC_DEFINE(MOZ_REPLACE_MALLOC)
     MOZ_SYSTEM_JEMALLOC=
 
     dnl Replace-malloc Mac linkage quirks
@@ -4229,12 +4367,25 @@ if test -n "$MOZ_REPLACE_MALLOC"; then
         MOZ_REPLACE_MALLOC_LINKAGE="$ac_cv_weak_dynamic_linking"
     fi
 fi
+AC_SUBST(MOZ_REPLACE_MALLOC)
 AC_SUBST(MOZ_REPLACE_MALLOC_LINKAGE)
 
 dnl ========================================================
 dnl = Jemalloc build setup
 dnl ========================================================
 if test -z "$MOZ_MEMORY"; then
+  if test -n "$MOZ_JEMALLOC4" -a -z "$MOZ_REPLACE_MALLOC"; then
+    MOZ_SYSTEM_JEMALLOC=1
+    AC_CHECK_FUNCS(mallctl nallocx,,
+      [MOZ_SYSTEM_JEMALLOC=
+       break])
+    if test -n "$MOZ_SYSTEM_JEMALLOC"; then
+      MOZ_MEMORY=1
+      AC_DEFINE(MOZ_MEMORY)
+      AC_DEFINE(MOZ_JEMALLOC4)
+      AC_DEFINE(MOZ_SYSTEM_JEMALLOC)
+    fi
+  fi
   case "${target}" in
     *-mingw*)
       if test -z "$WIN32_REDIST_DIR" -a -z "$MOZ_DEBUG"; then
@@ -4243,14 +4394,9 @@ if test -z "$MOZ_MEMORY"; then
       ;;
   esac
 else
-  if test -n "$MOZ_JEMALLOC4" -a -z "$MOZ_REPLACE_MALLOC"; then
-    MOZ_SYSTEM_JEMALLOC=1
-    AC_CHECK_FUNCS(mallctl nallocx,,
-      [MOZ_SYSTEM_JEMALLOC=
-       break])
-    if test -n "$MOZ_SYSTEM_JEMALLOC"; then
-      AC_DEFINE(MOZ_SYSTEM_JEMALLOC)
-    fi
+  AC_DEFINE(MOZ_MEMORY)
+  if test -n "$MOZ_JEMALLOC4"; then
+    AC_DEFINE(MOZ_JEMALLOC4)
   fi
   if test "x$MOZ_DEBUG" = "x1"; then
     AC_DEFINE(MOZ_MEMORY_DEBUG)
@@ -4259,11 +4405,33 @@ else
   dnl complicated.  Therefore, simply define special cpp variables for the
   dnl platforms we have special knowledge of.
   case "${target}" in
+  *-darwin*)
+    AC_DEFINE(MOZ_MEMORY_DARWIN)
+    ;;
+  *-*freebsd*)
+    AC_DEFINE(MOZ_MEMORY_BSD)
+    ;;
+  *-android*|*-linuxandroid*)
+    AC_DEFINE(MOZ_MEMORY_LINUX)
+    AC_DEFINE(MOZ_MEMORY_ANDROID)
+    ;;
+  *-*linux*)
+    AC_DEFINE(MOZ_MEMORY_LINUX)
+    ;;
+  *-netbsd*)
+    AC_DEFINE(MOZ_MEMORY_BSD)
+    ;;
   *-mingw*)
+    AC_DEFINE(MOZ_MEMORY_WINDOWS)
     export MOZ_NO_DEBUG_RTL=1
+    ;;
+  *)
+    AC_MSG_ERROR([--enable-jemalloc not supported on ${target}])
     ;;
   esac
 fi # MOZ_MEMORY
+AC_SUBST(MOZ_MEMORY)
+AC_SUBST(MOZ_JEMALLOC4)
 AC_SUBST(MOZ_SYSTEM_JEMALLOC)
 AC_SUBST(MOZ_GLUE_IN_PROGRAM)
 
@@ -5289,7 +5457,7 @@ AC_SUBST(MOZ_SIMPLE_PACKAGE_NAME)
 AC_SUBST(MOZILLA_OFFICIAL)
 if test "$MOZILLA_OFFICIAL"; then
     AC_DEFINE(MOZILLA_OFFICIAL)
-    # Build revisions should always be present in official builds
+    # Build revisions should always be present in Mozilla official builds
     MOZ_INCLUDE_SOURCE_INFO=1
 fi
 
@@ -5448,10 +5616,15 @@ AC_SUBST(WIN32_GUI_EXE_LDFLAGS)
 
 AC_SUBST(MOZ_VORBIS)
 AC_SUBST(MOZ_TREMOR)
+AC_SUBST(MOZ_WMF)
+AC_SUBST(MOZ_FFMPEG)
 AC_SUBST(MOZ_FFVPX)
 AC_SUBST_LIST(FFVPX_ASFLAGS)
+AC_SUBST(MOZ_FMP4)
+AC_SUBST(MOZ_EME)
 AC_SUBST(MOZ_DIRECTSHOW)
 AC_SUBST(MOZ_ANDROID_OMX)
+AC_SUBST(MOZ_APPLEMEDIA)
 AC_SUBST(MOZ_OMX_PLUGIN)
 AC_SUBST(VPX_USE_YASM)
 AC_SUBST_LIST(VPX_ASFLAGS)
@@ -5709,6 +5882,9 @@ if test -n "$NSPR_CFLAGS" -o -n "$NSPR_LIBS"; then
     ac_configure_args="$ac_configure_args --with-nspr-libs='$NSPR_LIBS'"
 fi
 ac_configure_args="$ac_configure_args --prefix=$dist"
+if test "$MOZ_MEMORY"; then
+   ac_configure_args="$ac_configure_args --enable-jemalloc"
+fi
 if test -n "$ZLIB_IN_MOZGLUE"; then
    MOZ_ZLIB_LIBS=
 fi
@@ -5725,6 +5901,7 @@ unset MOZ_BUILD_APP
 export DIST
 export MOZ_LINKER
 export ZLIB_IN_MOZGLUE
+export MOZ_MEMORY
 export AR
 export RANLIB
 export CPP

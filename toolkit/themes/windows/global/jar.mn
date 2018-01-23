@@ -20,6 +20,11 @@ toolkit.jar:
 #endif
   skin/classic/global/colorpicker.css
   skin/classic/global/commonDialog.css
+* skin/classic/global/console/console.css                  (console/console.css)
+  skin/classic/global/console/console-toolbar.png          (console/console-toolbar.png)
+  skin/classic/global/console/console-error-caret.gif      (console/console-error-caret.gif)
+  skin/classic/global/console/console-error-dash.gif       (console/console-error-dash.gif)
+  skin/classic/global/console/itemSelected.png             (console/itemSelected.png)
   skin/classic/global/findBar.css
 * skin/classic/global/global.css
   skin/classic/global/listbox.css
@@ -53,7 +58,7 @@ toolkit.jar:
   skin/classic/global/tree/twisty.svg                            (tree/twisty.svg)
   skin/classic/global/tree/twisty-preWin10.svg                   (tree/twisty-preWin10.svg)
 
-#if MOZ_BUILD_APP == browser
+#ifdef MOZ_PHOENIX
 [browser/extensions/{972ce4c6-7e08-4474-a285-3208198ce6fd}] chrome.jar:
 #elif MOZ_SEPARATE_MANIFEST_FOR_THEME_OVERRIDES
 [extensions/{972ce4c6-7e08-4474-a285-3208198ce6fd}] chrome.jar:

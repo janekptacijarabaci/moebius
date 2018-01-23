@@ -19,6 +19,7 @@ DIRS += [
     'asyncshutdown',
     'browser',
     'commandlines',
+    'console',
     'contentprefs',
     'contextualidentity',
     'crashmonitor',

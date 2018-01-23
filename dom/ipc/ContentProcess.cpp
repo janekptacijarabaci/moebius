@@ -33,9 +33,8 @@ static bool
 IsSandboxTempDirRequired()
 {
   // On Windows, a sandbox-writable temp directory is only used
-  // for Vista or later with sandbox pref level >= 1.
-  return (IsVistaOrLater() &&
-    (Preferences::GetInt("security.sandbox.content.level") >= 1));
+  // with sandbox pref level >= 1.
+  return (Preferences::GetInt("security.sandbox.content.level") >= 1);
 }
 
 static void

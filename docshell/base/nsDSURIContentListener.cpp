@@ -17,6 +17,7 @@
 #include "nsIHttpChannel.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsError.h"
+#include "nsContentSecurityManager.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsIConsoleService.h"
 #include "nsIScriptError.h"
@@ -93,6 +94,14 @@ nsDSURIContentListener::DoContent(const nsACString& aContentType,
 
   if (aOpenedChannel) {
     aOpenedChannel->GetLoadFlags(&loadFlags);
+
+    // block top-level data URI navigations if triggered by the web
+    if (!nsContentSecurityManager::AllowTopLevelNavigationToDataURI(aOpenedChannel)) {
+      // logging to console happens within AllowTopLevelNavigationToDataURI
+      aRequest->Cancel(NS_ERROR_DOM_BAD_URI);
+      *aAbortProcess = true;
+      return NS_OK; 
+    }
   }
 
   if (loadFlags & nsIChannel::LOAD_RETARGETED_DOCUMENT_URI) {
@@ -318,6 +327,11 @@ nsDSURIContentListener::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
     MOZ_CRASH();
   }
 
+  // If the X-Frame-Options value is SAMEORIGIN, then the top frame in the
+  // parent chain must be from the same origin as this document.
+  bool checkSameOrigin = aPolicy.LowerCaseEqualsLiteral("sameorigin");
+  nsCOMPtr<nsIURI> topUri;
+
   // Traverse up the parent chain and stop when we see a docshell whose
   // parent has a system principal, or a docshell corresponding to
   // <iframe mozbrowser>.
@@ -337,6 +351,17 @@ nsDSURIContentListener::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
           system) {
         // Found a system-principled doc: last docshell was top.
         break;
+      }
+
+      if (checkSameOrigin) {
+        topDoc->NodePrincipal()->GetURI(getter_AddRefs(topUri));
+        rv = ssm->CheckSameOriginURI(uri, topUri, true);
+
+        // one of the ancestors is not same origin as this document
+        if (NS_FAILED(rv)) {
+          ReportXFOViolation(curDocShellItem, uri, eSAMEORIGIN);
+          return false;
+        }
       }
     } else {
       return false;
@@ -359,18 +384,7 @@ nsDSURIContentListener::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   }
 
   topDoc = curDocShellItem->GetDocument();
-  nsCOMPtr<nsIURI> topUri;
   topDoc->NodePrincipal()->GetURI(getter_AddRefs(topUri));
-
-  // If the X-Frame-Options value is SAMEORIGIN, then the top frame in the
-  // parent chain must be from the same origin as this document.
-  if (aPolicy.LowerCaseEqualsLiteral("sameorigin")) {
-    rv = ssm->CheckSameOriginURI(uri, topUri, true);
-    if (NS_FAILED(rv)) {
-      ReportXFOViolation(curDocShellItem, uri, eSAMEORIGIN);
-      return false; /* wasn't same-origin */
-    }
-  }
 
   // If the X-Frame-Options value is "allow-from [uri]", then the top
   // frame in the parent chain must be from that origin

@@ -20,7 +20,7 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'android':
 
 DEFINES['ACCEPTED_MAR_CHANNEL_IDS'] = CONFIG['ACCEPTED_MAR_CHANNEL_IDS']
 
-if CONFIG['MOZ_BUILD_APP'] == 'browser':
+if CONFIG['MOZ_PHOENIX']:
     PYTHON_UNITTEST_MANIFESTS += [
         'compare-mozconfig/python.ini',
     ]
@@ -58,7 +58,7 @@ if CONFIG['MOZ_APP_BASENAME']:
     if CONFIG['MOZ_APP_DISPLAYNAME'] != CONFIG['MOZ_APP_BASENAME']:
         appini_defines['MOZ_APP_DISPLAYNAME'] = CONFIG['MOZ_APP_DISPLAYNAME']
 
-    if CONFIG['MOZ_BUILD_APP'] == 'browser':
+    if CONFIG['MOZ_PHOENIX']:
         appini_defines['MOZ_BUILD_APP_IS_BROWSER'] = True
 
     if CONFIG['MOZ_APP_PROFILE']:

@@ -36,11 +36,17 @@ this.AppConstants = Object.freeze({
   false,
 #endif
 
-  // Official corresponds, roughly, to whether this build is performed
-  // on Mozilla's continuous integration infrastructure. You should
+  // Official corresponds to whether this build is considered an
+  // official, branded release for the public. You should
   // disable developer-only functionality when this flag is set.
-  MOZILLA_OFFICIAL:
-#ifdef MOZILLA_OFFICIAL
+  MOZ_OFFICIAL:
+#ifdef MC_OFFICIAL
+  true,
+#else
+  false,
+#endif
+  MC_OFFICIAL:
+#ifdef MC_OFFICIAL
   true,
 #else
   false,
@@ -311,7 +317,14 @@ this.AppConstants = Object.freeze({
   MOZ_APP_NAME: "@MOZ_APP_NAME@",
   MOZ_APP_VERSION: "@MOZ_APP_VERSION@",
   MOZ_APP_VERSION_DISPLAY: "@MOZ_APP_VERSION_DISPLAY@",
-  MOZ_BUILD_APP: "@MOZ_BUILD_APP@",
+
+  MOZ_BUILD_APP:
+#ifdef MOZ_PHOENIX
+  "browser",
+#else
+  "@MOZ_BUILD_APP@",
+#endif
+
   MOZ_MACBUNDLE_NAME: "@MOZ_MACBUNDLE_NAME@",
   MOZ_UPDATE_CHANNEL: "@MOZ_UPDATE_CHANNEL@",
   INSTALL_LOCALE: "@AB_CD@",

@@ -110,8 +110,6 @@ add_old_configure_assignment('PKG_CONFIG', pkg_config)
 
 include('build/moz.configure/toolchain.configure',
         when='--enable-compile-environment')
-include('build/moz.configure/memory.configure',
-        when='--enable-compile-environment')
 include('build/moz.configure/headers.configure',
         when='--enable-compile-environment')
 include('build/moz.configure/warnings.configure',
