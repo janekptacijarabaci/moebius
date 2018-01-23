@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#filter substitution
+
 "use strict";
 
 this.EXPORTED_SYMBOLS = ["MigrationUtils", "MigratorPrototype"];
@@ -11,7 +13,6 @@ const TOPIC_WILL_IMPORT_BOOKMARKS = "initial-migration-will-import-default-bookm
 const TOPIC_DID_IMPORT_BOOKMARKS = "initial-migration-did-import-default-bookmarks";
 const TOPIC_PLACES_DEFAULTS_FINISHED = "places-browser-init-complete";
 
-Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -46,19 +47,18 @@ let gKeepUndoData = false;
 let gUndoData = null;
 
 XPCOMUtils.defineLazyGetter(this, "gAvailableMigratorKeys", function() {
-  if (AppConstants.platform == "win") {
-    return [
-      "firefox", "edge", "ie", "chrome", "chromium", "360se",
-      "canary"
-    ];
-  }
-  if (AppConstants.platform == "macosx") {
-    return ["firefox", "safari", "chrome", "chromium", "canary"];
-  }
-  if (AppConstants.XP_UNIX) {
-    return ["firefox", "chrome", "chromium"];
-  }
+#ifdef XP_WIN
+  return [
+    "firefox", "edge", "ie", "chrome", "chromium", "360se",
+    "canary"
+  ];
+#elif XP_MACOSX
+  return ["firefox", "safari", "chrome", "chromium", "canary"];
+#elif XP_UNIX
+  return ["firefox", "chrome", "chromium"];
+#else
   return [];
+#endif
 });
 
 function getMigrationBundle() {
@@ -745,10 +745,11 @@ this.MigrationUtils = Object.freeze({
       Cu.reportError("Could not detect default browser: " + ex);
     }
 
+#ifdef XP_WIN
     // "firefox" is the least useful entry here, and might just be because we've set
     // ourselves as the default (on Windows 7 and below). In that case, check if we
     // have a registry key that tells us where to go:
-    if (key == "firefox" && AppConstants.isPlatformAndVersionAtMost("win", "6.2")) {
+    if (key == "firefox" && Services.vc.compare(Services.sysinfo.getProperty("version"), "6.2") >= 0) {
       // Because we remove the registry key, reading the registry key only works once.
       // We save the value for subsequent calls to avoid hard-to-trace bugs when multiple
       // consumers ask for this key.
@@ -775,6 +776,8 @@ this.MigrationUtils = Object.freeze({
         }
       }
     }
+#endif
+
     return key;
   },
 
@@ -817,7 +820,8 @@ this.MigrationUtils = Object.freeze({
   showMigrationWizard:
   function MU_showMigrationWizard(aOpener, aParams) {
     let features = "chrome,dialog,modal,centerscreen,titlebar,resizable=no";
-    if (AppConstants.platform == "macosx" && !this.isStartupMigration) {
+#ifdef XP_MACOSX
+    if (!this.isStartupMigration) {
       let win = Services.wm.getMostRecentWindow("Browser:MigrationWizard");
       if (win) {
         win.focus();
@@ -827,6 +831,7 @@ this.MigrationUtils = Object.freeze({
       // startup-migration.
       features = "centerscreen,chrome,resizable=no";
     }
+#endif
 
     // nsIWindowWatcher doesn't deal with raw arrays, so we convert the input
     let params;
@@ -940,7 +945,7 @@ this.MigrationUtils = Object.freeze({
     }
 
     let isRefresh = migrator && skipSourcePage &&
-                    migratorKey == AppConstants.MOZ_APP_NAME;
+                    migratorKey == "@MOZ_APP_NAME@";
 
     if (!isRefresh && AutoMigrate.enabled) {
       try {

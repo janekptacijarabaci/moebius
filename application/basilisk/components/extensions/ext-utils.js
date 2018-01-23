@@ -20,7 +20,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "styleSheetService",
                                    "nsIStyleSheetService");
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
-Cu.import("resource://gre/modules/AppConstants.jsm");
 
 const POPUP_LOAD_TIMEOUT_MS = 200;
 
@@ -58,21 +57,20 @@ function promisePopupShown(popup) {
 XPCOMUtils.defineLazyGetter(this, "popupStylesheets", () => {
   let stylesheets = ["chrome://browser/content/extension.css"];
 
-  if (AppConstants.platform === "macosx") {
-    stylesheets.push("chrome://browser/content/extension-mac.css");
-  }
+#ifdef XP_MACOSX
+  stylesheets.push("chrome://browser/content/extension-mac.css");
+#endif
   return stylesheets;
 });
 
 XPCOMUtils.defineLazyGetter(this, "standaloneStylesheets", () => {
   let stylesheets = [];
 
-  if (AppConstants.platform === "macosx") {
-    stylesheets.push("chrome://browser/content/extension-mac-panel.css");
-  }
-  if (AppConstants.platform === "win") {
-    stylesheets.push("chrome://browser/content/extension-win-panel.css");
-  }
+#ifdef XP_MACOSX
+  stylesheets.push("chrome://browser/content/extension-mac-panel.css");
+#elif XP_WIN
+  stylesheets.push("chrome://browser/content/extension-win-panel.css");
+#endif
   return stylesheets;
 });
 

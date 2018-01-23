@@ -8,11 +8,12 @@ this.EXPORTED_SYMBOLS = ["ShellService"];
 
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
-Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+#ifdef XP_WIN
 XPCOMUtils.defineLazyModuleGetter(this, "WindowsRegistry",
                                   "resource://gre/modules/WindowsRegistry.jsm");
+#endif
 
 /**
  * Internal functionality to save and restore the docShell.allow* properties.
@@ -26,20 +27,19 @@ let ShellServiceInternal = {
    * environments.
    */
   get canSetDesktopBackground() {
-    if (AppConstants.platform == "win" ||
-        AppConstants.platform == "macosx") {
-      return true;
+#ifdef XP_LINUX
+    if (this.shellService) {
+      let linuxShellService = this.shellService
+                                  .QueryInterface(Ci.nsIGNOMEShellService);
+      return linuxShellService.canSetDesktopBackground;
     }
+#endif
 
-    if (AppConstants.platform == "linux") {
-      if (this.shellService) {
-        let linuxShellService = this.shellService
-                                    .QueryInterface(Ci.nsIGNOMEShellService);
-        return linuxShellService.canSetDesktopBackground;
-      }
-    }
-
-    return false;
+#if defined(XP_WIN) || defined(XP_MACOSX)
+  return true;
+#else
+  return false;
+#endif
   },
 
   /**
@@ -60,18 +60,18 @@ let ShellServiceInternal = {
       return false;
     }
 
-    if (AppConstants.platform == "win") {
-      let optOutValue = WindowsRegistry.readRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-                                                   "Software\\Mozilla\\Basilisk",
-                                                   "DefaultBrowserOptOut");
-      WindowsRegistry.removeRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-                                   "Software\\Mozilla\\Basilisk",
-                                   "DefaultBrowserOptOut");
-      if (optOutValue == "True") {
-        Services.prefs.setBoolPref("browser.shell.checkDefaultBrowser", false);
-        return false;
-      }
+#ifdef XP_WIN
+    let optOutValue = WindowsRegistry.readRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+                                                 "Software\\Mozilla\\Basilisk",
+                                                 "DefaultBrowserOptOut");
+    WindowsRegistry.removeRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+                                 "Software\\Mozilla\\Basilisk",
+                                 "DefaultBrowserOptOut");
+    if (optOutValue == "True") {
+      Services.prefs.setBoolPref("browser.shell.checkDefaultBrowser", false);
+      return false;
     }
+#endif
 
     return true;
   },

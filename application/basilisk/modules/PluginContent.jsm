@@ -20,9 +20,6 @@ XPCOMUtils.defineLazyGetter(this, "gNavigatorBundle", function() {
   return Services.strings.createBundle(url);
 });
 
-XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
-  "resource://gre/modules/AppConstants.jsm");
-
 this.PluginContent = function(global) {
   this.init(global);
 }
@@ -666,9 +663,9 @@ PluginContent.prototype = {
   },
 
   submitReport: function submitReport(plugin) {
-    if (!AppConstants.MOZ_CRASHREPORTER) {
-      return;
-    }
+#ifndef MOZ_CRASHREPORTER
+    return;
+#else
     if (!plugin) {
       Cu.reportError("Attempted to submit crash report without an associated plugin.");
       return;
@@ -690,6 +687,7 @@ PluginContent.prototype = {
 
     this.global.sendAsyncMessage("PluginContent:SubmitReport",
                                  { runID, keyVals, submitURLOptIn });
+#endif
   },
 
   reloadPage() {

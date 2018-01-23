@@ -10,7 +10,6 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PanelWideWidgetTracker",
   "resource:///modules/PanelWideWidgetTracker.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "CustomizableWidgets",
@@ -203,18 +202,18 @@ var CustomizableUIInternal = {
       "sync-button",
     ];
 
-    if (!AppConstants.MOZ_DEV_EDITION) {
-      panelPlacements.splice(-1, 0, "developer-button");
-    }
+#ifndef MOZ_DEV_EDITION
+    panelPlacements.splice(-1, 0, "developer-button");
+#endif
 
-    if (AppConstants.E10S_TESTING_ONLY) {
-      if (gPalette.has("e10s-button")) {
-        let newWindowIndex = panelPlacements.indexOf("new-window-button");
-        if (newWindowIndex > -1) {
-          panelPlacements.splice(newWindowIndex + 1, 0, "e10s-button");
-        }
+#ifdef E10S_TESTING_ONLY
+    if (gPalette.has("e10s-button")) {
+      let newWindowIndex = panelPlacements.indexOf("new-window-button");
+      if (newWindowIndex > -1) {
+        panelPlacements.splice(newWindowIndex + 1, 0, "e10s-button");
       }
     }
+#endif
 
     let showCharacterEncoding = Services.prefs.getComplexValue(
       "browser.menu.showCharacterEncoding",
@@ -224,11 +223,11 @@ var CustomizableUIInternal = {
       panelPlacements.push("characterencoding-button");
     }
 
-    if (AppConstants.NIGHTLY_BUILD) {
-      if (Services.prefs.getBoolPref("extensions.webcompat-reporter.enabled")) {
-        panelPlacements.push("webcompat-reporter-button");
-      }
+#ifdef NIGHTLY_BUILD
+    if (Services.prefs.getBoolPref("extensions.webcompat-reporter.enabled")) {
+      panelPlacements.push("webcompat-reporter-button");
     }
+#endif
 
     this.registerArea(CustomizableUI.AREA_PANEL, {
       anchor: "PanelUI-menu-button",
@@ -245,9 +244,9 @@ var CustomizableUIInternal = {
       "home-button",
     ];
 
-    if (AppConstants.MOZ_DEV_EDITION) {
-      navbarPlacements.splice(2, 0, "developer-button");
-    }
+#ifdef MOZ_DEV_EDITION
+    navbarPlacements.splice(2, 0, "developer-button");
+#endif
 
     if (Services.prefs.getBoolPref(kPrefWebIDEInNavbar)) {
       navbarPlacements.push("webide-button");
@@ -268,16 +267,16 @@ var CustomizableUIInternal = {
       defaultCollapsed: false,
     }, true);
 
-    if (AppConstants.MENUBAR_CAN_AUTOHIDE) {
-      this.registerArea(CustomizableUI.AREA_MENUBAR, {
-        legacy: true,
-        type: CustomizableUI.TYPE_TOOLBAR,
-        defaultPlacements: [
-          "menubar-items",
-        ],
-        defaultCollapsed: true,
-      }, true);
-    }
+#ifdef MENUBAR_CAN_AUTOHIDE
+    this.registerArea(CustomizableUI.AREA_MENUBAR, {
+      legacy: true,
+      type: CustomizableUI.TYPE_TOOLBAR,
+      defaultPlacements: [
+        "menubar-items",
+      ],
+      defaultCollapsed: true,
+    }, true);
+#endif
 
     this.registerArea(CustomizableUI.AREA_TABSTRIP, {
       legacy: true,
@@ -313,9 +312,9 @@ var CustomizableUIInternal = {
       CustomizableUI.AREA_TABSTRIP,
       CustomizableUI.AREA_ADDONBAR,
     ]);
-    if (AppConstants.platform != "macosx") {
-      toolbars.add(CustomizableUI.AREA_MENUBAR);
-    }
+#ifndef XP_MACOSX
+    toolbars.add(CustomizableUI.AREA_MENUBAR);
+#endif
     return toolbars;
   },
 

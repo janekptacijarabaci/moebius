@@ -10,7 +10,6 @@ this.EXPORTED_SYMBOLS = ["CustomizableWidgets"];
 Cu.import("resource:///modules/CustomizableUI.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "BrowserUITelemetry",
   "resource:///modules/BrowserUITelemetry.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
@@ -1150,12 +1149,12 @@ let preferencesButton = {
     win.openPreferences();
   }
 };
-if (AppConstants.platform == "macosx") {
-  preferencesButton.tooltiptext = "preferences-button.tooltiptext.withshortcut";
-  preferencesButton.shortcutId = "key_preferencesCmdMac";
-} else {
-  preferencesButton.tooltiptext = "preferences-button.tooltiptext2";
-}
+#ifdef XP_MACOSX
+preferencesButton.tooltiptext = "preferences-button.tooltiptext.withshortcut";
+preferencesButton.shortcutId = "key_preferencesCmdMac";
+#else
+preferencesButton.tooltiptext = "preferences-button.tooltiptext2";
+#endif
 CustomizableWidgets.push(preferencesButton);
 
 if (Services.prefs.getBoolPref("privacy.panicButton.enabled")) {
@@ -1222,20 +1221,20 @@ if (Services.prefs.getBoolPref("privacy.panicButton.enabled")) {
   });
 }
 
-if (AppConstants.E10S_TESTING_ONLY) {
-  if (Services.appinfo.browserTabsRemoteAutostart) {
-    CustomizableWidgets.push({
-      id: "e10s-button",
-      defaultArea: CustomizableUI.AREA_PANEL,
-      onBuild(aDocument) {
-        let node = aDocument.createElementNS(kNSXUL, "toolbarbutton");
-        node.setAttribute("label", CustomizableUI.getLocalizedProperty(this, "label"));
-        node.setAttribute("tooltiptext", CustomizableUI.getLocalizedProperty(this, "tooltiptext"));
-      },
-      onCommand(aEvent) {
-        let win = aEvent.view;
-        win.OpenBrowserWindow({remote: false});
-      },
-    });
-  }
+#ifdef E10S_TESTING_ONLY
+if (Services.appinfo.browserTabsRemoteAutostart) {
+  CustomizableWidgets.push({
+    id: "e10s-button",
+    defaultArea: CustomizableUI.AREA_PANEL,
+    onBuild(aDocument) {
+      let node = aDocument.createElementNS(kNSXUL, "toolbarbutton");
+      node.setAttribute("label", CustomizableUI.getLocalizedProperty(this, "label"));
+      node.setAttribute("tooltiptext", CustomizableUI.getLocalizedProperty(this, "tooltiptext"));
+    },
+    onCommand(aEvent) {
+      let win = aEvent.view;
+      win.OpenBrowserWindow({remote: false});
+    },
+  });
 }
+#endif

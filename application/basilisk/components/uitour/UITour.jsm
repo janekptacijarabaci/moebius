@@ -8,7 +8,6 @@ this.EXPORTED_SYMBOLS = ["UITour"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
-Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
@@ -1814,17 +1813,24 @@ this.UITour = {
         appinfo["defaultBrowser"] = isDefaultBrowser;
 
         let canSetDefaultBrowserInBackground = true;
-        if (AppConstants.isPlatformAndVersionAtLeast("win", "6.2") ||
-            AppConstants.isPlatformAndVersionAtLeast("macosx", "10.10")) {
-          canSetDefaultBrowserInBackground = false;
-        } else if (AppConstants.platform == "linux") {
-          // The ShellService may not exist on some versions of Linux.
-          try {
-            aWindow.getShellService();
-          } catch (e) {
-            canSetDefaultBrowserInBackground = null;
-          }
+#ifdef XP_LINUX
+        // The ShellService may not exist on some versions of Linux.
+        try {
+          aWindow.getShellService();
+        } catch (e) {
+          canSetDefaultBrowserInBackground = null;
         }
+#else
+#ifdef XP_WIN
+        if (Services.vc.compare(Services.sysinfo.getProperty("version"), "6.2") >= 0) {
+          canSetDefaultBrowserInBackground = false;
+        }
+#elif XP_MACOSX
+        if (Services.vc.compare(Services.sysinfo.getProperty("version"), "10.10") >= 0) {
+          canSetDefaultBrowserInBackground = false;
+        }
+#endif
+#endif
 
         appinfo["canSetDefaultBrowserInBackground"] =
           canSetDefaultBrowserInBackground;
@@ -1940,30 +1946,30 @@ this.UITour = {
   },
 
   _addAnnotationPanelMutationObserver(aPanelEl) {
-    if (AppConstants.platform == "linux") {
-      let observer = this._annotationPanelMutationObservers.get(aPanelEl);
-      if (observer) {
-        return;
-      }
-      let win = aPanelEl.ownerGlobal;
-      observer = new win.MutationObserver(this._annotationMutationCallback);
-      this._annotationPanelMutationObservers.set(aPanelEl, observer);
-      let observerOptions = {
-        attributeFilter: ["height", "width"],
-        attributes: true,
-      };
-      observer.observe(aPanelEl, observerOptions);
+#ifdef XP_LINUX
+    let observer = this._annotationPanelMutationObservers.get(aPanelEl);
+    if (observer) {
+      return;
     }
+    let win = aPanelEl.ownerGlobal;
+    observer = new win.MutationObserver(this._annotationMutationCallback);
+    this._annotationPanelMutationObservers.set(aPanelEl, observer);
+    let observerOptions = {
+      attributeFilter: ["height", "width"],
+      attributes: true,
+    };
+    observer.observe(aPanelEl, observerOptions);
+#endif
   },
 
   _removeAnnotationPanelMutationObserver(aPanelEl) {
-    if (AppConstants.platform == "linux") {
-      let observer = this._annotationPanelMutationObservers.get(aPanelEl);
-      if (observer) {
-        observer.disconnect();
-        this._annotationPanelMutationObservers.delete(aPanelEl);
-      }
+#ifdef XP_LINUX
+    let observer = this._annotationPanelMutationObservers.get(aPanelEl);
+    if (observer) {
+      observer.disconnect();
+      this._annotationPanelMutationObservers.delete(aPanelEl);
     }
+#endif
   },
 
 /**

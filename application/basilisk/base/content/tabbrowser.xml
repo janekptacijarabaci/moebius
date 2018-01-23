@@ -68,9 +68,6 @@
          Components.classes["@mozilla.org/autocomplete/search;1?name=unifiedcomplete"]
                    .getService(Components.interfaces.mozIPlacesAutoComplete);
       </field>
-      <field name="AppConstants" readonly="true">
-        (Components.utils.import("resource://gre/modules/AppConstants.jsm", {})).AppConstants;
-      </field>
       <field name="mTabBox" readonly="true">
         document.getAnonymousElementByAttribute(this, "anonid", "tabbox");
       </field>
@@ -108,7 +105,11 @@
         new Map();
       </field>
       <field name="arrowKeysShouldWrap" readonly="true">
-        this.AppConstants.platform == "macosx";
+#ifdef XP_MACOSX
+        true
+#else
+        false
+#endif
       </field>
 
       <field name="_autoScrollPopup">
@@ -3313,9 +3314,9 @@
         <parameter name="aTab"/>
         <body>
           <![CDATA[
-            if (!this.AppConstants.E10S_TESTING_ONLY) {
-              throw "This method is intended only for e10s testing!";
-            }
+#ifndef E10S_TESTING_ONLY
+            throw "This method is intended only for e10s testing!";
+#endif
             let url = aTab.linkedBrowser.currentURI.spec;
             return window.openDialog("chrome://browser/content/", "_blank", "chrome,all,dialog=no,non-remote", url);
           ]]>
@@ -3881,9 +3882,9 @@
                 dump("Assertion failure\n" + Error().stack);
 
                 // Don't break a user's browser if an assertion fails.
-                if (this.tabbrowser.AppConstants.DEBUG) {
-                  throw new Error("Assertion failure");
-                }
+#ifdef DEBUG
+                throw new Error("Assertion failure");
+#endif
               }
             },
 
@@ -4582,14 +4583,14 @@
             }
           }
 
-          if (this.AppConstants.platform != "macosx") {
-            if (aEvent.ctrlKey && !aEvent.shiftKey && !aEvent.metaKey &&
-                aEvent.keyCode == KeyEvent.DOM_VK_F4 &&
-                !this.mCurrentTab.pinned) {
-              this.removeCurrentTab({animate: true});
-              aEvent.preventDefault();
-            }
+#ifndef XP_MACOSX
+          if (aEvent.ctrlKey && !aEvent.shiftKey && !aEvent.metaKey &&
+              aEvent.keyCode == KeyEvent.DOM_VK_F4 &&
+              !this.mCurrentTab.pinned) {
+            this.removeCurrentTab({animate: true});
+            aEvent.preventDefault();
           }
+#endif
         ]]></body>
       </method>
 
@@ -4604,21 +4605,21 @@
           if (aEvent.altKey)
             return;
 
-          if (this.AppConstants.platform == "macosx") {
-            if (!aEvent.metaKey)
-              return;
+#ifdef XP_MACOSX
+          if (!aEvent.metaKey)
+            return;
 
-            var offset = 1;
-            switch (aEvent.charCode) {
-              case "}".charCodeAt(0):
-                offset = -1;
-              case "{".charCodeAt(0):
-                if (window.getComputedStyle(this, null).direction == "ltr")
-                  offset *= -1;
-                this.tabContainer.advanceSelectedTab(offset, true);
-                aEvent.preventDefault();
-            }
+          var offset = 1;
+          switch (aEvent.charCode) {
+            case "}".charCodeAt(0):
+              offset = -1;
+            case "{".charCodeAt(0):
+              if (window.getComputedStyle(this, null).direction == "ltr")
+                offset *= -1;
+              this.tabContainer.advanceSelectedTab(offset, true);
+              aEvent.preventDefault();
           }
+#endif
         ]]></body>
       </method>
 
@@ -4666,8 +4667,11 @@
               label = this.mStringBundle.getString(stringID);
             }
           } else {
-            label = tab.getAttribute("label") +
-                      (this.AppConstants.E10S_TESTING_ONLY && tab.linkedBrowser && tab.linkedBrowser.isRemoteBrowser ? " - e10s" : "");
+#ifdef E10S_TESTING_ONLY
+            label = tab.getAttribute("label") + (tab.linkedBrowser && tab.linkedBrowser.isRemoteBrowser ? " - e10s" : "");
+#else
+            label = tab.getAttribute("label");
+#endif
             if (tab.userContextId) {
               label = this.mStringBundle.getFormattedString("tabs.containers.tooltip", [label, ContextualIdentityService.getUserContextLabel(tab.userContextId)]);
             }
@@ -4943,9 +4947,9 @@
           let els = Components.classes["@mozilla.org/eventlistenerservice;1"]
                               .getService(nsIEventListenerService);
           els.addSystemEventListener(document, "keydown", this, false);
-          if (this.AppConstants.platform == "macosx") {
-            els.addSystemEventListener(document, "keypress", this, false);
-          }
+#ifdef XP_MACOSX
+          els.addSystemEventListener(document, "keypress", this, false);
+#endif
           window.addEventListener("sizemodechange", this);
 
           var uniqueId = this._generateUniquePanelID();
@@ -5061,9 +5065,9 @@
           let els = Components.classes["@mozilla.org/eventlistenerservice;1"]
                               .getService(nsIEventListenerService);
           els.removeSystemEventListener(document, "keydown", this, false);
-          if (this.AppConstants.platform == "macosx") {
-            els.removeSystemEventListener(document, "keypress", this, false);
-          }
+#ifdef XP_MACOSX
+          els.removeSystemEventListener(document, "keypress", this, false);
+#endif
           window.removeEventListener("sizemodechange", this);
 
           if (gMultiProcessBrowser) {
@@ -6410,11 +6414,11 @@
           return;
 
         let wrongModifiers;
-        if (this.tabbrowser.AppConstants.platform == "macosx") {
-          wrongModifiers = !event.metaKey;
-        } else {
-          wrongModifiers = !event.ctrlKey || event.metaKey;
-        }
+#ifdef XP_MACOSX
+        wrongModifiers = !event.metaKey;
+#else
+        wrongModifiers = !event.ctrlKey || event.metaKey;
+#endif
 
         if (wrongModifiers)
           return;
@@ -6493,14 +6497,13 @@
           context.fillRect(0, 0, canvas.width, canvas.height);
 
           let captureListener;
-          let platform = this.tabbrowser.AppConstants.platform;
           // On Windows and Mac we can update the drag image during a drag
           // using updateDragImage. On Linux, we can use a panel.
-          if (platform == "win" || platform == "macosx") {
-            captureListener = function() {
-              dt.updateDragImage(canvas, dragImageOffset, dragImageOffset);
-            }
-          } else {
+#if defined(XP_WIN) || defined(XP_MACOSX)
+          captureListener = function() {
+            dt.updateDragImage(canvas, dragImageOffset, dragImageOffset);
+          }
+#else
             // Create a panel to use it in setDragImage
             // which will tell xul to render a panel that follows
             // the pointer while a dnd session is on.
@@ -6517,7 +6520,7 @@
               document.documentElement.appendChild(this._dndPanel);
             }
             toDrag = this._dndPanel;
-          }
+#endif
           // PageThumb is async with e10s but that's fine
           // since we can update the image during the dnd.
           PageThumbs.captureToCanvas(browser, canvas, captureListener);
@@ -6778,10 +6781,10 @@
           window.focus();
         } else {
           let props = { screenX: left, screenY: top };
-          if (this.tabbrowser.AppConstants.platform != "win") {
-            props.outerWidth = winWidth;
-            props.outerHeight = winHeight;
-          }
+#ifndef XP_WIN
+          props.outerWidth = winWidth;
+          props.outerHeight = winHeight;
+#endif
           this.tabbrowser.replaceTabWithWindow(draggedTab, props);
         }
         event.stopPropagation();

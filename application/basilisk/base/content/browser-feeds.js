@@ -3,6 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#filter substitution 
+
 XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask",
                                   "resource://gre/modules/DeferredTask.jsm");
 
@@ -300,22 +302,19 @@ var FeedHandler = {
    * @return  The display name of the application represented by the file.
    */
   _getFileDisplayName(file) {
-    switch (AppConstants.platform) {
-      case "win":
-        if (file instanceof Ci.nsILocalFileWin) {
-          try {
-            return file.getVersionInfoField("FileDescription");
-          } catch (e) {}
-        }
-        break;
-      case "macosx":
-        if (file instanceof Ci.nsILocalFileMac) {
-          try {
-            return file.bundleDisplayName;
-          } catch (e) {}
-        }
-        break;
+#ifdef XP_WIN
+    if (file instanceof Ci.nsILocalFileWin) {
+      try {
+        return file.getVersionInfoField("FileDescription");
+      } catch (e) {}
     }
+#elif XP_MACOSX
+    if (file instanceof Ci.nsILocalFileMac) {
+      try {
+        return file.bundleDisplayName;
+      } catch (e) {}
+    }
+#endif
 
     return file.leafName;
   },
@@ -334,19 +333,15 @@ var FeedHandler = {
           // XXXben - we need to compare this with the running instance
           //          executable just don't know how to do that via script
           // XXXmano TBD: can probably add this to nsIShellService
-          let appName = "";
-          switch (AppConstants.platform) {
-            case "win":
-              appName = AppConstants.MOZ_APP_NAME + ".exe";
-              break;
-            case "macosx":
-              appName = AppConstants.MOZ_MACBUNDLE_NAME;
-              break;
-            default:
-              appName = AppConstants.MOZ_APP_NAME + "-bin";
-              break;
-          }
 
+          let appName = "";
+#ifdef XP_WIN
+          appName = "@MOZ_APP_NAME@.exe";
+#elif XP_MACOSX
+          appName = "@MOZ_MACBUNDLE_NAME@";
+#else
+          appName = "@MOZ_APP_NAME@-bin";
+#endif
           if (fp.file.leafName != appName) {
             Services.prefs.setComplexValue(prefName, Ci.nsILocalFile, selectedApp);
             aBrowser.messageManager.sendAsyncMessage("FeedWriter:SetApplicationLauncherMenuItem",

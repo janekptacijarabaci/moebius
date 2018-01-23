@@ -2,13 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-Components.utils.import("resource://gre/modules/AppConstants.jsm");
 
 var Ci = Components.interfaces;
 
 var gSetBackground = {
-  _position        : AppConstants.platform == "macosx" ? "STRETCH" : "",
-  _backgroundColor : AppConstants.platform != "macosx" ? 0 : undefined,
+#ifdef XP_MACOSX
+  _position        : "STRETCH",
+  _backgroundColor : undefined,
+#else
+  _position        : "",
+  _backgroundColor : 0,
+#endif
   _screenWidth     : 0,
   _screenHeight    : 0,
   _image           : null,
@@ -23,23 +27,23 @@ var gSetBackground = {
     this._canvas = document.getElementById("screen");
     this._screenWidth = screen.width;
     this._screenHeight = screen.height;
-    if (AppConstants.platform == "macosx") {
-      document.documentElement.getButton("accept").hidden = true;
-    }
+#ifdef XP_MACOSX
+    document.documentElement.getButton("accept").hidden = true;
+#endif
     if (this._screenWidth / this._screenHeight >= 1.6)
       document.getElementById("monitor").setAttribute("aspectratio", "16:10");
 
-    if (AppConstants.platform == "win") {
-      // Hide fill + fit options if < Win7 since they don't work.
-      var version = Components.classes["@mozilla.org/system-info;1"]
-                    .getService(Ci.nsIPropertyBag2)
-                    .getProperty("version");
-      var isWindows7OrHigher = (parseFloat(version) >= 6.1);
-      if (!isWindows7OrHigher) {
-        document.getElementById("fillPosition").hidden = true;
-        document.getElementById("fitPosition").hidden = true;
-      }
+#ifdef XP_WIN
+    // Hide fill + fit options if < Win7 since they don't work.
+    var version = Components.classes["@mozilla.org/system-info;1"]
+                  .getService(Ci.nsIPropertyBag2)
+                  .getProperty("version");
+    var isWindows7OrHigher = (parseFloat(version) >= 6.1);
+    if (!isWindows7OrHigher) {
+      document.getElementById("fillPosition").hidden = true;
+      document.getElementById("fitPosition").hidden = true;
     }
+#endif
 
     // make sure that the correct dimensions will be used
     setTimeout(function(self) {
@@ -57,27 +61,24 @@ var gSetBackground = {
     var ctx = this._canvas.getContext("2d");
     ctx.scale(this._canvas.clientWidth / this._screenWidth, this._canvas.clientHeight / this._screenHeight);
 
-    if (AppConstants.platform != "macosx") {
-      this._initColor();
-    } else {
-      // Make sure to reset the button state in case the user has already
-      // set an image as their desktop background.
-      var setDesktopBackground = document.getElementById("setDesktopBackground");
-      setDesktopBackground.hidden = false;
-      var bundle = document.getElementById("backgroundBundle");
-      setDesktopBackground.label = bundle.getString("DesktopBackgroundSet");
-      setDesktopBackground.disabled = false;
+#ifdef XP_MACOSX
+    // Make sure to reset the button state in case the user has already
+    // set an image as their desktop background.
+    var setDesktopBackground = document.getElementById("setDesktopBackground");
+    setDesktopBackground.hidden = false;
+    var bundle = document.getElementById("backgroundBundle");
+    setDesktopBackground.label = bundle.getString("DesktopBackgroundSet");
+    setDesktopBackground.disabled = false;
 
-      document.getElementById("showDesktopPreferences").hidden = true;
-    }
+    document.getElementById("showDesktopPreferences").hidden = true;
+#else
+    this._initColor();
+#endif
     this.updatePosition();
   },
 
   setDesktopBackground() {
-    if (AppConstants.platform != "macosx") {
-      document.persist("menuPosition", "value");
-      this._shell.desktopBackgroundColor = this._hexStringToLong(this._backgroundColor);
-    } else {
+#ifdef XP_MACOSX
       Components.classes["@mozilla.org/observer-service;1"]
                 .getService(Ci.nsIObserverService)
                 .addObserver(this, "shell:desktop-background-changed", false);
@@ -86,7 +87,10 @@ var gSetBackground = {
       var setDesktopBackground = document.getElementById("setDesktopBackground");
       setDesktopBackground.disabled = true;
       setDesktopBackground.label = bundle.getString("DesktopBackgroundDownloading");
-    }
+#else
+      document.persist("menuPosition", "value");
+      this._shell.desktopBackgroundColor = this._hexStringToLong(this._backgroundColor);
+#endif
     this._shell.setDesktopBackground(this._image,
                                      Ci.nsIShellService["BACKGROUND_" + this._position]);
   },
@@ -95,9 +99,9 @@ var gSetBackground = {
     var ctx = this._canvas.getContext("2d");
     ctx.clearRect(0, 0, this._screenWidth, this._screenHeight);
 
-    if (AppConstants.platform != "macosx") {
-      this._position = document.getElementById("menuPosition").value;
-    }
+#ifndef XP_MACOSX
+    this._position = document.getElementById("menuPosition").value;
+#endif
 
     switch (this._position) {
       case "TILE":
@@ -153,7 +157,18 @@ var gSetBackground = {
   }
 };
 
-if (AppConstants.platform != "macosx") {
+#ifdef XP_MACOSX
+  gSetBackground["observe"] = function(aSubject, aTopic, aData) {
+    if (aTopic == "shell:desktop-background-changed") {
+      document.getElementById("setDesktopBackground").hidden = true;
+      document.getElementById("showDesktopPreferences").hidden = false;
+
+      Components.classes["@mozilla.org/observer-service;1"]
+                .getService(Ci.nsIObserverService)
+                .removeObserver(this, "shell:desktop-background-changed");
+    }
+  };
+#else
   gSetBackground["_initColor"] = function() {
     var color = this._shell.desktopBackgroundColor;
 
@@ -185,17 +200,7 @@ if (AppConstants.platform != "macosx") {
     return "#" + [aR, aG, aB].map(aInt => aInt.toString(16).replace(/^(.)$/, "0$1"))
                              .join("").toUpperCase();
   };
-} else {
-  gSetBackground["observe"] = function(aSubject, aTopic, aData) {
-    if (aTopic == "shell:desktop-background-changed") {
-      document.getElementById("setDesktopBackground").hidden = true;
-      document.getElementById("showDesktopPreferences").hidden = false;
-
-      Components.classes["@mozilla.org/observer-service;1"]
-                .getService(Ci.nsIObserverService)
-                .removeObserver(this, "shell:desktop-background-changed");
-    }
-  };
+#endif
 
   gSetBackground["showDesktopPrefs"] = function() {
     this._shell.openApplication(Ci.nsIMacShellService.APPLICATION_DESKTOP);

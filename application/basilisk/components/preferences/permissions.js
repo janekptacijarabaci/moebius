@@ -6,7 +6,6 @@
 /* import-globals-from ../../../toolkit/content/treeUtils.js */
 
 Components.utils.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource://gre/modules/AppConstants.jsm");
 
 const nsIPermissionManager = Components.interfaces.nsIPermissionManager;
 const nsICookiePermission = Components.interfaces.nsICookiePermission;
@@ -332,10 +331,11 @@ var gPermissionManager = {
   onPermissionKeyPress(aEvent) {
     if (aEvent.keyCode == KeyEvent.DOM_VK_DELETE) {
       this.onPermissionDeleted();
-    } else if (AppConstants.platform == "macosx" &&
-               aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE) {
+#ifdef XP_MACOSX
+    } else if (aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE) {
       this.onPermissionDeleted();
       aEvent.preventDefault();
+#endif
     }
   },
 

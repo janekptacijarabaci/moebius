@@ -12,7 +12,6 @@ const Cr = Components.results;
 const kLoginsKey = "Software\\Microsoft\\Internet Explorer\\IntelliForms\\Storage2";
 const kMainKey = "Software\\Microsoft\\Internet Explorer\\Main";
 
-Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/osfile.jsm"); /* globals OS */
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
@@ -111,7 +110,7 @@ IE7FormPasswords.prototype = {
 
   get exists() {
     // work only on windows until 7
-    if (AppConstants.isPlatformAndVersionAtLeast("win", "6.2")) {
+    if (Services.vc.compare(Services.sysinfo.getProperty("version"), "6.2") >= 0) {
       return false;
     }
 
@@ -348,7 +347,7 @@ IEProfileMigrator.prototype.getResources = function IE_getResources() {
     MSMigrationUtils.getCookiesMigrator(),
   ];
   // Only support the form password migrator for Windows XP to 7.
-  if (AppConstants.isPlatformAndVersionAtMost("win", "6.1")) {
+  if (Services.vc.compare(Services.sysinfo.getProperty("version"), "6.1") >= 0) {
     resources.push(new IE7FormPasswords());
   }
   let windowsVaultFormPasswordsMigrator =

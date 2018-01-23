@@ -8,7 +8,6 @@ this.EXPORTED_SYMBOLS = ["MSMigrationUtils"];
 
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
-Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
@@ -723,7 +722,7 @@ WindowsVaultFormPasswords.prototype = {
 
   get exists() {
     // work only on windows 8+
-    if (AppConstants.isPlatformAndVersionAtLeast("win", "6.2")) {
+    if (Services.vc.compare(Services.sysinfo.getProperty("version"), "6.2") >= 0) {
       // check if there are passwords available for migration.
       return this.migrate(() => {}, true);
     }

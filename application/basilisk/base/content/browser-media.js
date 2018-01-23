@@ -196,40 +196,42 @@ const TELEMETRY_DDSTAT_SOLVED = 4;
 
 let gDecoderDoctorHandler = {
   getLabelForNotificationBox(type) {
-    if (type == "adobe-cdm-not-found" &&
-        AppConstants.platform == "win") {
+#ifdef XP_WIN
+    if (type == "adobe-cdm-not-found" || type == "adobe-cdm-not-activated") {
       return gNavigatorBundle.getString("decoder.noCodecs.message");
     }
-    if (type == "adobe-cdm-not-activated" &&
-        AppConstants.platform == "win") {
-      return gNavigatorBundle.getString("decoder.noCodecs.message");
-    }
+#endif
+
+#ifndef XP_MACOSX
     if (type == "platform-decoder-not-found") {
-      if (AppConstants.platform == "win") {
-        return gNavigatorBundle.getString("decoder.noHWAcceleration.message");
-      }
-      if (AppConstants.platform == "linux") {
-        return gNavigatorBundle.getString("decoder.noCodecsLinux.message");
-      }
+#ifdef XP_WIN
+      return gNavigatorBundle.getString("decoder.noHWAcceleration.message");
+#elif XP_LINUX
+      return gNavigatorBundle.getString("decoder.noCodecsLinux.message");
+#endif
     }
+#endif
     if (type == "cannot-initialize-pulseaudio") {
       return gNavigatorBundle.getString("decoder.noPulseAudio.message");
     }
-    if (type == "unsupported-libavcodec" &&
-        AppConstants.platform == "linux") {
+#ifdef XP_LINUX
+    if (type == "unsupported-libavcodec") {
       return gNavigatorBundle.getString("decoder.unsupportedLibavcodec.message");
     }
+#endif
     return "";
   },
 
   getSumoForLearnHowButton(type) {
-    if (AppConstants.platform == "win") {
-      return "fix-video-audio-problems-firefox-windows";
-    }
+#ifdef XP_WIN
+    return "fix-video-audio-problems-firefox-windows";
+#else
     if (type == "cannot-initialize-pulseaudio") {
       return "fix-common-audio-and-video-issues";
     }
+
     return "";
+#endif
   },
 
   receiveMessage({target: browser, data: data}) {

@@ -19,7 +19,6 @@ const AUTH_TYPE = {
   SCHEME_DIGEST: 2
 };
 
-Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
@@ -42,16 +41,16 @@ XPCOMUtils.defineLazyModuleGetter(this, "OSCrypto",
  */
 function getDataFolder(subfoldersWin, subfoldersOSX, subfoldersUnix) {
   let dirServiceID, subfolders;
-  if (AppConstants.platform == "win") {
-    dirServiceID = "LocalAppData";
-    subfolders = subfoldersWin.concat(["User Data"]);
-  } else if (AppConstants.platform == "macosx") {
-    dirServiceID = "ULibDir";
-    subfolders = ["Application Support"].concat(subfoldersOSX);
-  } else {
-    dirServiceID = "Home";
-    subfolders = [".config"].concat(subfoldersUnix);
-  }
+#ifdef XP_WIN
+  dirServiceID = "LocalAppData";
+  subfolders = subfoldersWin.concat(["User Data"]);
+#elif XP_MACOSX
+  dirServiceID = "ULibDir";
+  subfolders = ["Application Support"].concat(subfoldersOSX);
+#else
+  dirServiceID = "Home";
+  subfolders = [".config"].concat(subfoldersUnix);
+#endif
   return FileUtils.getDir(dirServiceID, subfolders, false);
 }
 
@@ -133,9 +132,9 @@ ChromeProfileMigrator.prototype.getResources =
           GetHistoryResource(profileFolder),
           GetCookiesResource(profileFolder),
         ];
-        if (AppConstants.platform == "win") {
-          possibleResources.push(GetWindowsPasswordsResource(profileFolder));
-        }
+#ifdef XP_WIN
+        possibleResources.push(GetWindowsPasswordsResource(profileFolder));
+#endif
         return possibleResources.filter(r => r != null);
       }
     }
@@ -528,8 +527,8 @@ CanaryProfileMigrator.prototype.classDescription = "Chrome Canary Profile Migrat
 CanaryProfileMigrator.prototype.contractID = "@mozilla.org/profile/migrator;1?app=browser&type=canary";
 CanaryProfileMigrator.prototype.classID = Components.ID("{4bf85aa5-4e21-46ca-825f-f9c51a5e8c76}");
 
-if (AppConstants.platform == "win" || AppConstants.platform == "macosx") {
-  componentsArray.push(CanaryProfileMigrator);
-}
+#if !defined(XP_WIN) || !defined(XP_MACOSX)
+componentsArray.push(CanaryProfileMigrator);
+#endif
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory(componentsArray);

@@ -27,7 +27,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/AddonManager.jsm");
-Cu.import("resource://gre/modules/AppConstants.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "DragPositionManager",
                                   "resource:///modules/DragPositionManager.jsm");
@@ -95,10 +94,10 @@ function CustomizeMode(aWindow) {
     let lwthemeButton = this.document.getElementById("customization-lwtheme-button");
     lwthemeButton.setAttribute("hidden", "true");
   }
-  if (AppConstants.CAN_DRAW_IN_TITLEBAR) {
-    this._updateTitlebarButton();
-    Services.prefs.addObserver(kDrawInTitlebarPref, this, false);
-  }
+#ifdef CAN_DRAW_IN_TITLEBAR
+  this._updateTitlebarButton();
+  Services.prefs.addObserver(kDrawInTitlebarPref, this, false);
+#endif
   this.window.addEventListener("unload", this);
 }
 
@@ -131,9 +130,9 @@ CustomizeMode.prototype = {
   },
 
   uninit() {
-    if (AppConstants.CAN_DRAW_IN_TITLEBAR) {
-      Services.prefs.removeObserver(kDrawInTitlebarPref, this);
-    }
+#ifdef CAN_DRAW_IN_TITLEBAR
+    Services.prefs.removeObserver(kDrawInTitlebarPref, this);
+#endif
   },
 
   toggle() {
@@ -622,15 +621,15 @@ CustomizeMode.prototype = {
     let toolboxRect = this.window.gNavToolbox.getBoundingClientRect();
     let height = toolboxRect.bottom;
 
-    if (AppConstants.platform == "macosx") {
-      let drawingInTitlebar = !docElement.hasAttribute("drawtitle");
-      let titlebar = this.document.getElementById("titlebar");
-      if (drawingInTitlebar) {
-        titlebar.style.backgroundImage = headerImageRef;
-      } else {
-        titlebar.style.removeProperty("background-image");
-      }
+#ifdef XP_MACOSX
+    let drawingInTitlebar = !docElement.hasAttribute("drawtitle");
+    let titlebar = this.document.getElementById("titlebar");
+    if (drawingInTitlebar) {
+      titlebar.style.backgroundImage = headerImageRef;
+    } else {
+      titlebar.style.removeProperty("background-image");
     }
+#endif
 
     let limitedBG = "-moz-image-rect(" + headerImageRef + ", 0, 100%, " +
                     height + ", 0)";
@@ -655,9 +654,11 @@ CustomizeMode.prototype = {
   },
 
   removeLWTStyling() {
-    let affectedNodes = AppConstants.platform == "macosx" ?
-                          ["tab-view-deck", "titlebar"] :
-                          ["tab-view-deck"];
+#ifdef XP_MACOSX
+    let affectedNodes = ["tab-view-deck", "titlebar"];
+#else
+    let affectedNodes = ["tab-view-deck"];
+#endif
     for (let id of affectedNodes) {
       let node = this.document.getElementById(id);
       node.style.removeProperty("background-image");
@@ -1537,9 +1538,9 @@ CustomizeMode.prototype = {
       case "nsPref:changed":
         this._updateResetButton();
         this._updateUndoResetButton();
-        if (AppConstants.CAN_DRAW_IN_TITLEBAR) {
-          this._updateTitlebarButton();
-        }
+#ifdef CAN_DRAW_IN_TITLEBAR
+        this._updateTitlebarButton();
+#endif
         break;
       case "lightweight-theme-window-updated":
         if (aSubject == this.window) {
@@ -1555,9 +1556,9 @@ CustomizeMode.prototype = {
   },
 
   _updateTitlebarButton() {
-    if (!AppConstants.CAN_DRAW_IN_TITLEBAR) {
-      return;
-    }
+#ifndef CAN_DRAW_IN_TITLEBAR
+    return;
+#endif
     let drawInTitlebar = true;
     try {
       drawInTitlebar = Services.prefs.getBoolPref(kDrawInTitlebarPref);
@@ -1572,9 +1573,9 @@ CustomizeMode.prototype = {
   },
 
   toggleTitlebar(aShouldShowTitlebar) {
-    if (!AppConstants.CAN_DRAW_IN_TITLEBAR) {
-      return;
-    }
+#ifndef CAN_DRAW_IN_TITLEBAR
+    return;
+#endif
     // Drawing in the titlebar means not showing the titlebar, hence the negation:
     Services.prefs.setBoolPref(kDrawInTitlebarPref, !aShouldShowTitlebar);
   },

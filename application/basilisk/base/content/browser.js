@@ -15,7 +15,7 @@ Cu.import("resource://gre/modules/NotificationDB.jsm");
 
 // lazy module getters
 
-/* global AboutHome:false, AddonWatcher:false, AppConstants: false,
+/* global AboutHome:false, AddonWatcher:false,
           BrowserUITelemetry:false, BrowserUsageTelemetry:false, BrowserUtils:false,
           CastingApps:false, CharsetMenu:false, Color:false, ContentSearch:false,
           Deprecated:false, E10SUtils:false, FormValidationHandler:false,
@@ -38,7 +38,6 @@ Cu.import("resource://gre/modules/NotificationDB.jsm");
 [
   ["AboutHome", "resource:///modules/AboutHome.jsm"],
   ["AddonWatcher", "resource://gre/modules/AddonWatcher.jsm"],
-  ["AppConstants", "resource://gre/modules/AppConstants.jsm"],
   ["BrowserUITelemetry", "resource:///modules/BrowserUITelemetry.jsm"],
   ["BrowserUsageTelemetry", "resource:///modules/BrowserUsageTelemetry.jsm"],
   ["BrowserUtils", "resource://gre/modules/BrowserUtils.jsm"],
@@ -85,10 +84,10 @@ Cu.import("resource://gre/modules/NotificationDB.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "SafeBrowsing",
   "resource://gre/modules/SafeBrowsing.jsm");
 
-if (AppConstants.MOZ_CRASHREPORTER) {
-  XPCOMUtils.defineLazyModuleGetter(this, "PluginCrashReporter",
-    "resource:///modules/ContentCrashHandlers.jsm");
-}
+#ifdef MOZ_CRASHREPORTER
+XPCOMUtils.defineLazyModuleGetter(this, "PluginCrashReporter",
+  "resource:///modules/ContentCrashHandlers.jsm");
+#endif
 
 // lazy service getters
 
@@ -106,11 +105,11 @@ if (AppConstants.MOZ_CRASHREPORTER) {
   ["gDNSService", "@mozilla.org/network/dns-service;1", "nsIDNSService"],
 ].forEach(([name, cc, ci]) => XPCOMUtils.defineLazyServiceGetter(this, name, cc, ci));
 
-if (AppConstants.MOZ_CRASHREPORTER) {
-  XPCOMUtils.defineLazyServiceGetter(this, "gCrashReporter",
-                                     "@mozilla.org/xre/app-info;1",
-                                     "nsICrashReporter");
-}
+#ifdef MOZ_CRASHREPORTER
+XPCOMUtils.defineLazyServiceGetter(this, "gCrashReporter",
+                                   "@mozilla.org/xre/app-info;1",
+                                   "nsICrashReporter");
+#endif
 
 XPCOMUtils.defineLazyServiceGetter(this, "gSerializationHelper",
                                    "@mozilla.org/network/serialization-helper;1",
@@ -173,9 +172,7 @@ XPCOMUtils.defineLazyGetter(this, "PopupNotifications", function() {
 });
 
 XPCOMUtils.defineLazyGetter(this, "Win7Features", function() {
-  if (AppConstants.platform != "win")
-    return null;
-
+#ifdef XP_WIN
   const WINTASKBAR_CONTRACTID = "@mozilla.org/windows-taskbar;1";
   if (WINTASKBAR_CONTRACTID in Cc &&
       Cc[WINTASKBAR_CONTRACTID].getService(Ci.nsIWinTaskbar).available) {
@@ -189,6 +186,7 @@ XPCOMUtils.defineLazyGetter(this, "Win7Features", function() {
       }
     };
   }
+#endif
   return null;
 });
 
@@ -207,9 +205,9 @@ var gAppInfo = Cc["@mozilla.org/xre/app-info;1"]
                   .getService(Ci.nsIXULAppInfo)
                   .QueryInterface(Ci.nsIXULRuntime);
 
-if (AppConstants.platform != "macosx") {
-  var gEditUIVisible = true;
-}
+#ifndef XP_MACOSX
+var gEditUIVisible = true;
+#endif
 
 /* globals gBrowser, gNavToolbox, gURLBar, gNavigatorBundle*/
 [
@@ -1282,9 +1280,9 @@ var gBrowserInit = {
     BrowserOffline.init();
     IndexedDBPromptHelper.init();
 
-    if (AppConstants.E10S_TESTING_ONLY)
-      gRemoteTabsUI.init();
-
+#ifdef E10S_TESTING_ONLY
+    gRemoteTabsUI.init();
+#endif
     // Initialize the full zoom setting.
     // We do this before the session restore service gets initialized so we can
     // apply full zoom settings to tabs restored by the session restore service.
@@ -1392,12 +1390,12 @@ var gBrowserInit = {
     // unless there are downloads to be displayed.
     DownloadsButton.initializeIndicator();
 
-    if (AppConstants.platform != "macosx") {
-      updateEditUIVisibility();
-      let placesContext = document.getElementById("placesContext");
-      placesContext.addEventListener("popupshowing", updateEditUIVisibility);
-      placesContext.addEventListener("popuphiding", updateEditUIVisibility);
-    }
+#ifndef XP_MACOSX
+    updateEditUIVisibility();
+    let placesContext = document.getElementById("placesContext");
+    placesContext.addEventListener("popupshowing", updateEditUIVisibility);
+    placesContext.addEventListener("popuphiding", updateEditUIVisibility);
+#endif
 
     LightWeightThemeWebInstaller.init();
 
@@ -1411,9 +1409,9 @@ var gBrowserInit = {
     gSyncUI.init();
     gFxAccounts.init();
 
-    if (AppConstants.MOZ_DATA_REPORTING)
-      gDataNotificationInfoBar.init();
-
+#ifdef MOZ_DATA_REPORTING
+    gDataNotificationInfoBar.init();
+#endif
     gBrowserThumbnails.init();
 
     gMenuButtonBadgeManager.init();
@@ -1652,107 +1650,107 @@ var gBrowserInit = {
   },
 };
 
-if (AppConstants.platform == "macosx") {
-  // nonBrowserWindowStartup(), nonBrowserWindowDelayedStartup(), and
-  // nonBrowserWindowShutdown() are used for non-browser windows in
-  // macBrowserOverlay
-  gBrowserInit.nonBrowserWindowStartup = function() {
-    // Disable inappropriate commands / submenus
-    var disabledItems = ["Browser:SavePage",
-                         "Browser:SendLink", "cmd_pageSetup", "cmd_print", "cmd_find", "cmd_findAgain",
-                         "viewToolbarsMenu", "viewSidebarMenuMenu", "Browser:Reload",
-                         "viewFullZoomMenu", "pageStyleMenu", "charsetMenu", "View:PageSource", "View:FullScreen",
-                         "viewHistorySidebar", "Browser:AddBookmarkAs", "Browser:BookmarkAllTabs",
-                         "View:PageInfo"];
-    var element;
+#ifdef XP_MACOSX
+// nonBrowserWindowStartup(), nonBrowserWindowDelayedStartup(), and
+// nonBrowserWindowShutdown() are used for non-browser windows in
+// macBrowserOverlay
+gBrowserInit.nonBrowserWindowStartup = function() {
+  // Disable inappropriate commands / submenus
+  var disabledItems = ["Browser:SavePage",
+                       "Browser:SendLink", "cmd_pageSetup", "cmd_print", "cmd_find", "cmd_findAgain",
+                       "viewToolbarsMenu", "viewSidebarMenuMenu", "Browser:Reload",
+                       "viewFullZoomMenu", "pageStyleMenu", "charsetMenu", "View:PageSource", "View:FullScreen",
+                       "viewHistorySidebar", "Browser:AddBookmarkAs", "Browser:BookmarkAllTabs",
+                       "View:PageInfo"];
+  var element;
 
-    for (let disabledItem of disabledItems) {
-      element = document.getElementById(disabledItem);
+  for (let disabledItem of disabledItems) {
+    element = document.getElementById(disabledItem);
+    if (element)
+      element.setAttribute("disabled", "true");
+  }
+
+  // If no windows are active (i.e. we're the hidden window), disable the close, minimize
+  // and zoom menu commands as well
+  if (window.location.href == "chrome://browser/content/hiddenWindow.xul") {
+    var hiddenWindowDisabledItems = ["cmd_close", "minimizeWindow", "zoomWindow"];
+    for (let hiddenWindowDisabledItem of hiddenWindowDisabledItems) {
+      element = document.getElementById(hiddenWindowDisabledItem);
       if (element)
         element.setAttribute("disabled", "true");
     }
 
-    // If no windows are active (i.e. we're the hidden window), disable the close, minimize
-    // and zoom menu commands as well
-    if (window.location.href == "chrome://browser/content/hiddenWindow.xul") {
-      var hiddenWindowDisabledItems = ["cmd_close", "minimizeWindow", "zoomWindow"];
-      for (let hiddenWindowDisabledItem of hiddenWindowDisabledItems) {
-        element = document.getElementById(hiddenWindowDisabledItem);
-        if (element)
-          element.setAttribute("disabled", "true");
-      }
+    // also hide the window-list separator
+    element = document.getElementById("sep-window-list");
+    element.setAttribute("hidden", "true");
 
-      // also hide the window-list separator
-      element = document.getElementById("sep-window-list");
-      element.setAttribute("hidden", "true");
+    // Setup the dock menu.
+    let dockMenuElement = document.getElementById("menu_mac_dockmenu");
+    if (dockMenuElement != null) {
+      let nativeMenu = Cc["@mozilla.org/widget/standalonenativemenu;1"]
+                       .createInstance(Ci.nsIStandaloneNativeMenu);
 
-      // Setup the dock menu.
-      let dockMenuElement = document.getElementById("menu_mac_dockmenu");
-      if (dockMenuElement != null) {
-        let nativeMenu = Cc["@mozilla.org/widget/standalonenativemenu;1"]
-                         .createInstance(Ci.nsIStandaloneNativeMenu);
+      try {
+        nativeMenu.init(dockMenuElement);
 
-        try {
-          nativeMenu.init(dockMenuElement);
-
-          let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
-                            .getService(Ci.nsIMacDockSupport);
-          dockSupport.dockMenu = nativeMenu;
-        } catch (e) {
-        }
+        let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
+                          .getService(Ci.nsIMacDockSupport);
+        dockSupport.dockMenu = nativeMenu;
+      } catch (e) {
       }
     }
+  }
 
-    if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
-      document.getElementById("macDockMenuNewWindow").hidden = true;
-    }
+  if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
+    document.getElementById("macDockMenuNewWindow").hidden = true;
+  }
 
-    this._delayedStartupTimeoutId = setTimeout(this.nonBrowserWindowDelayedStartup.bind(this), 0);
-  };
+  this._delayedStartupTimeoutId = setTimeout(this.nonBrowserWindowDelayedStartup.bind(this), 0);
+};
 
-  gBrowserInit.nonBrowserWindowDelayedStartup = function() {
-    this._delayedStartupTimeoutId = null;
+gBrowserInit.nonBrowserWindowDelayedStartup = function() {
+  this._delayedStartupTimeoutId = null;
 
-    // initialise the offline listener
-    BrowserOffline.init();
+  // initialise the offline listener
+  BrowserOffline.init();
 
-    // initialize the private browsing UI
-    gPrivateBrowsingUI.init();
+  // initialize the private browsing UI
+  gPrivateBrowsingUI.init();
 
-    // initialize the sync UI
-    gSyncUI.init();
+  // initialize the sync UI
+  gSyncUI.init();
 
-    if (AppConstants.E10S_TESTING_ONLY) {
-      gRemoteTabsUI.init();
-    }
-  };
+#ifdef E10S_TESTING_ONLY
+  gRemoteTabsUI.init();
+#endif
+};
 
-  gBrowserInit.nonBrowserWindowShutdown = function() {
-    let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
-                      .getService(Ci.nsIMacDockSupport);
-    dockSupport.dockMenu = null;
+gBrowserInit.nonBrowserWindowShutdown = function() {
+  let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
+                    .getService(Ci.nsIMacDockSupport);
+  dockSupport.dockMenu = null;
 
-    // If nonBrowserWindowDelayedStartup hasn't run yet, we have no work to do -
-    // just cancel the pending timeout and return;
-    if (this._delayedStartupTimeoutId) {
-      clearTimeout(this._delayedStartupTimeoutId);
-      return;
-    }
+  // If nonBrowserWindowDelayedStartup hasn't run yet, we have no work to do -
+  // just cancel the pending timeout and return;
+  if (this._delayedStartupTimeoutId) {
+    clearTimeout(this._delayedStartupTimeoutId);
+    return;
+  }
 
-    BrowserOffline.uninit();
-  };
-}
+  BrowserOffline.uninit();
+};
+#endif
 
 
 /* Legacy global init functions */
 var BrowserStartup        = gBrowserInit.onLoad.bind(gBrowserInit);
 var BrowserShutdown       = gBrowserInit.onUnload.bind(gBrowserInit);
 
-if (AppConstants.platform == "macosx") {
-  var nonBrowserWindowStartup        = gBrowserInit.nonBrowserWindowStartup.bind(gBrowserInit);
-  var nonBrowserWindowDelayedStartup = gBrowserInit.nonBrowserWindowDelayedStartup.bind(gBrowserInit);
-  var nonBrowserWindowShutdown       = gBrowserInit.nonBrowserWindowShutdown.bind(gBrowserInit);
-}
+#ifdef XP_MACOSX
+var nonBrowserWindowStartup        = gBrowserInit.nonBrowserWindowStartup.bind(gBrowserInit);
+var nonBrowserWindowDelayedStartup = gBrowserInit.nonBrowserWindowDelayedStartup.bind(gBrowserInit);
+var nonBrowserWindowShutdown       = gBrowserInit.nonBrowserWindowShutdown.bind(gBrowserInit);
+#endif
 
 function HandleAppCommandEvent(evt) {
   switch (evt.command) {
@@ -1888,9 +1886,11 @@ function BrowserStop() {
 }
 
 function BrowserReloadOrDuplicate(aEvent) {
-  let metaKeyPressed = AppConstants.platform == "macosx"
-                       ? aEvent.metaKey
-                       : aEvent.ctrlKey;
+#ifdef XP_MACOSX
+  let metaKeyPressed = aEvent.metaKey;
+#else
+  let metaKeyPressed = aEvent.ctrlKey;
+#endif
   var backgroundTabModifier = aEvent.button == 1 || metaKeyPressed;
 
   if (aEvent.shiftKey && !backgroundTabModifier) {
@@ -4127,9 +4127,7 @@ function BrowserCustomizeToolbar() {
  * is a no op.
  */
 function updateEditUIVisibility() {
-  if (AppConstants.platform == "macosx")
-    return;
-
+#ifndef XP_MACOSX
   let editMenuPopupState = document.getElementById("menu_EditPopup").state;
   let contextMenuPopupState = document.getElementById("contentAreaContextMenu").state;
   let placesContextMenuPopupState = document.getElementById("placesContext").state;
@@ -4163,6 +4161,9 @@ function updateEditUIVisibility() {
     goSetCommandEnabled("cmd_delete", true);
     goSetCommandEnabled("cmd_switchTextDirection", true);
   }
+#else
+  return;
+#endif
 }
 
 /**
@@ -4618,7 +4619,8 @@ var XULBrowserWindow = {
     else
       this.asyncUpdateUI();
 
-    if (AppConstants.MOZ_CRASHREPORTER && aLocationURI) {
+#ifdef MOZ_CRASHREPORTER
+    if (aLocationURI) {
       let uri = aLocationURI.clone();
       try {
         // If the current URI contains a username/password, remove it.
@@ -4634,6 +4636,7 @@ var XULBrowserWindow = {
         }
       }
     }
+#endif
   },
 
   asyncUpdateUI() {
@@ -5235,9 +5238,9 @@ function setToolbarVisibility(toolbar, isVisible, persist = true) {
   let hidingAttribute;
   if (toolbar.getAttribute("type") == "menubar") {
     hidingAttribute = "autohide";
-    if (AppConstants.platform == "linux") {
-      Services.prefs.setBoolPref("ui.key.menuAccessKeyFocuses", !isVisible);
-    }
+#ifdef XP_LINUX
+    Services.prefs.setBoolPref("ui.key.menuAccessKeyFocuses", !isVisible);
+#endif
   } else {
     hidingAttribute = "collapsed";
   }
@@ -5264,16 +5267,20 @@ function setToolbarVisibility(toolbar, isVisible, persist = true) {
 
 var TabletModeUpdater = {
   init() {
-    if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
+#ifdef XP_WIN
+    if (Services.vc.compare(Services.sysinfo.getProperty("version"), "10") >= 0) {
       this.update(WindowsUIUtils.inTabletMode);
       Services.obs.addObserver(this, "tablet-mode-change", false);
     }
+#endif
   },
 
   uninit() {
-    if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
+#ifdef XP_WIN
+    if (Services.vc.compare(Services.sysinfo.getProperty("version"), "10") >= 0) {
       Services.obs.removeObserver(this, "tablet-mode-change");
     }
+#endif
   },
 
   observe(subject, topic, data) {
@@ -5296,7 +5303,11 @@ var TabletModeUpdater = {
 var gTabletModePageCounter = {
   enabled: false,
   inc() {
-    this.enabled = AppConstants.isPlatformAndVersionAtLeast("win", "10.0");
+#ifdef XP_WIN
+    this.enabled = Services.vc.compare(Services.sysinfo.getProperty("version"), "10") >= 0;
+#else
+    this.enabled = false;
+#endif
     if (!this.enabled) {
       this.inc = () => {};
       return;
@@ -5384,10 +5395,10 @@ const nodeToShortcutMap = {
   "downloads-button": "key_openDownloads"
 };
 
-if (AppConstants.platform == "macosx") {
-  nodeToTooltipMap["print-button"] = "printButton.tooltip";
-  nodeToShortcutMap["print-button"] = "printKb";
-}
+#ifdef XP_MACOSX
+nodeToTooltipMap["print-button"] = "printButton.tooltip";
+nodeToShortcutMap["print-button"] = "printKb";
+#endif
 
 const gDynamicTooltipCache = new Map();
 function UpdateDynamicShortcutTooltipText(aTooltip) {
@@ -6340,11 +6351,14 @@ function warnAboutClosingWindow() {
 
   os.notifyObservers(null, "browser-lastwindow-close-granted", null);
 
+#ifdef XP_MACOSX
   // OS X doesn't quit the application when the last window is closed, but keeps
-  // the session alive. Hence don't prompt users to save tabs, but warn about
-  // closing multiple tabs.
-  return AppConstants.platform != "macosx"
-         || (isPBWindow || gBrowser.warnAboutClosingTabs(gBrowser.closingTabsEnum.ALL));
+   // the session alive. Hence don't prompt users to save tabs, but warn about
+   // closing multiple tabs.
+  return (isPBWindow || gBrowser.warnAboutClosingTabs(gBrowser.closingTabsEnum.ALL));
+#else
+  return true;
+#endif
 }
 
 var MailIntegration = {
@@ -7657,12 +7671,13 @@ var gRemoteTabsUI = {
       return;
     }
 
-    if (AppConstants.platform == "macosx" &&
-        Services.prefs.getBoolPref("layers.acceleration.disabled")) {
+#ifdef XP_MACOSX
+    if (Services.prefs.getBoolPref("layers.acceleration.disabled")) {
       // On OS X, "Disable Hardware Acceleration" also disables OMTC and forces
       // a fallback to Basic Layers. This is incompatible with e10s.
       return;
     }
+#endif
 
     let newNonRemoteWindow = document.getElementById("menu_newNonRemoteWindow");
     let autostart = Services.appinfo.browserTabsRemoteAutostart;
@@ -7845,15 +7860,15 @@ var TabContextMenu = {
     if (this.contextTab.hasAttribute("customizemode"))
       document.getElementById("context_openTabInWindow").disabled = true;
 
-    if (AppConstants.E10S_TESTING_ONLY) {
-      menuItems = aPopupMenu.getElementsByAttribute("tbattr", "tabbrowser-remote");
-      for (let menuItem of menuItems) {
-        menuItem.hidden = !gMultiProcessBrowser;
-        if (menuItem.id == "context_openNonRemoteWindow") {
-          menuItem.disabled = !!parseInt(this.contextTab.getAttribute("usercontextid"));
-        }
+#ifdef E10S_TESTING_ONLY
+    menuItems = aPopupMenu.getElementsByAttribute("tbattr", "tabbrowser-remote");
+    for (let menuItem of menuItems) {
+      menuItem.hidden = !gMultiProcessBrowser;
+      if (menuItem.id == "context_openNonRemoteWindow") {
+        menuItem.disabled = !!parseInt(this.contextTab.getAttribute("usercontextid"));
       }
     }
+#endif
 
     disabled = gBrowser.visibleTabs.length == 1;
     menuItems = aPopupMenu.getElementsByAttribute("tbattr", "tabbrowser-multiple-visible");
@@ -8137,9 +8152,11 @@ var ToolbarIconColor = {
       return rgb.map(x => parseInt(x));
     }
 
+#ifdef XP_MACOSX
+    let toolbarSelector = "#navigator-toolbox > toolbar:not([collapsed=true]):not(#addon-bar):not([type=menubar])";
+#else
     let toolbarSelector = "#navigator-toolbox > toolbar:not([collapsed=true]):not(#addon-bar)";
-    if (AppConstants.platform == "macosx")
-      toolbarSelector += ":not([type=menubar])";
+#endif
 
     // The getComputedStyle calls and setting the brighttext are separated in
     // two loops to avoid flushing layout and making it dirty repeatedly.
