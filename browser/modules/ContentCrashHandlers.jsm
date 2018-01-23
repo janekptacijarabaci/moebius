@@ -90,6 +90,8 @@ this.TabCrashHandler = {
           Services.telemetry
                   .getHistogramById("FX_CONTENT_CRASH_DUMP_UNAVAILABLE")
                   .add(1);
+        } else if (AppConstants.MOZ_CRASHREPORTER) {
+          this.childMap.set(childID, dumpID);
         }
 
         if (!this.flushCrashedBrowserQueue(childID)) {
@@ -328,7 +330,74 @@ this.TabCrashHandler = {
    *        even if they are empty.
    */
   maybeSendCrashReport(message) {
-    return;
+    if (!AppConstants.MOZ_CRASHREPORTER)
+      return;
+
+    let browser = message.target.browser;
+
+    if (message.data.autoSubmit) {
+      // The user has opted in to autosubmitted backlogged
+      // crash reports in the future.
+      UnsubmittedCrashHandler.autoSubmit = true;
+    }
+
+    let childID = this.browserMap.get(browser.permanentKey);
+    let dumpID = this.childMap.get(childID);
+    if (!dumpID)
+      return
+
+    if (!message.data.sendReport) {
+      Services.telemetry.getHistogramById("FX_CONTENT_CRASH_NOT_SUBMITTED").add(1);
+      this.prefs.setBoolPref("sendReport", false);
+      return;
+    }
+
+    let {
+      includeURL,
+      comments,
+      email,
+      emailMe,
+      URL,
+    } = message.data;
+
+    let extraExtraKeyVals = {
+      "Comments": comments,
+      "Email": email,
+      "URL": URL,
+    };
+
+    // For the entries in extraExtraKeyVals, we only want to submit the
+    // extra data values where they are not the empty string.
+    for (let key in extraExtraKeyVals) {
+      let val = extraExtraKeyVals[key].trim();
+      if (!val) {
+        delete extraExtraKeyVals[key];
+      }
+    }
+
+    // URL is special, since it's already been written to extra data by
+    // default. In order to make sure we don't send it, we overwrite it
+    // with the empty string.
+    if (!includeURL) {
+      extraExtraKeyVals["URL"] = "";
+    }
+
+    CrashSubmit.submit(dumpID, {
+      recordSubmission: true,
+      extraExtraKeyVals,
+    }).then(null, Cu.reportError);
+
+    this.prefs.setBoolPref("sendReport", true);
+    this.prefs.setBoolPref("includeURL", includeURL);
+    this.prefs.setBoolPref("emailMe", emailMe);
+    if (emailMe) {
+      this.prefs.setCharPref("email", email);
+    } else {
+      this.prefs.setCharPref("email", "");
+    }
+
+    this.childMap.set(childID, null); // Avoid resubmission.
+    this.removeSubmitCheckboxesForSameCrash(childID);
   },
 
   removeSubmitCheckboxesForSameCrash(childID) {
@@ -448,7 +517,11 @@ this.TabCrashHandler = {
    * @returns dumpID (String)
    */
   getDumpID(browser) {
-    return null;
+    if (!AppConstants.MOZ_CRASHREPORTER) {
+      return null;
+    }
+
+    return this.childMap.get(this.browserMap.get(browser.permanentKey));
   },
 }
 

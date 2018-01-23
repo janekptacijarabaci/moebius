@@ -86,6 +86,11 @@ Cu.import("resource://gre/modules/NotificationDB.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "SafeBrowsing",
   "resource://gre/modules/SafeBrowsing.jsm");
 
+if (AppConstants.MOZ_CRASHREPORTER) {
+  XPCOMUtils.defineLazyModuleGetter(this, "PluginCrashReporter",
+    "resource:///modules/ContentCrashHandlers.jsm");
+}
+
 // lazy service getters
 
 /* global Favicons:false, WindowsUIUtils:false, gAboutNewTabService:false,
@@ -101,6 +106,12 @@ XPCOMUtils.defineLazyModuleGetter(this, "SafeBrowsing",
   ["gAboutNewTabService", "@mozilla.org/browser/aboutnewtab-service;1", "nsIAboutNewTabService"],
   ["gDNSService", "@mozilla.org/network/dns-service;1", "nsIDNSService"],
 ].forEach(([name, cc, ci]) => XPCOMUtils.defineLazyServiceGetter(this, name, cc, ci));
+
+if (AppConstants.MOZ_CRASHREPORTER) {
+  XPCOMUtils.defineLazyServiceGetter(this, "gCrashReporter",
+                                     "@mozilla.org/xre/app-info;1",
+                                     "nsICrashReporter");
+}
 
 XPCOMUtils.defineLazyServiceGetter(this, "gSerializationHelper",
                                    "@mozilla.org/network/serialization-helper;1",
@@ -4612,6 +4623,22 @@ var XULBrowserWindow = {
     else
       this.asyncUpdateUI();
 
+    if (AppConstants.MOZ_CRASHREPORTER && aLocationURI) {
+      let uri = aLocationURI.clone();
+      try {
+        // If the current URI contains a username/password, remove it.
+        uri.userPass = "";
+      } catch (ex) { /* Ignore failures on about: URIs. */ }
+
+      try {
+        gCrashReporter.annotateCrashReport("URL", uri.spec);
+      } catch (ex) {
+        // Don't make noise when the crash reporter is built but not enabled.
+        if (ex.result != Components.results.NS_ERROR_NOT_INITIALIZED) {
+          throw ex;
+        }
+      }
+    }
   },
 
   asyncUpdateUI() {
