@@ -7,10 +7,10 @@ var Ci = Components.interfaces;
 
 var gSetBackground = {
 #ifdef XP_MACOSX
-  _position        : "STRETCH"
+  _position        : "STRETCH",
   _backgroundColor : undefined,
 #else
-  _position        : ""
+  _position        : "",
   _backgroundColor : 0,
 #endif
   _screenWidth     : 0,

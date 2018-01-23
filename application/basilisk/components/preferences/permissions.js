@@ -331,13 +331,12 @@ var gPermissionManager = {
   onPermissionKeyPress(aEvent) {
     if (aEvent.keyCode == KeyEvent.DOM_VK_DELETE) {
       this.onPermissionDeleted();
-    }
 #ifdef XP_MACOSX
-    else if (aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE) {
+    } else if (aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE) {
       this.onPermissionDeleted();
       aEvent.preventDefault();
-    }
 #endif
+    }
   },
 
   _lastPermissionSortColumn: "",

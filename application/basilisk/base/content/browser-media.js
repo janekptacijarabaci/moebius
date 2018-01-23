@@ -197,10 +197,7 @@ const TELEMETRY_DDSTAT_SOLVED = 4;
 let gDecoderDoctorHandler = {
   getLabelForNotificationBox(type) {
 #ifdef XP_WIN
-    if (type == "adobe-cdm-not-found") {
-      return gNavigatorBundle.getString("decoder.noCodecs.message");
-    }
-    if (type == "adobe-cdm-not-activated") {
+    if (type == "adobe-cdm-not-found" || type == "adobe-cdm-not-activated") {
       return gNavigatorBundle.getString("decoder.noCodecs.message");
     }
 #endif

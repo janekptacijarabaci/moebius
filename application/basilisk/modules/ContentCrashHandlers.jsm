@@ -88,12 +88,11 @@ this.TabCrashHandler = {
           Services.telemetry
                   .getHistogramById("FX_CONTENT_CRASH_DUMP_UNAVAILABLE")
                   .add(1);
-        }
 #ifdef MOZ_CRASHREPORTER
-        else {
+        } else {
           this.childMap.set(childID, dumpID);
-        }
 #endif
+        }
 
         if (!this.flushCrashedBrowserQueue(childID)) {
           this.unseenCrashedChildIDs.push(childID);

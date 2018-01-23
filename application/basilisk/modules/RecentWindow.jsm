@@ -35,7 +35,7 @@ this.RecentWindow = {
                PrivateBrowsingUtils.isWindowPrivate(win) == aOptions.private));
     }
 
-#ifdef XP_LINUX
+#if !defined(XP_WIN) || !defined(XP_MACOSX)
     let win = Services.wm.getMostRecentWindow("navigator:browser");
 
     // if we're lucky, this isn't a popup, and we can just return this

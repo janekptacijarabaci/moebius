@@ -591,8 +591,7 @@ function eventMatchesKey(aEvent, aKey) {
 #else
         keyModifiers[index] = "Control";
 #endif
-      } 
-      else {
+      } else {
         keyModifiers[index] = modifier[0].toUpperCase() + modifier.slice(1);
       }
     });

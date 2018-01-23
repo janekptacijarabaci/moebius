@@ -173,18 +173,15 @@ var gSyncUI = {
 #ifdef MOZ_SERVICES_CLOUDSYNC
       if (CloudSync && CloudSync.ready && CloudSync().adapters.count) {
         document.getElementById("sync-syncnow-state").hidden = false;
-      }
-      else if (loginFailed) {
+      } else if (loginFailed) {
 #else
       if (loginFailed) {
 #endif
         // unhiding this element makes the menubar show the login failure state.
         document.getElementById("sync-reauth-state").hidden = false;
-      }
-      else if (needsSetup) {
+      } else if (needsSetup) {
         document.getElementById("sync-setup-state").hidden = false;
-      }
-      else {
+      } else {
         document.getElementById("sync-syncnow-state").hidden = false;
       }
 

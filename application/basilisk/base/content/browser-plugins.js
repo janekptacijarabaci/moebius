@@ -461,25 +461,20 @@ var gPluginHandler = {
 
     // If we don't have a minidumpID, we can't (or didn't) submit anything.
     // This can happen if the plugin is killed from the task manager.
-    let state;
+    let state = "noSubmit";
 #ifdef MOZ_CRASHREPORTER
-    let hasCrashReporter = true;
-#else
-    let hasCrashReporter = false;
-#endif
-    if (!hasCrashReporter || !gCrashReporter.enabled) {
+    if (!gCrashReporter.enabled) {
       // This state tells the user that crash reporting is disabled, so we
       // cannot send a report.
       state = "noSubmit";
-    }
-    else if (!pluginDumpID) {
+    } else if (!pluginDumpID) {
       // This state tells the user that there is no crash report available.
       state = "noReport";
-    }
-    else {
+    } else {
       // This state asks the user to submit a crash report.
       state = "please";
     }
+#endif
 
     let mm = window.getGroupMessageManager("browsers");
     mm.broadcastAsyncMessage("BrowserPlugins:NPAPIPluginProcessCrashed",

@@ -296,8 +296,7 @@ function updateTitlebarDisplay() {
   if (TabsInTitlebar.enabled) {
     // not OS X
     document.documentElement.setAttribute("chromemargin", "0,2,2,2");
-  }
-  else {
+  } else {
     document.documentElement.removeAttribute("chromemargin");
   }
 #endif

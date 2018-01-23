@@ -946,9 +946,8 @@ BrowserGlue.prototype = {
     if (!disableResetPrompt && lastUse &&
         Date.now() - lastUse >= OFFER_PROFILE_RESET_INTERVAL_MS) {
       this._resetProfileNotification("unused");
-    }
 #ifdef XP_WIN
-    else if (!disableResetPrompt) {
+    } else if (!disableResetPrompt) {
       // Check if we were just re-installed and offer Firefox Reset
       let updateChannel;
       try {
@@ -967,8 +966,8 @@ BrowserGlue.prototype = {
           this._resetProfileNotification("uninstall");
         }
       }
-    }
 #endif
+    }
 
     this._checkForOldBuildUpdates();
 

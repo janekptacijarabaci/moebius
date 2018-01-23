@@ -734,12 +734,11 @@ var gCookiesWindow = {
   onCookieKeyPress(aEvent) {
     if (aEvent.keyCode == KeyEvent.DOM_VK_DELETE) {
       this.deleteCookie();
-    }
 #ifdef XP_MACOSX
-    else if (aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE) {
+    } else if (aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE) {
       this.deleteCookie();
-    }
 #endif
+    }
   },
 
   _lastSortProperty : "",

@@ -527,7 +527,7 @@ CanaryProfileMigrator.prototype.classDescription = "Chrome Canary Profile Migrat
 CanaryProfileMigrator.prototype.contractID = "@mozilla.org/profile/migrator;1?app=browser&type=canary";
 CanaryProfileMigrator.prototype.classID = Components.ID("{4bf85aa5-4e21-46ca-825f-f9c51a5e8c76}");
 
-#ifndef XP_LINUX
+#if !defined(XP_WIN) || !defined(XP_MACOSX)
 componentsArray.push(CanaryProfileMigrator);
 #endif
 

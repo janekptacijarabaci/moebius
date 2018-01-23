@@ -751,8 +751,7 @@ nsDefaultCommandLineHandler.prototype = {
                    URLlist);
       }
 
-    }
-    else if (!cmdLine.preventDefault) {
+    } else if (!cmdLine.preventDefault) {
 #ifdef XP_WIN
       if (Services.vc.compare(Services.sysinfo.getProperty("version"), "10") >= 0 &&
           cmdLine.state != nsICommandLine.STATE_INITIAL_LAUNCH &&

@@ -187,8 +187,7 @@ var RemoteTabViewer = {
         CloudSync().tabsReady && CloudSync().tabs.hasRemoteTabs()) {
       this._generateCloudSyncTabList()
           .then(complete, complete);
-    }
-    else {
+    } else {
       complete();
     }
 #else

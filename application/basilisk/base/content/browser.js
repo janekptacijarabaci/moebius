@@ -6351,17 +6351,14 @@ function warnAboutClosingWindow() {
 
   os.notifyObservers(null, "browser-lastwindow-close-granted", null);
 
-  // OS X doesn't quit the application when the last window is closed, but keeps
-  // the session alive. Hence don't prompt users to save tabs, but warn about
-  // closing multiple tabs.
 #ifdef XP_MACOSX
-  let isNotMacOSX = false;
+  // OS X doesn't quit the application when the last window is closed, but keeps
+   // the session alive. Hence don't prompt users to save tabs, but warn about
+   // closing multiple tabs.
+  return (isPBWindow || gBrowser.warnAboutClosingTabs(gBrowser.closingTabsEnum.ALL));
 #else
-  let isNotMacOSX = true;
+  return true;
 #endif
-
-  return isNotMacOSX
-         || (isPBWindow || gBrowser.warnAboutClosingTabs(gBrowser.closingTabsEnum.ALL));
 }
 
 var MailIntegration = {
