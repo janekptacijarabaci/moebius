@@ -41,9 +41,6 @@ var gAdvancedPane = {
     this.updateReadPrefs();
 #endif
     this.updateOfflineApps();
-#ifdef MOZ_CRASHREPORTER
-    this.initSubmitCrashes();
-#endif
     this.initTelemetry();
 #ifdef MOZ_TELEMETRY_REPORTING
     this.initSubmitHealthReport();

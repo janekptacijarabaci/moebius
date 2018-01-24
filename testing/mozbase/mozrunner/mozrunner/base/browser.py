@@ -71,10 +71,5 @@ class GoannaRuntimeRunner(BaseRunner):
         has_debugger = "debug_args" in kwargs and kwargs["debug_args"]
         if has_debugger:
             self.env["MOZ_CRASHREPORTER_DISABLE"] = "1"
-        else:
-            if not self.show_crash_reporter:
-                # hide the crash reporter window
-                self.env["MOZ_CRASHREPORTER_NO_REPORT"] = "1"
-            self.env["MOZ_CRASHREPORTER"] = "1"
 
         BaseRunner.start(self, *args, **kwargs)

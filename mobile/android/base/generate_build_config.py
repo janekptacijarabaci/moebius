@@ -75,7 +75,6 @@ def main(output_file, input_filename):
                 'MOZ_APP_VENDOR',
                 'MOZ_APP_VERSION',
                 'MOZ_CHILD_PROCESS_NAME',
-                'MOZ_CRASHREPORTER',
                 'MOZ_MOZILLA_API_KEY',
                 'MOZ_UPDATE_CHANNEL',
                 'OMNIJAR_NAME',

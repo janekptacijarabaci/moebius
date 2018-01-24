@@ -594,11 +594,6 @@ ContentChild::Init(MessageLoop* aIOLoop,
   SendBackUpXResources(FileDescriptor(xSocketFd));
 #endif
 
-#ifdef MOZ_CRASHREPORTER
-  SendPCrashReporterConstructor(CrashReporter::CurrentThreadId(),
-                                XRE_GetProcessType());
-#endif
-
   SendGetProcessAttributes(&mID, &mIsForBrowser);
 
 #ifdef NS_PRINTING
@@ -1505,18 +1500,6 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
   sandboxEnabled = StartMacOSContentSandbox();
 #endif
 
-#if defined(MOZ_CRASHREPORTER)
-  CrashReporter::AnnotateCrashReport(
-    NS_LITERAL_CSTRING("ContentSandboxEnabled"),
-    sandboxEnabled? NS_LITERAL_CSTRING("1") : NS_LITERAL_CSTRING("0"));
-#if defined(XP_LINUX) && !defined(OS_ANDROID)
-  nsAutoCString flagsString;
-  flagsString.AppendInt(SandboxInfo::Get().AsInteger());
-
-  CrashReporter::AnnotateCrashReport(
-    NS_LITERAL_CSTRING("ContentSandboxCapabilities"), flagsString);
-#endif /* XP_LINUX && !OS_ANDROID */
-#endif /* MOZ_CRASHREPORTER */
 #endif /* MOZ_CONTENT_SANDBOX */
 
   return IPC_OK();
@@ -1741,11 +1724,7 @@ PCrashReporterChild*
 ContentChild::AllocPCrashReporterChild(const mozilla::dom::NativeThreadId& id,
                                        const uint32_t& processType)
 {
-#ifdef MOZ_CRASHREPORTER
-    return new CrashReporterChild();
-#else
-    return nullptr;
-#endif
+  return nullptr;
 }
 
 bool
@@ -2157,16 +2136,6 @@ ContentChild::ProcessingError(Result aCode, const char* aReason)
       MOZ_CRASH("not reached");
   }
 
-#if defined(MOZ_CRASHREPORTER) && !defined(MOZ_B2G)
-  if (PCrashReporterChild* c = LoneManagedOrNullAsserts(ManagedPCrashReporterChild())) {
-    CrashReporterChild* crashReporter =
-      static_cast<CrashReporterChild*>(c);
-    nsDependentCString reason(aReason);
-    crashReporter->SendAnnotateCrashReport(
-        NS_LITERAL_CSTRING("ipc_channel_error"),
-        reason);
-  }
-#endif
   MOZ_CRASH("Content child abort due to IPC error");
 }
 
@@ -2779,10 +2748,6 @@ ContentChild::RecvShutdown()
   // to wait for that event loop to finish. Otherwise we could prematurely
   // terminate an "unload" or "pagehide" event handler (which might be doing a
   // sync XHR, for example).
-#if defined(MOZ_CRASHREPORTER)
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("IPCShutdownState"),
-                                     NS_LITERAL_CSTRING("RecvShutdown"));
-#endif
   nsCOMPtr<nsIThread> thread;
   nsresult rv = NS_GetMainThread(getter_AddRefs(thread));
   if (NS_SUCCEEDED(rv) && thread) {
@@ -2830,10 +2795,6 @@ ContentChild::RecvShutdown()
   // parent closes.
   StartForceKillTimer();
 
-#if defined(MOZ_CRASHREPORTER)
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("IPCShutdownState"),
-                                     NS_LITERAL_CSTRING("SendFinishShutdown"));
-#endif
   // Ignore errors here. If this fails, the parent will kill us after a
   // timeout.
   Unused << SendFinishShutdown();

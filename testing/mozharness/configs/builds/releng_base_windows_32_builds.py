@@ -66,7 +66,6 @@ config = {
         'MOZ_AUTOMATION': '1',
         'BINSCOPE': 'C:/Program Files (x86)/Microsoft/SDL BinScope/BinScope.exe',
         'HG_SHARE_BASE_DIR': 'C:/builds/hg-shared',
-        'MOZ_CRASHREPORTER_NO_REPORT': '1',
         'MOZ_OBJDIR': 'obj-firefox',
         'PATH': 'C:/mozilla-build/nsis-3.0b1;C:/mozilla-build/python27;'
                 'C:/mozilla-build/buildbotve/scripts;'

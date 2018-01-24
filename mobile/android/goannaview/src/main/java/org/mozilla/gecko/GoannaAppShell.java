@@ -169,10 +169,6 @@ public class GoannaAppShell
 
             // reportJavaCrash should have caused us to hard crash. If we're still here,
             // it probably means Goanna is not loaded, and we should do something else.
-            if (AppConstants.MOZ_CRASHREPORTER && AppConstants.MOZILLA_OFFICIAL) {
-                // Only use Java crash reporter if enabled on official build.
-                return super.reportException(thread, exc);
-            }
             return false;
         }
     };

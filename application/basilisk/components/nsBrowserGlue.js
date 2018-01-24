@@ -91,15 +91,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "AlertsService", "@mozilla.org/alerts-s
   ["webrtcUI", "resource:///modules/webrtcUI.jsm"],
 ].forEach(([name, resource]) => XPCOMUtils.defineLazyModuleGetter(this, name, resource));
 
-#ifdef MOZ_CRASHREPORTER
-XPCOMUtils.defineLazyModuleGetter(this, "PluginCrashReporter",
-                                  "resource:///modules/ContentCrashHandlers.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "UnsubmittedCrashHandler",
-                                  "resource:///modules/ContentCrashHandlers.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "CrashSubmit",
-                                  "resource://gre/modules/CrashSubmit.jsm");
-#endif
-
 XPCOMUtils.defineLazyGetter(this, "gBrandBundle", function() {
   return Services.strings.createBundle("chrome://branding/locale/brand.properties");
 });
@@ -668,10 +659,6 @@ BrowserGlue.prototype = {
 #endif
 
     TabCrashHandler.init();
-#ifdef MOZ_CRASHREPORTER
-    PluginCrashReporter.init();
-    UnsubmittedCrashHandler.init();
-#endif
 
     Services.obs.notifyObservers(null, "browser-ui-startup-complete", "");
   },

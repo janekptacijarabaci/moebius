@@ -75,11 +75,6 @@
 #error "Not yet implemented for this platform"
 #endif // defined(XP_WIN32)
 
-#ifdef MOZ_CRASHREPORTER_INJECTOR
-#include "InjectCrashReporter.h"
-using mozilla::InjectCrashRunnable;
-#endif
-
 #include <stdlib.h>
 #include <time.h>
 #include <prenv.h>
@@ -289,39 +284,18 @@ struct ChildProcessData : public nsUint32HashKey
   explicit ChildProcessData(KeyTypePointer aKey)
     : nsUint32HashKey(aKey)
     , sequence(0)
-#ifdef MOZ_CRASHREPORTER_INJECTOR
-    , callback(nullptr)
-#endif
   { }
 
   nsCOMPtr<nsIFile> minidump;
   // Each crashing process is assigned an increasing sequence number to
   // indicate which process crashed first.
   uint32_t sequence;
-#ifdef MOZ_CRASHREPORTER_INJECTOR
-  InjectorCrashCallback* callback;
-#endif
 };
 
 typedef nsTHashtable<ChildProcessData> ChildMinidumpMap;
 static ChildMinidumpMap* pidToMinidump;
 static uint32_t crashSequence;
 static bool OOPInitialized();
-
-#ifdef MOZ_CRASHREPORTER_INJECTOR
-static nsIThread* sInjectorThread;
-
-class ReportInjectedCrash : public Runnable
-{
-public:
-  explicit ReportInjectedCrash(uint32_t pid) : mPID(pid) { }
-
-  NS_IMETHOD Run();
-
-private:
-  uint32_t mPID;
-};
-#endif // MOZ_CRASHREPORTER_INJECTOR
 
 // Crashreporter annotations that we don't send along in subprocess reports.
 static const char* kSubprocessBlacklist[] = {
@@ -3436,23 +3410,13 @@ OnChildProcessDumpRequested(void* aContext,
 
   {
 
-#ifdef MOZ_CRASHREPORTER_INJECTOR
-    bool runCallback;
-#endif
     {
       MutexAutoLock lock(*dumpMapLock);
       ChildProcessData* pd = pidToMinidump->PutEntry(pid);
       MOZ_ASSERT(!pd->minidump);
       pd->minidump = minidump;
       pd->sequence = ++crashSequence;
-#ifdef MOZ_CRASHREPORTER_INJECTOR
-      runCallback = nullptr != pd->callback;
-#endif
     }
-#ifdef MOZ_CRASHREPORTER_INJECTOR
-    if (runCallback)
-      NS_DispatchToMainThread(new ReportInjectedCrash(pid));
-#endif
   }
 }
 
@@ -3573,13 +3537,6 @@ OOPDeinit()
     return;
   }
 
-#ifdef MOZ_CRASHREPORTER_INJECTOR
-  if (sInjectorThread) {
-    sInjectorThread->Shutdown();
-    NS_RELEASE(sInjectorThread);
-  }
-#endif
-
   delete crashServer;
   crashServer = nullptr;
 
@@ -3608,67 +3565,6 @@ GetChildNotificationPipe()
   return childCrashNotifyPipe;
 }
 #endif
-
-#ifdef MOZ_CRASHREPORTER_INJECTOR
-void
-InjectCrashReporterIntoProcess(DWORD processID, InjectorCrashCallback* cb)
-{
-  if (!GetEnabled())
-    return;
-
-  if (!OOPInitialized())
-    OOPInit();
-
-  if (!sInjectorThread) {
-    if (NS_FAILED(NS_NewNamedThread("CrashRep Inject", &sInjectorThread)))
-      return;
-  }
-
-  {
-    MutexAutoLock lock(*dumpMapLock);
-    ChildProcessData* pd = pidToMinidump->PutEntry(processID);
-    MOZ_ASSERT(!pd->minidump && !pd->callback);
-    pd->callback = cb;
-  }
-
-  nsCOMPtr<nsIRunnable> r = new InjectCrashRunnable(processID);
-  sInjectorThread->Dispatch(r, nsIEventTarget::DISPATCH_NORMAL);
-}
-
-NS_IMETHODIMP
-ReportInjectedCrash::Run()
-{
-  // Crash reporting may have been disabled after this method was dispatched
-  if (!OOPInitialized())
-    return NS_OK;
-
-  InjectorCrashCallback* cb;
-  {
-    MutexAutoLock lock(*dumpMapLock);
-    ChildProcessData* pd = pidToMinidump->GetEntry(mPID);
-    if (!pd || !pd->callback)
-      return NS_OK;
-
-    MOZ_ASSERT(pd->minidump);
-
-    cb = pd->callback;
-  }
-
-  cb->OnCrash(mPID);
-  return NS_OK;
-}
-
-void
-UnregisterInjectorCallback(DWORD processID)
-{
-  if (!OOPInitialized())
-    return;
-
-  MutexAutoLock lock(*dumpMapLock);
-  pidToMinidump->RemoveEntry(processID);
-}
-
-#endif // MOZ_CRASHREPORTER_INJECTOR
 
 bool
 CheckForLastRunCrash()

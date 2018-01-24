@@ -63,11 +63,7 @@ class FFSetup(object):
         self.env = dict(os.environ)
         for k, v in self.browser_config['env'].iteritems():
             self.env[k] = str(v)
-        self.env['MOZ_CRASHREPORTER_NO_REPORT'] = '1'
-        if self.browser_config['symbols_path']:
-            self.env['MOZ_CRASHREPORTER'] = '1'
-        else:
-            self.env['MOZ_CRASHREPORTER_DISABLE'] = '1'
+        self.env['MOZ_CRASHREPORTER_DISABLE'] = '1'
 
         self.env['MOZ_DISABLE_NONLOCAL_CONNECTIONS'] = '1'
 

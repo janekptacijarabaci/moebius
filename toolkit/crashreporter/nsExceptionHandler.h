@@ -215,30 +215,6 @@ bool CreateAdditionalChildMinidump(ProcessHandle childPid,
 // Parent-side API for children
 const char* GetChildNotificationPipe();
 
-#ifdef MOZ_CRASHREPORTER_INJECTOR
-// Inject a crash report client into an arbitrary process, and inform the
-// callback object when it crashes. Parent process only.
-
-class InjectorCrashCallback
-{
-public:
-  InjectorCrashCallback() { }
-
-  /**
-   * Inform the callback of a crash. The client code should call
-   * TakeMinidumpForChild to remove it from the PID mapping table.
-   *
-   * The callback will not be fired if the client has already called
-   * TakeMinidumpForChild for this process ID.
-   */
-  virtual void OnCrash(DWORD processID) = 0;
-};
-
-// This method implies OOPInit
-void InjectCrashReporterIntoProcess(DWORD processID, InjectorCrashCallback* cb);
-void UnregisterInjectorCallback(DWORD processID);
-#endif
-
 // Child-side API
 bool SetRemoteExceptionHandler(const nsACString& crashPipe);
 void InitChildProcessTmpDir();

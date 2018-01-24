@@ -30,12 +30,6 @@
 using mozilla::dom::CrashReporterParent;
 using mozilla::ipc::GoannaChildProcessHost;
 
-#ifdef MOZ_CRASHREPORTER
-#include "nsPrintfCString.h"
-using CrashReporter::AnnotationTable;
-using CrashReporter::GetIDFromMinidump;
-#endif
-
 #include "mozilla/Telemetry.h"
 
 #ifdef XP_WIN
@@ -463,78 +457,10 @@ GMPParent::EnsureProcessLoaded()
   return NS_SUCCEEDED(rv);
 }
 
-#ifdef MOZ_CRASHREPORTER
-void
-GMPParent::WriteExtraDataForMinidump(CrashReporter::AnnotationTable& notes)
-{
-  notes.Put(NS_LITERAL_CSTRING("GMPPlugin"), NS_LITERAL_CSTRING("1"));
-  notes.Put(NS_LITERAL_CSTRING("PluginFilename"),
-                               NS_ConvertUTF16toUTF8(mName));
-  notes.Put(NS_LITERAL_CSTRING("PluginName"), mDisplayName);
-  notes.Put(NS_LITERAL_CSTRING("PluginVersion"), mVersion);
-}
-
-void
-GMPParent::GetCrashID(nsString& aResult)
-{
-  CrashReporterParent* cr =
-    static_cast<CrashReporterParent*>(LoneManagedOrNullAsserts(ManagedPCrashReporterParent()));
-  if (NS_WARN_IF(!cr)) {
-    return;
-  }
-
-  AnnotationTable notes(4);
-  WriteExtraDataForMinidump(notes);
-  nsCOMPtr<nsIFile> dumpFile;
-  TakeMinidump(getter_AddRefs(dumpFile), nullptr);
-  if (!dumpFile) {
-    NS_WARNING("GMP crash without crash report");
-    aResult = mName;
-    aResult += '-';
-    AppendUTF8toUTF16(mVersion, aResult);
-    return;
-  }
-  GetIDFromMinidump(dumpFile, aResult);
-  cr->GenerateCrashReportForMinidump(dumpFile, &notes);
-}
-
-static void
-GMPNotifyObservers(const uint32_t aPluginID, const nsACString& aPluginName, const nsAString& aPluginDumpID)
-{
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  nsCOMPtr<nsIWritablePropertyBag2> propbag =
-    do_CreateInstance("@mozilla.org/hash-property-bag;1");
-  if (obs && propbag) {
-    propbag->SetPropertyAsUint32(NS_LITERAL_STRING("pluginID"), aPluginID);
-    propbag->SetPropertyAsACString(NS_LITERAL_STRING("pluginName"), aPluginName);
-    propbag->SetPropertyAsAString(NS_LITERAL_STRING("pluginDumpID"), aPluginDumpID);
-    obs->NotifyObservers(propbag, "gmp-plugin-crash", nullptr);
-  }
-
-  RefPtr<gmp::GoannaMediaPluginService> service =
-    gmp::GoannaMediaPluginService::GetGoannaMediaPluginService();
-  if (service) {
-    service->RunPluginCrashCallbacks(aPluginID, aPluginName);
-  }
-}
-#endif
 void
 GMPParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   LOGD("%s: (%d)", __FUNCTION__, (int)aWhy);
-#ifdef MOZ_CRASHREPORTER
-  if (AbnormalShutdown == aWhy) {
-    Telemetry::Accumulate(Telemetry::SUBPROCESS_ABNORMAL_ABORT,
-                          NS_LITERAL_CSTRING("gmplugin"), 1);
-    nsString dumpID;
-    GetCrashID(dumpID);
-
-    // NotifyObservers is mainthread-only
-    NS_DispatchToMainThread(WrapRunnableNM(&GMPNotifyObservers,
-                                           mPluginId, mDisplayName, dumpID),
-                            NS_DISPATCH_NORMAL);
-  }
-#endif
   // warn us off trying to close again
   mState = GMPStateClosing;
   mAbnormalShutdownInProgress = true;
@@ -555,9 +481,7 @@ GMPParent::ActorDestroy(ActorDestroyReason aWhy)
 mozilla::dom::PCrashReporterParent*
 GMPParent::AllocPCrashReporterParent(const NativeThreadId& aThread)
 {
-#ifndef MOZ_CRASHREPORTER
   MOZ_ASSERT(false, "Should only be sent if crash reporting is enabled.");
-#endif
   CrashReporterParent* cr = new CrashReporterParent();
   cr->SetChildData(aThread, GoannaProcessType_GMPlugin);
   return cr;

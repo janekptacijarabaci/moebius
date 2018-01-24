@@ -88,8 +88,6 @@ class GTests(object):
             for p in ('gmp-fake', 'gmp-fakeopenh264')
         )
         env["XPCOM_DEBUG_BREAK"] = "stack-and-abort"
-        env["MOZ_CRASHREPORTER_NO_REPORT"] = "1"
-        env["MOZ_CRASHREPORTER"] = "1"
         env["MOZ_RUN_GTEST"] = "1"
         # Normally we run with GTest default output, override this to use the TBPL test format.
         env["MOZ_TBPL_PARSER"] = "1"

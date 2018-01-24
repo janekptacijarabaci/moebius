@@ -63,9 +63,7 @@ var gPluginHandler = {
                                            msg.data.pluginID);
         break;
       case "PluginContent:SubmitReport":
-#ifdef MOZ_CRASHREPORTER
-        this.submitReport(msg.data.runID, msg.data.keyVals, msg.data.submitURLOptIn);
-#endif
+        // Nothing to do here.
         break;
       case "PluginContent:LinkClickCallback":
         switch (msg.data.name) {
@@ -98,12 +96,7 @@ var gPluginHandler = {
   },
 
   submitReport: function submitReport(runID, keyVals, submitURLOptIn) {
-#ifdef MOZ_CRASHREPORTER
-    Services.prefs.setBoolPref("dom.ipc.plugins.reportCrashURL", submitURLOptIn);
-    PluginCrashReporter.submitCrashReport(runID, keyVals);
-#else
     return;
-#endif
   },
 
   // Callback for user clicking a "reload page" link
