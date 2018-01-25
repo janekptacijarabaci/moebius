@@ -2302,11 +2302,7 @@ ContainerState::GetLayerCreationHint(AnimatedGeometryRoot* aAnimatedGeometryRoot
       break;
     }
     nsIScrollableFrame* scrollable = do_QueryFrame(fParent);
-    if (scrollable
-  #ifdef MOZ_B2G
-        && scrollable->WantAsyncScroll()
-  #endif
-       ) {
+    if (scrollable) {
       // WantAsyncScroll() returns false when the frame has overflow:hidden,
       // so we won't create tiled layers for overflow:hidden frames even if
       // they have a display port. The main purpose of the WantAsyncScroll check
