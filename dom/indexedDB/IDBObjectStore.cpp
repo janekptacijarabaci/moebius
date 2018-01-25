@@ -856,10 +856,7 @@ public:
   }
 };
 
-// We don't need to upgrade database on B2G. See the comment in ActorsParent.cpp,
 // UpgradeSchemaFrom18_0To19_0()
-#if !defined(MOZ_B2G)
-
 class UpgradeDeserializationHelper
 {
 public:
@@ -925,8 +922,6 @@ public:
     return false;
   }
 };
-
-#endif // MOZ_B2G
 
 template <class Traits>
 JSObject*
@@ -1268,8 +1263,6 @@ IDBObjectStore::DeserializeIndexValue(JSContext* aCx,
   return true;
 }
 
-#if !defined(MOZ_B2G)
-
 // static
 bool
 IDBObjectStore::DeserializeUpgradeValue(JSContext* aCx,
@@ -1305,8 +1298,6 @@ IDBObjectStore::DeserializeUpgradeValue(JSContext* aCx,
 
   return true;
 }
-
-#endif // MOZ_B2G
 
 #ifdef DEBUG
 

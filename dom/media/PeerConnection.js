@@ -826,8 +826,7 @@ class RTCPeerConnection {
 
   async _getPermission() {
     if (!this._havePermission) {
-      let privileged = this._isChrome || AppConstants.MOZ_B2G ||
-          Services.prefs.getBoolPref("media.navigator.permission.disabled");
+      let privileged = this._isChrome || Services.prefs.getBoolPref("media.navigator.permission.disabled");
 
       if (privileged) {
         this._havePermission = Promise.resolve();

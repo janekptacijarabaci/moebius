@@ -359,7 +359,7 @@ uint32_t MaxNumberOfChannels()
   return 0;
 }
 
-#if defined(__ANDROID__) && defined(MOZ_B2G)
+#if defined(__ANDROID__)
 cubeb_stream_type ConvertChannelToCubebType(dom::AudioChannel aChannel)
 {
   switch(aChannel) {
