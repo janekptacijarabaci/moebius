@@ -602,8 +602,6 @@ LoginManagerStorage.prototype = {
   }),
 }
 
-// A global variable to indicate if the login manager is available - it doesn't
-// exist on b2g. Defined here as the use of preprocessor directives skews line
-// numbers in the runtime, meaning stack-traces etc end up off by a few lines.
-// Doing it at the end of the file makes that less of a pita.
-var haveLoginManager = !AppConstants.MOZ_B2G;
+// A global variable to indicate if the login manager is available - it did not
+// exist on b2g which is now removed so set it to true.
+var haveLoginManager = true;

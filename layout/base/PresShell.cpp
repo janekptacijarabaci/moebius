@@ -201,10 +201,6 @@
 #include "nsIDocShellTreeOwner.h"
 #endif
 
-#ifdef MOZ_B2G
-#include "nsIHardwareKeyHandler.h"
-#endif
-
 #ifdef MOZ_TASK_TRACER
 #include "GoannaTaskTracer.h"
 using namespace mozilla::tasktracer;
