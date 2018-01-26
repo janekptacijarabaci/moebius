@@ -176,6 +176,8 @@ const HeadersPanel = createClass({
 
     let summaryVersion = httpVersion ?
       this.renderSummary(SUMMARY_VERSION, httpVersion) : null;
+    // display Status-Line above other response headers
+    let statusLine = `${httpVersion} ${status} ${statusText}\n`;
 
     let summaryRawHeaders;
     if (this.state.rawHeadersOpened) {
@@ -192,7 +194,7 @@ const HeadersPanel = createClass({
             div({ className: "raw-headers" },
               div({ className: "tabpanel-summary-label" }, RAW_HEADERS_RESPONSE),
               textarea({
-                value: writeHeaderText(responseHeaders.headers),
+                value: statusLine + writeHeaderText(responseHeaders.headers),
                 readOnly: true,
               }),
             ),
