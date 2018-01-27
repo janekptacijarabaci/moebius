@@ -534,7 +534,7 @@ class Build(MachCommandBase):
             try:
                 # Fennec doesn't have useful output from just building. We should
                 # arguably make the build action useful for Fennec. Another day...
-                if self.substs['MOZ_BUILD_APP'] != 'mobile/android':
+                if not self.substs['MOZ_FENNEC']:
                     print('To take your build for a test drive, run: |mach run|')
             except Exception:
                 # Ignore Exceptions in case we can't find config.status (such

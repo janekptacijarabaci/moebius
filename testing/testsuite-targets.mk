@@ -168,7 +168,7 @@ endef
 
 $(foreach name,$(TEST_PKGS),$(eval $(call package_archive,$(name))))
 
-ifeq ($(MOZ_BUILD_APP),mobile/android)
+ifdef MOZ_FENNIC
 stage-all: stage-android
 stage-all: stage-instrumentation-tests
 endif
