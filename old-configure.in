@@ -2365,10 +2365,6 @@ fi
 # that haven't made a confvars.sh yet. Don't add new stuff here, use
 # MOZ_BUILD_APP.
 case "$MOZ_BUILD_APP" in
-browser)
-  AC_DEFINE(MOZ_PHOENIX)
-  ;;
-
 xulrunner)
   AC_DEFINE(MOZ_XULRUNNER)
   ;;
@@ -2379,7 +2375,6 @@ if test -n "$MOZ_GRAPHENE"; then
     AC_DEFINE(MOZ_GRAPHENE)
 fi
 
-AC_SUBST(MOZ_PHOENIX)
 AC_SUBST(MOZ_XULRUNNER)
 
 dnl ========================================================
