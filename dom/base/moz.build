@@ -458,7 +458,7 @@ include('/ipc/chromium/chromium-config.mozbuild')
 
 FINAL_LIBRARY = 'xul'
 
-if CONFIG['MOZ_BUILD_APP'] in ['xulrunner'] or CONFIG['MOZ_PHOENIX'] or CONFIG['MOZ_FENNEC']:
+if CONFIG['MOZ_PHOENIX'] or CONFIG['MOZ_FENNEC'] or CONFIG['MOZ_XULRUNNER']:
     DEFINES['HAVE_SIDEBAR'] = True
 
 if CONFIG['MOZ_X11']:
