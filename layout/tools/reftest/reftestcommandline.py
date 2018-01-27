@@ -347,8 +347,7 @@ class DesktopArgumentsParser(ReftestArgumentsParser):
 
         if options.app is None:
             bin_dir = (self.build_obj.get_binary_path() if
-                       self.build_obj and self.build_obj.substs[
-                           'MOZ_BUILD_APP'] != 'mobile/android'
+                       self.build_obj and not self.build_obj.substs['MOZ_FENNEC']
                        else None)
 
             if bin_dir:

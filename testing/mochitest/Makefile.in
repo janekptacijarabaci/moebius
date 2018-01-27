@@ -19,7 +19,7 @@ $(_DEST_DIR):
 	$(NSINSTALL) -D $@
 
 # On Android only, include a release signed Robocop APK in the test package.
-ifeq ($(MOZ_BUILD_APP),mobile/android)
+ifdef MOZ_FENNEC
 include $(topsrcdir)/config/android-common.mk
 
 ifndef MOZ_BUILD_MOBILE_ANDROID_WITH_GRADLE

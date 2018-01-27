@@ -807,7 +807,7 @@ class Artifacts(object):
         else:
             target_suffix = '-opt'
 
-        if self._substs.get('MOZ_BUILD_APP', '') == 'mobile/android':
+        if self._substs.get('MOZ_FENNEC'):
             if self._substs['ANDROID_CPU_ARCH'] == 'x86':
                 return 'android-x86-opt'
             return 'android-api-15' + target_suffix
