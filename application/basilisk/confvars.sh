@@ -5,8 +5,8 @@
 
 MOZ_APP_BASENAME=Basilisk
 MOZ_APP_VENDOR=Moonchild
-MOZ_UPDATER=1
 MOZ_PHOENIX=1
+MOZ_UPDATER=1
 
 if test "$OS_ARCH" = "WINNT" -o \
         "$OS_ARCH" = "Linux"; then
@@ -31,8 +31,8 @@ if test -n "$BASILISK_VERSION" ; then
     MOZ_APP_VERSION=55.0.`date --utc '+%Y.%m.%d'`
     MOZ_APP_VERSION_DISPLAY=`date --utc '+%Y.%m.%d'`
 else
-    MOZ_APP_VERSION=$FIREFOX_VERSION
-    MOZ_APP_VERSION_DISPLAY=$FIREFOX_VERSION_DISPLAY
+    MOZ_APP_VERSION=`cat ${_topsrcdir}/$MOZ_BUILD_APP/config/version.txt`
+    MOZ_APP_VERSION_DISPLAY=`cat ${_topsrcdir}/$MOZ_BUILD_APP/config/version_display.txt`
 fi
 
 MOZ_EXTENSIONS_DEFAULT=" gio"
