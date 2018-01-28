@@ -1894,7 +1894,7 @@ XMLHttpRequestWorker::Open(const nsACString& aMethod,
   ++mProxy->mOpenCount;
   runnable->Dispatch(Terminating, aRv);
   if (aRv.Failed()) {
-    if (!--mProxy->mOpenCount) {
+    if (mProxy && !--mProxy->mOpenCount) {
       ReleaseProxy();
     }
 
