@@ -226,9 +226,8 @@ DOMHighResTimeStamp
 Performance::RoundTime(double aTime) const
 {
   // Round down to the nearest 50us, because if the timer is too accurate people
-  // can do nasty timing attacks with it.  See similar code in the worker
-  // Performance implementation.
-  const double maxResolutionMs = 0.050;
+  // can do nasty timing attacks with it.
+  const double maxResolutionMs = 1.0;
   return floor(aTime / maxResolutionMs) * maxResolutionMs;
 }
 
