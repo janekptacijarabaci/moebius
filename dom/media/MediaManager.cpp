@@ -39,6 +39,7 @@
 #include "mozilla/Types.h"
 #include "mozilla/PeerIdentity.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/MediaStreamBinding.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
@@ -1971,6 +1972,35 @@ nsresult MediaManager::GenerateUUID(nsAString& aResult)
   return NS_OK;
 }
 
+static bool IsFullyActive(nsPIDOMWindowInner* aWindow)
+{
+  while (true) {
+    if (!aWindow) {
+      return false;
+    }
+    nsIDocument* document = aWindow->GetExtantDoc();
+    if (!document) {
+      return false;
+    }
+    if (!document->IsCurrentActiveDocument()) {
+      return false;
+    }
+    nsPIDOMWindowOuter* context = aWindow->GetOuterWindow();
+    if (!context) {
+      return false;
+    }
+    if (context->IsTopLevelWindow()) {
+      return true;
+    }
+    nsCOMPtr<Element> frameElement =
+      nsGlobalWindow::Cast(context)->GetRealFrameElementOuter();
+    if (!frameElement) {
+      return false;
+    }
+    aWindow = frameElement->OwnerDoc()->GetInnerWindow();
+  }
+}
+
 enum class GetUserMediaSecurityState {
   Other = 0,
   HTTPS = 1,
@@ -2013,6 +2043,14 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
     onFailure->OnError(error);
     return NS_OK;
   }
+
+  if (!IsFullyActive(aWindow)) {
+    RefPtr<MediaStreamError> error =
+        new MediaStreamError(aWindow, NS_LITERAL_STRING("InvalidStateError"));
+    onFailure->OnError(error);
+    return NS_OK;
+  }
+
   if (sInShutdown) {
     RefPtr<MediaStreamError> error =
         new MediaStreamError(aWindow,
