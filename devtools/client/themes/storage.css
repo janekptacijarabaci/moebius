@@ -32,6 +32,25 @@
   min-width: 250px;
 }
 
+#storage-toolbar .add-button {
+  margin: 0 0 0 5px;
+  padding: 0 0 0 5px;
+  width: 18px;
+  background-image: url("chrome://devtools/skin/images/add.svg");
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  background-position: left center;
+  -moz-box-align: center;
+}
+
+#storage-toolbar .devtools-button {
+  min-width: unset;
+}
+
+#storage-toolbar .devtools-button hbox {
+  display: none;
+}
+
 /* Responsive sidebar */
 @media (max-width: 700px) {
   #storage-tree,
