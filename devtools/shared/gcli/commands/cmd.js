@@ -91,7 +91,7 @@ function loadItemsFromMozDir() {
 }
 
 exports.mozDirLoader = function (name) {
-  return loadItemsFromMozDir().then(items => {
+  return loadItemsFromMozDir()().then(items => {
     return { items };
   });
 };
@@ -141,8 +141,6 @@ exports.items = [
       return !prefBranch.prefHasUserValue(PREF_DIR);
     },
     exec: function (args, context) {
-      gcli.load();
-
       let dirName = prefBranch.getComplexValue(PREF_DIR,
                                               Ci.nsISupportsString).data.trim();
       return l10n.lookupFormat("cmdStatus3", [ dirName ]);
@@ -174,8 +172,6 @@ exports.items = [
     exec: function (args, context) {
       supportsString.data = args.directory;
       prefBranch.setComplexValue(PREF_DIR, Ci.nsISupportsString, supportsString);
-
-      gcli.load();
 
       return l10n.lookupFormat("cmdStatus3", [ args.directory ]);
     }
