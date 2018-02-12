@@ -1,4 +1,10 @@
-# Unified XUL Platform (UXP)
+## Important: this repository is now deprecated in favor of MoonchildProductions/UXP
+
+In time, issues will be duplicated to the new working repository which is a
+re-forking of Mozilla code at an earlier fork point to avoid breaking issues
+with the current code making it unsuitable for platform development.
+
+# Unified XUL Platform (UXP-deprecated)
 ## Codename: Möbius
 
 This repository holds the code for a unified application platform for XUL-based
